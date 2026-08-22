@@ -55,7 +55,30 @@ they sign in with their Crux Google account.
 
 Invite codes are now single-use and expire after 14 days.
 
-## 5. Verify
+## 5. New settings worth reviewing
+
+All are created automatically with the defaults below on first load; change them in
+**Admin → Settings**.
+
+| Setting | Default | What it does |
+|---|---|---|
+| `HEAD_OFFICE_EMAIL` | *(blank)* | Crux head office mailbox, used for a level-5 escalation when the client has no head office of its own and the matrix names nobody at level 5. |
+| `HEAD_OFFICE_CC` | *(blank)* | Always copied on a head-office escalation. |
+| `APPRECIATION_NUDGE_ENABLED` | `true` | Weekly reminder to managers who have recognised nobody this month. |
+| `APPRECIATION_NUDGE_DAY` | `1` | ISO day of week for it. 1 = Monday. |
+| `APPRECIATION_NUDGE_HOUR` | `11` | Earliest hour it may go out. |
+| `BRANCH_RECIPIENT` | `BRANCH_MANAGER,CRUX_POC` | Now also accepts `HEAD_OFFICE` and `MATRIX_1`…`MATRIX_5`, which route to whoever the escalation matrix names at that level for the branch. |
+
+**No new trigger is needed.** The existing five-minute `tick()` now also runs the
+weekly appreciation nudge, the failed-email retry sweep and session housekeeping.
+If triggers were never installed, **Admin → Setup → Install triggers**.
+
+Per-client KPI allocation is available from **Team → Targets**: each KPI is either
+one combined figure or up to 50 client / sub-category slices, never both.
+Admin → Setup also gains **Preview appreciation nudge** (computes who would be
+reminded, sends nothing) and **Run appreciation nudge**.
+
+## 6. Verify
 
 Run the built-in self-check: **Admin → Setup → Preflight**.
 
@@ -72,7 +95,7 @@ Then confirm the P0 fix by hand, which is the scenario that was reported:
 ## Local tests
 
 ```bash
-bash test/run-all.sh      # 166 tests, no spreadsheet touched, no email sent
+bash test/run-all.sh      # 228 tests, no spreadsheet touched, no email sent
 ```
 
 The suites run the real `src/*.gs` under Node with the Apps Script globals
