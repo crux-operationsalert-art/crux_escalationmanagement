@@ -14,3 +14,20 @@ XLSX and splitting each sheet to CSV.
 deliberately reproduces the vulnerability against the *old* logic so the test
 proves the flaw was real rather than asserting it away; every later section
 exercises the current code and must pass.
+
+## Layout tests
+
+`node test/layout.test.js` needs Chromium (found automatically at
+`/opt/pw-browsers/chromium-1194/chrome-linux/chrome`, or set `CHROME`). It skips
+with exit 0 if Chromium is absent rather than failing a run that cannot do better.
+
+`layout/build-harness.js` assembles the real `Styles.html` + `App.html` into a
+standalone page with `google.script.run` stubbed and a probe appended, then
+`layout/measure.sh` renders it headless and prints the probe's JSON. The generated
+`layout/harness.html` is not committed.
+
+The RPC fixtures must match the shapes the views actually consume —
+`paginate_` returns `{total, page, size, rows}`, and a view handed `{items}`
+silently renders its empty state, which would make a layout test pass while
+measuring nothing. `layout.test.js` guards against that by asserting some table
+genuinely overflows.

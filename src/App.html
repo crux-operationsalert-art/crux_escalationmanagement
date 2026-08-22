@@ -293,6 +293,49 @@
     ]);
   }
 
+  /**
+   * Give every data table its own horizontal scroll container.
+   *
+   * Cards clip their own overflow, but several tables (escalations, the logs) are
+   * appended to a bare div with no card ancestor, so on a narrow screen they
+   * widened the DOCUMENT and the whole page scrolled sideways, taking the header
+   * and the navigation out of view with it.
+   *
+   * This has to be an observer rather than a sweep after render: almost every
+   * table is built when its RPC resolves, long after the view function has
+   * returned, so a one-shot pass over the container caught only the handful that
+   * render synchronously. Observing #app covers every table that exists now and
+   * any added later, without patching each screen and missing the next one.
+   *
+   * A narrow table in a scroll container behaves exactly as before: no overflow,
+   * no scrollbar.
+   */
+  function wrapOneTable(t) {
+    var p = t.parentElement;
+    if (!p || p.classList.contains('table-scroll')) return;   // already wrapped
+    var box = document.createElement('div');
+    box.className = 'table-scroll';
+    p.insertBefore(box, t);
+    box.appendChild(t);
+  }
+  function wrapTablesForScroll(root) {
+    if (!root || !root.querySelectorAll) return;
+    if (root.matches && root.matches('table.table')) wrapOneTable(root);
+    Array.prototype.forEach.call(root.querySelectorAll('table.table'), wrapOneTable);
+  }
+  (function observeTables() {
+    var app = document.getElementById('app');
+    if (!app || typeof MutationObserver !== 'function') return;
+    wrapTablesForScroll(app);
+    new MutationObserver(function(muts) {
+      muts.forEach(function(m) {
+        Array.prototype.forEach.call(m.addedNodes || [], function(n) {
+          if (n && n.nodeType === 1) wrapTablesForScroll(n);
+        });
+      });
+    }).observe(app, { childList: true, subtree: true });
+  })();
+
   function renderMain() {
     var view = Routes[state.route] || Routes[currentNavKey()] || Routes.dashboard;
     var container = h('div',{class:'main', testid:'view-'+currentNavKey()}, []);
@@ -863,7 +906,7 @@
     ]));
     if (!d.branches.length) { card.appendChild(h('div',{class:'empty'},['No branches yet for this client.'])); }
     else {
-      var table = h('table',{class:'table', testid:'table-branches'},[
+      var table = h('table',{class:'table wide', testid:'table-branches'},[
         h('thead',{},[h('tr',{},[h('th',{},['Code']), h('th',{},['Branch']), h('th',{},['Crux POC']), h('th',{},['Location']), h('th',{},['Zone']), h('th',{},['Status'])])])
       ]);
       var tb = h('tbody',{},[]);
@@ -2233,7 +2276,7 @@
           showAck ? 'No warnings on record.' : 'Nothing awaiting acknowledgement.'
         ]));
       } else {
-        var table = h('table',{class:'table', testid:'table-warnings'},[
+        var table = h('table',{class:'table wide', testid:'table-warnings'},[
           h('thead',{},[h('tr',{},[
             h('th',{},['Issued']), h('th',{},['Person']), h('th',{},['Level']),
             h('th',{},['Escalation']), h('th',{},['Reason']), h('th',{},['Status']), h('th',{},[''])
@@ -2379,7 +2422,7 @@
     rpc('escalations.list',{}).then(function(res){
       wrap.innerHTML = '';
       if (!res.rows.length) { wrap.appendChild(h('div',{class:'empty'},[h('h3',{},['No escalations yet']), h('p',{},['Log a call or raise one to see it here.'])])); return; }
-      var t = h('table',{class:'table', testid:'table-escalations'},[
+      var t = h('table',{class:'table wide', testid:'table-escalations'},[
         h('thead',{},[h('tr',{},[h('th',{},['ID']), h('th',{},['Type']), h('th',{},['Client']), h('th',{},['Branch']), h('th',{},['Category']), h('th',{},['Severity']), h('th',{},['Owner']), h('th',{},['Status']), h('th',{},['Due'])])])
       ]);
       var tb = h('tbody',{},[]);
@@ -3928,7 +3971,7 @@
     rpc(action, { filters: filters || {}, size: 500 }).then(function(res){
       body.innerHTML = '';
       if (!res.rows.length) { body.appendChild(h('div',{class:'empty'},['No rows match your filters.'])); return; }
-      var t = h('table',{class:'table', testid:'table-log'},[h('thead',{},[h('tr',{}, cols.map(function(c){ return h('th',{},[c]); }))])]);
+      var t = h('table',{class:'table wide', testid:'table-log'},[h('thead',{},[h('tr',{}, cols.map(function(c){ return h('th',{},[c]); }))])]);
       var tb = h('tbody',{},[]);
       res.rows.forEach(function(r){
         tb.appendChild(h('tr',{class:'no-hover'}, cols.map(function(c){

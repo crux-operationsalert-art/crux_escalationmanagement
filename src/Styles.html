@@ -44,25 +44,44 @@ h3 { font-size: 16px; }
 .hidden { display: none !important; }
 
 /* Layout */
-.app-shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
-.sidebar { background: var(--ink-950); color: #cbd0d9; padding: 20px 14px; }
+/* LAYOUT / SCROLLING (section 32)
+   The shell used to be `min-height: 100vh` with the whole document scrolling as
+   one block. Two consequences, on every long screen:
+     - the sidebar is a grid cell that grows to the height of the content, so
+       scrolling a long table carried the navigation off the top of the window and
+       there was no way back without scrolling to the top again;
+     - a wide table (ESCALATIONS has 27 columns, the logs 15) widened the document
+       itself, so the whole page scrolled sideways and the header and nav slid out
+       of view horizontally too.
+   The shell is now a fixed-height frame holding two independently scrolling
+   panes. The document never scrolls; the sidebar and the content do. Cards clip
+   their own overflow, so a wide table scrolls inside its card and leaves the page
+   header where it is.
+   Heights use dvh with a vh fallback: on mobile browsers 100vh is taller than the
+   visible viewport by the height of the address bar, which cut off the bottom of
+   every screen. */
+.app-shell { display: grid; grid-template-columns: 240px 1fr; height: 100vh; height: 100dvh; overflow: hidden; }
+.sidebar { background: var(--ink-950); color: #cbd0d9; padding: 20px 14px; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; }
 .sidebar-brand { color: #fff; font-family: var(--font-serif); font-size: 18px; letter-spacing: -0.01em; padding: 6px 10px 18px; border-bottom: 1px solid #22262f; margin-bottom: 12px; }
 .sidebar-brand small { display:block; font-family: var(--font-mono); font-size: 10px; color: var(--amber-400); letter-spacing: .18em; text-transform: uppercase; margin-top: 4px; }
 .nav-item { display:flex; align-items:center; gap:10px; padding: 9px 10px; border-radius: var(--radius-sm); color: #cbd0d9; cursor: pointer; font-size: 14px; margin-bottom: 2px; }
 .nav-item:hover { background: #191d25; color: #fff; }
 .nav-item.active { background: #2a3140; color: #fff; }
 .nav-item .dot { width:6px; height:6px; border-radius:50%; background:var(--amber-400); }
-.sidebar-user { position: sticky; bottom: 12px; padding: 10px; border-top: 1px solid #22262f; margin-top: 16px; font-size: 12px; color: var(--ink-300); }
+/* `margin-top:auto` inside the flex column, instead of position:sticky against a
+   cell of unbounded height, which never actually stuck. */
+.sidebar-user { margin-top: auto; padding: 10px; border-top: 1px solid #22262f; font-size: 12px; color: var(--ink-300); }
 .sidebar-user b { color: #fff; }
 .role-pill { display:inline-block; padding: 2px 8px; border-radius: 999px; background:#2a3140; color:#f2c37b; font-family: var(--font-mono); font-size: 10px; letter-spacing: .1em; }
 
-.main { padding: 28px 40px; max-width: 1300px; }
+.main { padding: 28px 40px; overflow-y: auto; overflow-x: auto; min-width: 0; }
+.main > * { max-width: 1300px; }
 .pageheader { display:flex; align-items:baseline; justify-content:space-between; margin-bottom: 22px; }
 .pageheader h1 { margin:0; }
 .pageheader .sub { color: var(--ink-500); font-size: 13px; margin-top: 2px; }
 
 /* Cards */
-.card { background:#fff; border:1px solid var(--ink-100); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow-sm); }
+.card { background:#fff; border:1px solid var(--ink-100); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow-sm); overflow-x: auto; min-width: 0; }
 .card + .card { margin-top: 14px; }
 .card h3 { display:flex; align-items:center; justify-content:space-between; }
 .grid { display:grid; gap: 14px; }
@@ -99,7 +118,12 @@ h3 { font-size: 16px; }
 .form-row-3 { display:grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
 
 /* Tables */
+/* Every data table sits in one of these (see wrapTablesForScroll). A wide table
+   scrolls here instead of widening the page. */
+.table-scroll { overflow-x: auto; max-width: 100%; min-width: 0; }
 .table { width: 100%; border-collapse: collapse; }
+/* Below this a many-column table becomes unreadable; the card scrolls instead. */
+.table.wide { min-width: 900px; }
 .table th, .table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--ink-100); vertical-align: top; }
 .table th { font-family: var(--font-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-500); background: var(--ink-50); }
 .table tbody tr:hover { background: #fdf9f0; cursor: pointer; }
@@ -131,10 +155,10 @@ h3 { font-size: 16px; }
 
 /* Modal */
 .modal { position: fixed; inset: 0; background: rgba(14,17,22,.42); backdrop-filter: blur(2px); display:flex; align-items:center; justify-content:center; z-index: 150; padding: 24px; }
-.modal-card { background:#fff; width: 100%; max-width: 720px; max-height: 88vh; border-radius: 14px; overflow: hidden; display:flex; flex-direction: column; box-shadow: var(--shadow-md); }
+.modal-card { background:#fff; width: 100%; max-width: 720px; max-height: 88vh; max-height: 88dvh; border-radius: 14px; overflow: hidden; display:flex; flex-direction: column; box-shadow: var(--shadow-md); }
 .modal-head { display:flex; align-items:center; justify-content:space-between; padding: 16px 20px; border-bottom: 1px solid var(--ink-100); }
 .modal-title { font-family: var(--font-serif); font-size: 18px; }
-.modal-body { padding: 20px; overflow: auto; }
+.modal-body { padding: 20px; overflow: auto; overscroll-behavior: contain; }
 .modal-foot { padding: 14px 20px; border-top: 1px solid var(--ink-100); display:flex; justify-content:flex-end; gap:10px; background: var(--ink-50); }
 
 /* Boot / Empty / Login */
@@ -156,8 +180,14 @@ h3 { font-size: 16px; }
 .kv { display:grid; grid-template-columns: 180px 1fr; gap: 10px; margin: 4px 0; }
 .kv .k { color: var(--ink-500); font-size: 12px; }
 
-.tabs { display:flex; gap: 4px; border-bottom: 1px solid var(--ink-100); margin-bottom: 16px; }
-.tab { padding: 10px 16px; cursor: pointer; color: var(--ink-500); border-bottom: 2px solid transparent; }
+/* A horizontal strip of tabs with no scroll container widened the whole document
+   on a narrow screen (the Admin bar has enough tabs to exceed 768px), so the page
+   scrolled sideways. The strip scrolls itself instead; the tabs keep their size
+   rather than being squeezed into unreadable slivers. */
+.tabs { display:flex; gap: 4px; border-bottom: 1px solid var(--ink-100); margin-bottom: 16px;
+        overflow-x: auto; overflow-y: hidden; max-width: 100%; scrollbar-width: thin; }
+.tab { padding: 10px 16px; cursor: pointer; color: var(--ink-500); border-bottom: 2px solid transparent;
+       flex: 0 0 auto; white-space: nowrap; }
 .tab.active { color: var(--ink-900); border-bottom-color: var(--amber-500); }
 
 .callout { padding: 12px 14px; border-radius: 10px; background: var(--amber-100); color: var(--amber-600); border-left: 3px solid var(--amber-500); }
@@ -212,8 +242,13 @@ h3 { font-size: 16px; }
 .status-line { display:flex; align-items:center; gap: 10px; margin: 8px 0; font-size: 13px; }
 
 @media (max-width: 900px) {
-  .app-shell { grid-template-columns: 1fr; }
-  .sidebar { position: sticky; top: 0; z-index: 40; padding: 12px; display:flex; align-items:center; overflow-x:auto; gap: 6px; }
+  /* Stacked: the DOCUMENT scrolls again and the nav is a sticky top bar. The
+     fixed two-pane frame above must be undone explicitly, or `overflow:hidden`
+     on a 100dvh shell would make the page unscrollable on a phone. */
+  .app-shell { grid-template-columns: 1fr; height: auto; min-height: 100dvh; overflow: visible; }
+  .sidebar { position: sticky; top: 0; z-index: 40; padding: 12px; display:flex; flex-direction: row; align-items:center; overflow-x:auto; overflow-y: hidden; gap: 6px; }
+  .main { overflow: visible; }
+  .boot { min-height: 100dvh; }
   .sidebar-brand { border:0; padding: 4px 8px; margin:0; }
   .nav-item { white-space: nowrap; padding: 6px 10px; }
   .sidebar-user { display:none; }
