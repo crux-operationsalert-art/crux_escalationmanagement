@@ -9,48 +9,47 @@ write path to it, so nothing here is live yet.
 Deploy by **updating the existing deployment**, never creating a new one — the
 `/exec` URL is already shared with every user and must not change.
 
-## 1. Install the code — the easy way (no local tooling)
+## 1. Install the code (no local tooling, and the live project's manifest is never edited)
 
-`tools/bootstrap-deploy.gs` installs this repo into the Apps Script project from
-inside the editor: it downloads the code from the public GitHub repo and writes it
-back through the Apps Script API using the editor's own authorisation, then points
-the **existing** deployment at the new version so the `/exec` URL is unchanged.
+`tools/deployer/` is a small, separate Apps Script project that installs this repo
+into the live one. It downloads the code from the public GitHub repo and writes it
+back through the Apps Script API, then repoints the **existing** deployment so the
+`/exec` URL is unchanged.
 
-All 19 files were verified downloadable from
-`raw.githubusercontent.com/crux-operationsalert-art/crux_escalationmanagement/claude/full-stack-execution-x9z1qd/src/`
-(742 KB total).
+It deliberately lives in its own scratch project rather than inside the production
+one. Rewriting a project needs the `script.projects` scope, and granting that to a
+throwaway project is far safer than adding it to the live web app's manifest — and
+it means the production manifest is never hand-edited, which is the step most
+likely to go wrong.
 
-**1a.** Turn the Apps Script API on for your account (one toggle, once):
-https://script.google.com/home/usersettings
+**1a.** Turn the Apps Script API on for the Google account that owns the project —
+one toggle, once: https://script.google.com/home/usersettings
 
-**1b.** In the Apps Script editor, open the manifest — the gear icon (Project
-Settings) → tick *Show "appsscript.json" manifest file in editor* — then add these
-two scopes to `oauthScopes`:
+**1b.** Go to https://script.new — this makes a fresh, empty Apps Script project.
+Name it something like `Crux deployer`.
 
-```json
-"https://www.googleapis.com/auth/script.projects",
-"https://www.googleapis.com/auth/script.deployments",
-```
+**1c.** Replace the contents of `Code.gs` with
+[`tools/deployer/Code.gs.txt`](tools/deployer/Code.gs.txt).
 
-These let the project rewrite itself. Step 2 removes them again by installing the
-clean manifest, so the finished project has no standing permission to modify
-itself.
+**1d.** Show the manifest: gear icon (Project Settings) → tick *Show
+"appsscript.json" manifest file in editor*. Open `appsscript.json` and replace all
+of it with [`tools/deployer/appsscript.json.txt`](tools/deployer/appsscript.json.txt).
+Save.
 
-**1c.** Add a new script file called `bootstrap` and paste in the contents of
-[`tools/bootstrap-deploy.gs`](tools/bootstrap-deploy.gs). Save.
+**1e.** Choose `check` in the function dropdown and Run. Authorise when prompted.
+It writes nothing. Read the Execution log — every line is `[OK]` or `[FAIL]`, and it
+ends with `READY` or `NOT READY`. A `[FAIL]` line says what to do about it.
 
-**1d.** Run `step1_check`. It writes nothing. Authorise when prompted, then read
-the Execution log: it confirms the API works, that all 19 files download, and
-which deployment it would update. It ends with either `READY` or `NOT READY`.
+**1f.** Once it says READY, choose `deploy` and Run.
 
-**1e.** Once it says READY, run `step2_deploy`.
+It downloads all 19 files before writing anything, so a failed download cannot
+leave the live project half-updated. It refuses to create a deployment if it cannot
+find the existing one, because a new deployment means a new `/exec` URL. If it
+fails *after* writing the code, the error says so plainly and names the manual
+finish rather than reporting success.
 
-It writes the files, creates a version, and repoints the existing deployment. It
-refuses to run if any file fails to download, and refuses to create a *new*
-deployment if it cannot find the existing one — a new deployment would mean a new
-`/exec` URL. Afterwards the bootstrap file and the two extra scopes are gone,
-because the clean manifest replaced them; that is expected. To deploy again later,
-paste it again.
+Keep the deployer project — running `deploy` again picks up any later commits on
+the branch.
 
 ## 2. Or, the manual way (if you prefer clasp)
 
@@ -65,11 +64,11 @@ pencil icon → **Version: New version** → Deploy.
 
 Do *not* use "New deployment". That mints a new `/exec` URL.
 
-`src/appsscript.json` is otherwise unchanged from what is live (`executeAs:
-USER_DEPLOYING`, `access: ANYONE_ANONYMOUS`). That access mode is deliberate — the
-same `doGet` serves the read-only client portal (`?view=portal`) to client contacts
-who have no Google account, so requiring sign-in would break every portal link.
-See the note in `Code.gs`.
+`src/appsscript.json` is unchanged from what is live (`executeAs: USER_DEPLOYING`,
+`access: ANYONE_ANONYMOUS`). That access mode is deliberate — the same `doGet`
+serves the read-only client portal (`?view=portal`) to client contacts who have no
+Google account, so requiring sign-in would break every portal link. See the note in
+`Code.gs`.
 
 ## 3. Run the migrations, in this order
 
