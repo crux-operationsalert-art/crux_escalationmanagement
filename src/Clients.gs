@@ -616,20 +616,8 @@ function headOfficeRecipients_(client, branchId, location, allRows) {
   parseList_(c.HeadOfficeCC).forEach(function(e) { if (isEmail_(e)) cc.push(e); });
   parseList_(getSetting_('HEAD_OFFICE_CC', '')).forEach(function(e) { if (isEmail_(e)) cc.push(e); });
 
-  return { to: to, cc: dedupeEmails_(cc), source: source };
-}
-
-/** Case-insensitive de-duplication, first spelling wins. */
-function dedupeEmails_(list) {
-  var seen = {}, out = [];
-  (list || []).forEach(function(e) {
-    var v = String(e || '').trim();
-    if (!isEmail_(v)) return;
-    var k = v.toLowerCase();
-    if (seen[k]) return;
-    seen[k] = true; out.push(v);
-  });
-  return out;
+  // Exclude the TO list, so head office is never also CC'd on its own email.
+  return { to: dedupeEmails_(to), cc: dedupeEmails_(cc, to), source: source };
 }
 
 /**
