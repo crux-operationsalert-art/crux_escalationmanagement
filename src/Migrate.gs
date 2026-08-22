@@ -312,3 +312,91 @@ function m3_(dryRun) {
   Logger.log('M3 done. BRANCHES: ' + brFix.length + ', ESCALATION_MATRIX: ' + mxFix.length);
   return { dryRun: false, branches: brFix.length, matrix: mxFix.length };
 }
+
+/* ===================================================================
+ * M4 — remove orphan escalation history left by the deployment self-test.
+ *
+ * The self-test raises real escalations in the live datastore and deletes them
+ * afterwards, but its cleanup removed only the ESCALATIONS row and never the
+ * child ESCALATION_HISTORY rows. Every run therefore left history behind
+ * pointing at an escalation that no longer exists.
+ *
+ * In the live datastore that is 166 of 171 history rows. The consequence is not
+ * cosmetic: the strike engine groups history by EscalationID to decide when
+ * somebody last responded, listing screens count history per escalation, and the
+ * audit trail reads as though far more happened than did.
+ *
+ * The leak itself is fixed in Preflight.gs. This clears what has already
+ * accumulated. It only ever removes rows whose parent escalation is ABSENT --
+ * history for a live escalation is never touched.
+ *
+ * HOW TO RUN
+ *   1. Editor > purgeOrphanHistoryDryRun > Run. Read the log carefully: it lists
+ *      every row it would remove, grouped by the missing escalation.
+ *   2. Happy? Run purgeOrphanHistory.
+ * =================================================================== */
+
+function purgeOrphanHistoryDryRun() { return m4_(true); }
+function purgeOrphanHistory()       { return m4_(false); }
+
+function m4_(dryRun) {
+  var tag = dryRun ? '[DRY RUN] ' : '';
+  Logger.log(tag + 'M4 — purge orphan escalation history');
+
+  var live = {};
+  readTable_('ESCALATIONS').forEach(function(e) { live[String(e.EscalationID)] = true; });
+  var history = readTable_('ESCALATION_HISTORY');
+  var orphans = history.filter(function(h) { return !live[String(h.EscalationID || '')]; });
+
+  var byEsc = {};
+  orphans.forEach(function(h) {
+    (byEsc[h.EscalationID] = byEsc[h.EscalationID] || []).push(h);
+  });
+
+  Logger.log(tag + 'history rows total: ' + history.length);
+  Logger.log(tag + 'orphan rows: ' + orphans.length + ' across ' +
+             Object.keys(byEsc).length + ' missing escalation(s)');
+  Object.keys(byEsc).sort().forEach(function(id) {
+    Logger.log(tag + '  ' + id + ': ' + byEsc[id].length + ' row(s)');
+  });
+
+  // Warnings referenced by history but absent from the register. Reported only:
+  // a missing warning is a fact an administrator should see, not something a
+  // migration should invent a replacement for.
+  var wIds = {};
+  history.forEach(function(h) {
+    [h.NewValue, h.OldValue].forEach(function(v) {
+      var m = /WRN-\d+/.exec(String(v || ''));
+      if (m) wIds[m[0]] = true;
+    });
+  });
+  var haveW = {};
+  readTable_('WARNINGS').forEach(function(w) { haveW[String(w.WarningID)] = true; });
+  var missingW = Object.keys(wIds).filter(function(id) { return !haveW[id]; });
+  if (missingW.length) {
+    Logger.log(tag + 'NOTE: history references warnings that are not in WARNINGS: ' +
+      missingW.join(', ') + '. These were raised and later removed (self-test ' +
+      'residue). Nothing is recreated; recorded here so the gap is visible.');
+  }
+
+  if (dryRun) {
+    Logger.log('[DRY RUN] nothing written. Run purgeOrphanHistory to apply.');
+    return { dryRun: true, orphans: orphans.length,
+             escalations: Object.keys(byEsc).length, missingWarnings: missingW };
+  }
+
+  var removed = 0;
+  orphans.forEach(function(h) {
+    try { deleteRowById_('ESCALATION_HISTORY', 'HistoryID', h.HistoryID); removed++; }
+    catch (e) { Logger.log('failed to remove ' + h.HistoryID + ': ' + e); }
+  });
+  if (removed) invalidateTableCache_('ESCALATION_HISTORY');
+
+  logAudit_({ user: 'migration:M4', action: 'ORPHAN_HISTORY_PURGE',
+    entity: 'ESCALATION_HISTORY', entityId: '',
+    oldValue: String(history.length),
+    newValue: JSON.stringify({ removed: removed, missingWarnings: missingW }) });
+
+  Logger.log('M4 done. Removed ' + removed + ' orphan history row(s).');
+  return { dryRun: false, removed: removed, missingWarnings: missingW };
+}

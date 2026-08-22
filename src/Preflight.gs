@@ -699,10 +699,22 @@ function testEscalationCreate() {
       return String(r.Description || '').indexOf('automated selftest') !== -1;
     });
     strays.forEach(function(r) {
+      // The child history rows must go FIRST. Deleting only the escalation left
+      // its history behind pointing at a row that no longer existed; 166 of the
+      // 171 history rows in the live datastore are that leak, accumulated over
+      // repeated self-test runs. Orphan history corrupts the audit trail and
+      // makes any per-escalation history query return rows for nothing.
+      try {
+        readTable_('ESCALATION_HISTORY')
+          .filter(function(h) { return String(h.EscalationID) === String(r.EscalationID); })
+          .forEach(function(h) {
+            try { deleteRowById_('ESCALATION_HISTORY', 'HistoryID', h.HistoryID); } catch (e3) {}
+          });
+      } catch (e4) { Logger.log('history cleanup failed for ' + r.EscalationID + ': ' + e4); }
       try { deleteRowById_('ESCALATIONS', 'EscalationID', r.EscalationID); Logger.log('cleaned up ' + r.EscalationID); }
       catch (e2) { Logger.log('CLEANUP FAILED for ' + r.EscalationID + ' - delete by hand: ' + e2); }
     });
-    Logger.log('sweep removed ' + strays.length + ' selftest row(s)');
+    Logger.log('sweep removed ' + strays.length + ' selftest row(s) and their history');
   }
 
   var fails = 0;

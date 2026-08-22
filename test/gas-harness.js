@@ -77,12 +77,48 @@ function createSandbox(opts = {}) {
       base64EncodeWebSafe: (b) => Buffer.from(b).toString('base64').replace(/\+/g, '-').replace(/\//g, '_'),
       computeDigest: (_alg, s) => Array.from(crypto.createHash('sha256').update(String(s)).digest()),
       DigestAlgorithm: { SHA_256: 'SHA_256' },
+      /**
+       * Faithful enough for every pattern src/ actually uses. Listed explicitly
+       * rather than "best effort", because a stub that quietly returns the wrong
+       * shape makes real logic look broken: an unimplemented 'u H' made
+       * workingHoursBetween_ return 0 for every day, which read as a dead strike
+       * engine rather than a dead stub.
+       *
+       * Dates are interpreted in the fixed +05:30 offset of APP_TIMEZONE
+       * (Asia/Kolkata), which has no daylight saving.
+       */
       formatDate: (d, _tz, fmt) => {
+        const IST = 5.5 * 3600000;
+        const k = new Date(d.getTime() + IST);          // shift, then read UTC parts
         const p = (n, w = 2) => String(n).padStart(w, '0');
-        if (fmt === 'd') return String(d.getDate());
-        if (fmt === 'yyyy/MM/dd') return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())}`;
-        if (fmt === 'yyyy-MM') return `${d.getFullYear()}-${p(d.getMonth() + 1)}`;
-        return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}+05:30`;
+        const Y = k.getUTCFullYear(), M = k.getUTCMonth() + 1, D = k.getUTCDate();
+        const h = k.getUTCHours(), mi = k.getUTCMinutes(), se = k.getUTCSeconds();
+        const dow0 = k.getUTCDay();                      // 0=Sun
+        const iso = dow0 === 0 ? 7 : dow0;               // 'u' is ISO: 1=Mon..7=Sun
+        const MON = ['January','February','March','April','May','June','July',
+                     'August','September','October','November','December'];
+        const EEE = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        switch (fmt) {
+          case 'u':                  return String(iso);
+          case 'u H':                return iso + ' ' + h;
+          case 'd':                  return String(D);
+          case 'yyyy':               return String(Y);
+          case 'yyyy-MM':            return Y + '-' + p(M);
+          case 'yyyy-MM-dd':         return Y + '-' + p(M) + '-' + p(D);
+          case 'yyyy/MM/dd':         return Y + '/' + p(M) + '/' + p(D);
+          case 'HH:mm':              return p(h) + ':' + p(mi);
+          case 'MMMM':               return MON[M - 1];
+          case 'MMMM yyyy':          return MON[M - 1] + ' ' + Y;
+          case 'EEE HH:mm':          return EEE[dow0] + ' ' + p(h) + ':' + p(mi);
+          case 'yyyyMMdd-HHmm':      return '' + Y + p(M) + p(D) + '-' + p(h) + p(mi);
+          case 'yyyy-MM-dd HH:mm':   return Y + '-' + p(M) + '-' + p(D) + ' ' + p(h) + ':' + p(mi);
+          case 'dd MMM, HH:mm':      return p(D) + ' ' + MON[M - 1].slice(0, 3) + ', ' + p(h) + ':' + p(mi);
+          case 'dd MMM yyyy, HH:mm': return p(D) + ' ' + MON[M - 1].slice(0, 3) + ' ' + Y + ', ' + p(h) + ':' + p(mi);
+          case "yyyy-MM-dd'T'HH:mm:ssXXX":
+            return Y + '-' + p(M) + '-' + p(D) + 'T' + p(h) + ':' + p(mi) + ':' + p(se) + '+05:30';
+          default:
+            throw new Error('gas-harness: formatDate pattern not implemented: ' + fmt);
+        }
       },
     },
     PropertiesService: {
@@ -128,7 +164,13 @@ function createSandbox(opts = {}) {
       const v = r ? String(r.Value || '') : '';
       return v !== '' ? v : (d === undefined ? '' : d);
     },
-    getBoolSetting_: (k, d) => String(api.getSetting_(k, d)).toLowerCase() === 'true',
+    // Mirrors Sheets.gs exactly. A stricter stub (=== 'true') made the live
+    // STRIKE_ENABLED value of "True" read as disabled, which looked like a
+    // product bug and was purely a test artefact.
+    getBoolSetting_: (k, d) => {
+      const v = String(api.getSetting_(k, d == null ? 'false' : String(d))).trim().toLowerCase();
+      return v === 'true' || v === 'yes' || v === 'y' || v === '1' || v === 'on';
+    },
     setSetting_: (k, v, user) => {
       const rows = tables.SETTINGS = tables.SETTINGS || [];
       const r = rows.find(x => x.Key === k);

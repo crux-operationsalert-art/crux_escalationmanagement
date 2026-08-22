@@ -702,24 +702,61 @@ function installTriggers_() {
  * ================================================================== */
 
 /** Working hours between two instants, honouring weekends and the daily window. */
+/**
+ * Offset of the app timezone from UTC, in ms, at a given instant.
+ *
+ * Derived by reading the instant as local wall-clock text and reinterpreting
+ * those numbers as UTC. Correct for fixed-offset zones (Asia/Kolkata) and
+ * evaluated per day, so a daylight-saving zone still behaves sensibly.
+ */
+function tzOffsetMs_(d, tz) {
+  var s = Utilities.formatDate(d, tz || getTz_(), 'yyyy-MM-dd HH:mm');
+  var m = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})$/.exec(s);
+  if (!m) return 0;
+  var asUtc = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4]), Number(m[5]));
+  return asUtc - Math.floor(d.getTime() / 60000) * 60000;
+}
+
+/**
+ * Working hours elapsed between two instants. Weekends never count.
+ *
+ * TIMEZONE FIX: this used to walk in hour buckets floored to a whole UTC hour,
+ * then ask formatDate which local hour each bucket fell in. India is UTC+05:30,
+ * so every UTC-aligned bucket straddles two IST clock hours. The bucket covering
+ * 09:30-10:30 IST reads as hour 9 and was skipped whole, losing 10:00-10:30, and
+ * the 16:30-17:30 bucket read as hour 16 and was counted whole. A full working
+ * day therefore measured 6.5 hours instead of 7 -- a half hour lost per day,
+ * which pushed every strike later than the policy intends. The error is invisible
+ * in any whole-hour timezone, which is why it survived.
+ *
+ * Now each local day's window is computed as two absolute timestamps and
+ * intersected with the range, so nothing depends on bucket alignment. It also
+ * iterates once per day rather than 24 times per day.
+ */
 function workingHoursBetween_(from, to) {
   if (!from || !to || to.getTime() <= from.getTime()) return 0;
   var tz = getTz_();
   var sH = parseInt(getSetting_('WORK_HOURS_START', '10'), 10);
   var eH = parseInt(getSetting_('WORK_HOURS_END', '17'), 10);
-  var HOUR = 3600000, hours = 0, guard = 0;
-  var cur = new Date(Math.floor(from.getTime() / HOUR) * HOUR);
-  while (cur.getTime() < to.getTime() && guard++ < 24 * 45) {
-    var p = Utilities.formatDate(cur, tz, 'u H').split(' ');
-    var dow = Number(p[0]), h = Number(p[1]);
-    if (dow <= 5 && h >= sH && h < eH) {
-      var a = Math.max(cur.getTime(), from.getTime());
-      var b = Math.min(cur.getTime() + HOUR, to.getTime());
-      if (b > a) hours += (b - a) / HOUR;
+  if (!(eH > sH)) return 0;
+
+  var HOUR = 3600000, DAY = 24 * HOUR;
+  var total = 0, guard = 0;
+  var probe = new Date(from.getTime());
+
+  while (probe.getTime() < to.getTime() && guard++ < 400) {
+    var off = tzOffsetMs_(probe, tz);
+    var localMidnight = Math.floor((probe.getTime() + off) / DAY) * DAY - off;
+    // Midday avoids any boundary ambiguity when reading the weekday.
+    var dow = Number(Utilities.formatDate(new Date(localMidnight + 12 * HOUR), tz, 'u'));
+    if (dow >= 1 && dow <= 5) {
+      var a = Math.max(localMidnight + sH * HOUR, from.getTime());
+      var b = Math.min(localMidnight + eH * HOUR, to.getTime());
+      if (b > a) total += (b - a) / HOUR;
     }
-    cur = new Date(cur.getTime() + HOUR);
+    probe = new Date(localMidnight + DAY + HOUR);   // safely inside the next local day
   }
-  return hours;
+  return total;
 }
 
 /** True only inside working hours - nothing is sent outside them. */
