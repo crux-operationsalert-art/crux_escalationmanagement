@@ -54,6 +54,19 @@ function tick() {
     if (today === sumDay && hhmm >= sumTime && !jobDone_(month, JOB_TYPES.SUM)) {
       runMonthlySummary_('auto');
     }
+    // Weekly appreciation nudge (section 25). Monday morning; idempotent per
+    // manager per ISO week, so the 5-minute tick cannot send it repeatedly.
+    var apprDay  = parseInt(getSetting_('APPRECIATION_NUDGE_DAY', '1'), 10);
+    var apprHour = parseInt(getSetting_('APPRECIATION_NUDGE_HOUR', '11'), 10);
+    var isoDow   = Number(Utilities.formatDate(now, tz, 'u'));
+    var hourNow  = Number(Utilities.formatDate(now, tz, 'H'));
+    if (isoDow === apprDay && hourNow >= apprHour &&
+        !jobDone_(isoWeekKey_(now), 'APPRECIATION_NUDGE')) {
+      try { runAppreciationNudge_('auto', { now: now }); }
+      catch (e) { logAudit_({ user:'auto', action:'APPRECIATION_NUDGE_ERROR',
+        entity:'PEOPLE_EVENTS', entityId:'', oldValue:'', newValue:String(e && e.message || e) }); }
+    }
+
     // Resend anything that failed. RETRY_LIMIT was configured but nothing ever
     // re-attempted a failed send, so a transient sender-alias error left eleven
     // escalation and people emails permanently undelivered with nothing
@@ -973,4 +986,159 @@ function runStrikeSweep_(executedBy, opts) {
 /** Safe rehearsal: computes every strike that WOULD fire and sends nothing. */
 function previewStrikeSweep_(p, me) {
   return runStrikeSweep_(me && me.email, { dryRun: true, ignoreWindow: true });
+}
+/* =========================================================================
+ * WEEKLY APPRECIATION MONITORING (section 25)
+ *
+ * Appreciation is part of performance management, and the tool could record it
+ * but nothing ever prompted anybody to. This runs weekly, works out which
+ * managers have recognised nobody on their team this month, and sends them a
+ * motivational nudge.
+ *
+ * Deliberate design choices, because a reminder that annoys people gets filtered:
+ *   - one reminder per manager per WEEK, keyed in REMINDER_LOG, so a re-run or a
+ *     second tick in the same week cannot send twice;
+ *   - it stops as soon as the manager has appreciated ANYONE this month - the
+ *     point is the behaviour, not the paperwork;
+ *   - managers with no active direct reports are skipped entirely;
+ *   - the tone is motivational, never accusatory, and it never names who has or
+ *     has not been appreciated. Singling a person out would make recognition feel
+ *     like a compliance task.
+ * ========================================================================= */
+
+var APPRECIATION_REMINDER_DAY = 1;   // ISO day: 1 = Monday
+var APPRECIATION_REMINDER_HOUR = 11;
+
+/** ISO week key, e.g. 2026-W34. Used to make the send idempotent per week. */
+function isoWeekKey_(d) {
+  var tz = getTz_();
+  var y = Number(Utilities.formatDate(d, tz, 'yyyy'));
+  // Thursday of this week decides the ISO year and week number.
+  var dow = Number(Utilities.formatDate(d, tz, 'u'));        // 1..7
+  var thur = new Date(d.getTime() + (4 - dow) * 86400000);
+  var thurY = Number(Utilities.formatDate(thur, tz, 'yyyy'));
+  var jan1 = new Date(thurY, 0, 1);
+  var week = Math.floor((thur.getTime() - jan1.getTime()) / (7 * 86400000)) + 1;
+  return thurY + '-W' + (week < 10 ? '0' + week : String(week));
+}
+
+/**
+ * Managers who have recognised nobody on their team this month.
+ * Returns [{ email, name, teamSize, monthKey }].
+ */
+function managersOwedAppreciationNudge_(now) {
+  now = now || new Date();
+  var mk = monthKey_(now);
+  var users = readTable_('USERS').filter(function(u) {
+    return isEmail_(u.Email) && String(u.Status || '') === 'ACTIVE';
+  });
+
+  // Appreciations recorded THIS month, by who issued them.
+  var issuedBy = {};
+  readTable_('PEOPLE_EVENTS').forEach(function(e) {
+    if (String(e.Type || '') !== 'APPRECIATION') return;
+    if (monthOfValue_(e.Timestamp) !== mk) return;
+    issuedBy[String(e.IssuedBy || '').toLowerCase()] = true;
+  });
+
+  var out = [];
+  users.forEach(function(u) {
+    var em = String(u.Email).toLowerCase();
+    var team = directReports_(em).filter(function(r) {
+      var row = users.filter(function(x){ return String(x.Email).toLowerCase() === r; })[0];
+      return !!row;                          // active reports only
+    });
+    if (!team.length) return;                // not a manager: nothing to prompt
+    if (issuedBy[em]) return;                // already recognising people: leave them alone
+    out.push({ email: u.Email, name: u.Name || u.Email, teamSize: team.length, monthKey: mk });
+  });
+  return out;
+}
+
+/** The nudge body. AI-assisted, with a fixed fallback so it never fails to send. */
+function appreciationNudgeHtml_(mgr) {
+  var fallback =
+    '<p>Dear ' + escHtml_(mgr.name) + ',</p>' +
+    '<p>You have ' + mgr.teamSize + ' ' + (mgr.teamSize === 1 ? 'person' : 'people') +
+    ' reporting to you, and no appreciation has been recorded from you this month.</p>' +
+    '<p>Recognition is the cheapest thing a manager can give and the one people ' +
+    'remember longest. Noticing good work out loud costs a minute and changes how ' +
+    'somebody feels about the next month.</p>' +
+    '<blockquote style="margin:12px 0;padding:8px 14px;border-left:3px solid #d0c7b0;color:#5b5346">' +
+    '&ldquo;People work for money but go the extra mile for recognition, praise and rewards.&rdquo;' +
+    '<br><span style="font-size:12px">&mdash; Dale Carnegie</span></blockquote>' +
+    '<p><b>Please take a moment this week to appreciate someone on your team.</b> ' +
+    'Open the tool, find them under your team, and press Appreciate.</p>';
+
+  if (typeof geminiCall_ !== 'function') return fallback;
+  try {
+    var body = geminiCall_({
+      system: 'You write short, warm internal emails for an Indian facilities-management ' +
+        'company. Tone: motivational and encouraging, never accusatory, never a telling-off. ' +
+        'Do not imply the manager has done anything wrong. 120 words maximum. ' +
+        'Include one short motivational quote with its author. Return HTML paragraphs only, ' +
+        'no salutation and no sign-off, and name no individual employee.',
+      prompt: 'Encourage a manager with ' + mgr.teamSize + ' direct reports to recognise ' +
+        'someone on their team this month. Cover briefly: the value of appreciation, ' +
+        'that contribution deserves to be noticed, and that consistent people management ' +
+        'is part of the job. End with a clear request to appreciate a team member.',
+      temp: 0.7, maxTokens: 320
+    });
+    var html = String(body || '').trim();
+    if (html.length < 40) return fallback;
+    return '<p>Dear ' + escHtml_(mgr.name) + ',</p>' + html +
+      '<p style="color:#5b5346;font-size:12px">Open the tool, find them under your team, ' +
+      'and press Appreciate.</p>';
+  } catch (e) {
+    return fallback;
+  }
+}
+
+/**
+ * The weekly sweep. Idempotent per manager per ISO week.
+ * @param {string} executedBy
+ * @param {object} opts { now, dryRun }
+ */
+function runAppreciationNudge_(executedBy, opts) {
+  opts = opts || {};
+  if (!getBoolSetting_('APPRECIATION_NUDGE_ENABLED', 'true')) return { skipped: 'disabled' };
+  var now = opts.now || new Date();
+  var week = isoWeekKey_(now);
+
+  var owed = managersOwedAppreciationNudge_(now);
+  var out = { week: week, candidates: owed.length, sent: [], skipped: [], dryRun: !!opts.dryRun };
+
+  owed.forEach(function(mgr) {
+    var idem = 'APPRECIATION-NUDGE-' + week + '-' + String(mgr.email).toLowerCase();
+    if (opts.dryRun) { out.sent.push({ email: mgr.email, teamSize: mgr.teamSize }); return; }
+    var res = sendEmail_({
+      type: 'APPRECIATION_NUDGE',
+      to: [mgr.email],
+      subject: 'A minute for your team this week',
+      htmlBody: appreciationNudgeHtml_(mgr),
+      trigger: 'scheduler.appreciationNudge',
+      idempotencyKey: idem
+    });
+    if (res.skipped) { out.skipped.push({ email: mgr.email, why: 'already sent this week' }); return; }
+    if (res.status === 'SENT') out.sent.push({ email: mgr.email, teamSize: mgr.teamSize });
+    else out.skipped.push({ email: mgr.email, why: res.error || 'send failed' });
+  });
+
+  if (!opts.dryRun) {
+    recordJob_(week, 'APPRECIATION_NUDGE', 'OK',
+      'candidates ' + owed.length + ', sent ' + out.sent.length, executedBy || 'auto');
+  }
+  return out;
+}
+
+/** Admin: rehearse the sweep. Computes everything, sends nothing. */
+function previewAppreciationNudge_(p, me) {
+  if (!hasAdminAccess_(userRow_(me))) throw AuthError_('Only an administrator can preview this.');
+  return runAppreciationNudge_(me.email, { dryRun: true });
+}
+
+/** Admin: run it now. */
+function runAppreciationNudgeNow_(p, me) {
+  if (!hasAdminAccess_(userRow_(me))) throw AuthError_('Only an administrator can run this.');
+  return runAppreciationNudge_(me.email, {});
 }

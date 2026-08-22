@@ -482,6 +482,68 @@ function getProfile_(p, me) {
 }
 
 /**
+ * People history for one person: appreciations, PIPs, warnings, in date order.
+ *
+ * Section 24 asked for appreciation history and its impact. Creating an
+ * appreciation worked and it did move the score, but nothing anywhere listed what
+ * had been recorded - so neither the person nor their manager could see whether
+ * recognition was actually happening, which is the only thing that makes the
+ * weekly nudge meaningful.
+ *
+ * Authorised with canViewPerson_, the same gate as the score, so this exposes
+ * nothing new: your own record, and the tree beneath you.
+ */
+function peopleHistory_(p, me) {
+  var em = String((p && p.Email) || me.email).toLowerCase();
+  if (!canViewPerson_(me, em)) throw AuthError_('You cannot view that record.');
+  var limit = Math.min(200, Math.max(1, Number((p && p.limit) || 60)));
+
+  var items = [];
+  readTable_('PEOPLE_EVENTS').forEach(function(e) {
+    if (String(e.PersonEmail || '').toLowerCase() !== em) return;
+    items.push({
+      kind: String(e.Type || ''), id: e.EventID,
+      at: String(e.Timestamp || ''),
+      by: String(e.IssuedBy || ''),
+      byName: personName_(e.IssuedBy),
+      notes: String(e.Notes || ''),
+      status: String(e.Status || ''),
+      startDate: String(e.StartDate || ''), endDate: String(e.EndDate || ''),
+      outcome: String(e.Outcome || '')
+    });
+  });
+  readTable_('WARNINGS').forEach(function(w) {
+    if (String(w.PersonEmail || '').toLowerCase() !== em) return;
+    items.push({
+      kind: 'WARNING', id: w.WarningID,
+      at: String(w.IssuedAt || ''),
+      by: String(w.IssuedBy || ''), byName: personName_(w.IssuedBy),
+      notes: String(w.Summary || w.Notes || ''),
+      status: String(w.Status || ''),
+      category: String(w.Category || ''),
+      escalationId: String(w.EscalationID || '')
+    });
+  });
+  items.sort(function(a, b) { return String(b.at).localeCompare(String(a.at)); });
+
+  var mk = monthKey_(new Date());
+  var thisMonth = items.filter(function(x) { return monthOfValue_(x.at) === mk; });
+  return {
+    Email: em,
+    items: items.slice(0, limit),
+    total: items.length,
+    counts: {
+      appreciationsThisMonth: thisMonth.filter(function(x){ return x.kind === 'APPRECIATION'; }).length,
+      appreciationsTotal: items.filter(function(x){ return x.kind === 'APPRECIATION'; }).length,
+      warningsThisMonth: thisMonth.filter(function(x){ return x.kind === 'WARNING'; }).length,
+      openPip: items.filter(function(x){ return x.kind === 'PIP' && x.status === 'OPEN'; }).length
+    },
+    // The score ledger is where the impact of each of these is spelled out.
+    monthKey: mk
+  };
+}
+
+/**
  * Save your own details. Role, Status and scope are deliberately NOT editable
  * here - those are the admin's to set, or a user could promote themselves.
  */

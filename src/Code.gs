@@ -279,6 +279,7 @@ var RPC_ROUTES = {
   'team.pipStart':        { roles: null, fn: function(p, me) { return teamStartPip_(p, me); } },
   'team.pipClose':        { roles: null, fn: function(p, me) { return teamClosePip_(p, me); } },
   'team.appreciate':      { roles: null, fn: function(p, me) { return teamAppreciate_(p, me); } },
+  'people.history':       { roles: null, fn: function(p, me) { return peopleHistory_(p, me); } },
   'windows.mine':         { roles: null, fn: function(p, me) { return myWindows_(p, me); } },
   'kpis.get':             { roles: null, fn: function(p, me) { return getKpis_(p, me); } },
   'kpis.set':             { roles: null, fn: function(p, me) { return setKpis_(p, me); } },
@@ -352,6 +353,8 @@ var RPC_ROUTES = {
   'admin.run.dispatch':   { roles: ['ADMIN'], fn: function(p, me) { return runJob_('MONTHLY_DISPATCH', p, me); } },
   // Rehearse the three-strike sweep: computes everything, sends nothing.
   'admin.strike.preview': { roles: ['ADMIN'], fn: function(p, me) { return previewStrikeSweep_(p, me); } },
+  'admin.appreciation.preview': { roles: ['ADMIN'], fn: function(p, me) { return previewAppreciationNudge_(p, me); } },
+  'admin.appreciation.run':     { roles: ['ADMIN'], fn: function(p, me) { return runAppreciationNudgeNow_(p, me); } },
   'admin.strike.run':     { roles: ['ADMIN'], fn: function(p, me) { return runStrikeSweep_(me.email, { ignoreWindow: !!(p && p.ignoreWindow) }); } },
   'warnings.categories':  { roles: null, fn: function(p, me) { return warningCategories_(p, me); } },
   'warnings.raise':       { roles: ['ADMIN','MANAGER','LOCATION_HEAD'],           fn: function(p, me) { return raiseWarning_(p, me); } },

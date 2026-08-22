@@ -1444,7 +1444,7 @@
             .catch(function(e){ toast(e.message,'err'); });
         } }]
     });
-    if (reject) attachAiDraft('dec-reason', 'note', function(){ return 'Reason for disagreeing with a monthly performance score.'; });
+    if (reject) attachAiDraft('dec-reason', 'note', function(){ return 'Reason for disagreeing with a monthly performance score.'; }, function(){ return (state.user && state.user.email) || ''; });
   }
 
   /* My performance. Shows the calculation, every deduction, and the accept or
@@ -1570,7 +1570,7 @@
             .catch(function(e){ toast(e.message,'err'); });
         } }]
     });
-    if (isReject) attachAiDraft('dec-reason', 'note', function(){ return 'Reason for disagreeing with a monthly performance score.'; });
+    if (isReject) attachAiDraft('dec-reason', 'note', function(){ return 'Reason for disagreeing with a monthly performance score.'; }, function(){ return (state.user && state.user.email) || ''; });
   }
   function renderTeam(card) {
     card.innerHTML = '';
@@ -1646,7 +1646,10 @@
               m.isDirect ? null : h('span',{class:'badge neutral', title:'Their own manager sets targets and scores'},['targets: their manager']),
               h('button',{class:'btn secondary small', onclick: function(){ openPeopleAction(m, card, 'appreciate'); }},['Appreciate']),
               h('button',{class:'btn secondary small', onclick: function(){ openPeopleAction(m, card, 'pip'); }},['PIP']),
-              h('button',{class:'btn secondary small', onclick: function(){ openPeopleAction(m, card, 'warn'); }},['Warn'])
+              h('button',{class:'btn secondary small', onclick: function(){ openPeopleAction(m, card, 'warn'); }},['Warn']),
+              // Section 24: recognition that nobody can see is not recognition.
+              h('button',{class:'btn secondary small', testid:'btn-history',
+                onclick: function(){ openPeopleHistory(m); }},['History'])
             ])
           ])
         ]);
@@ -2044,9 +2047,9 @@
         '<div class="field"><label>Performance comments*</label><textarea id="sc-comments" rows="3"></textarea></div>' +
         '<div class="field"><label>Areas of improvement*</label><textarea id="sc-improve" rows="3"></textarea></div>' +
         '<div class="field"><label>Next month expectations*</label><textarea id="sc-next" rows="3"></textarea></div>';
-      attachAiDraft('sc-comments', 'note', function(){ return 'Monthly review for ' + m.Name + ', score ' + c.finalScore + '/100'; });
-      attachAiDraft('sc-improve', 'pip', function(){ return 'Areas to improve for ' + m.Name; });
-      attachAiDraft('sc-next', 'note', function(){ return 'Next month expectations for ' + m.Name; });
+      attachAiDraft('sc-comments', 'note', function(){ return 'Monthly review for ' + m.Name + ', score ' + c.finalScore + '/100'; }, function(){ return m.Email; });
+      attachAiDraft('sc-improve', 'pip', function(){ return 'Areas to improve for ' + m.Name; }, function(){ return m.Email; });
+      attachAiDraft('sc-next', 'note', function(){ return 'Next month expectations for ' + m.Name; }, function(){ return m.Email; });
     }).catch(function(e){
       var b = document.getElementById('sc-body');
       if (b) b.innerHTML = '<div class="callout danger">' + esc(e.message) + '</div>';
@@ -2064,6 +2067,68 @@
     ['ESCALATION','Unanswered escalation'],
     ['OTHER','Other']
   ];
+
+  /** Appreciation, PIP and warning history for one person, most recent first. */
+  function openPeopleHistory(m) {
+    Modal.open({
+      title: 'History - ' + m.Name,
+      wide: true,
+      body: '<div id="ph-body" class="empty">Loading...</div>',
+      actions: [{ label: 'Close', kind: 'secondary', close: true }]
+    });
+    rpc('people.history', { Email: m.Email }).then(function(r) {
+      var box = document.getElementById('ph-body');
+      if (!box) return;
+      var c = r.counts || {};
+      var badge = function(label, n, kind) {
+        return '<span class="badge ' + kind + '" style="margin-right:6px">' +
+               esc(label) + ': ' + n + '</span>';
+      };
+      var head = '<div style="margin-bottom:10px">' +
+        badge('Appreciations this month', c.appreciationsThisMonth || 0,
+              (c.appreciationsThisMonth ? 'ok' : 'neutral')) +
+        badge('Appreciations all time', c.appreciationsTotal || 0, 'neutral') +
+        badge('Warnings this month', c.warningsThisMonth || 0,
+              (c.warningsThisMonth ? 'err' : 'neutral')) +
+        (c.openPip ? badge('Open PIP', c.openPip, 'danger') : '') +
+        '</div>';
+
+      if (!(r.items || []).length) {
+        box.innerHTML = head + '<div class="callout">Nothing recorded yet. ' +
+          'Appreciations, PIPs and warnings will appear here.</div>';
+        return;
+      }
+      var kindClass = { APPRECIATION: 'ok', WARNING: 'err', PIP: 'danger' };
+      var rows = r.items.map(function(x) {
+        var when = String(x.at || '').slice(0, 10);
+        var extra = x.kind === 'PIP' && x.startDate
+          ? ' (' + esc(x.startDate) + ' to ' + esc(x.endDate || '?') + ')' : '';
+        return '<tr>' +
+          '<td style="padding:5px 8px;white-space:nowrap">' + esc(when) + '</td>' +
+          '<td style="padding:5px 8px"><span class="badge ' +
+            (kindClass[x.kind] || 'neutral') + '">' + esc(x.kind) + '</span>' + extra + '</td>' +
+          '<td style="padding:5px 8px">' + esc(x.byName || x.by || '-') + '</td>' +
+          '<td style="padding:5px 8px">' + esc(x.notes || '-') +
+            (x.category ? '<br><span class="muted" style="font-size:11px">' +
+              esc(x.category) + '</span>' : '') + '</td>' +
+          '<td style="padding:5px 8px;white-space:nowrap">' + esc(x.status || '-') + '</td>' +
+          '</tr>';
+      }).join('');
+      box.innerHTML = head +
+        '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">' +
+        '<thead><tr>' +
+        ['DATE','WHAT','BY','DETAIL','STATUS'].map(function(h2) {
+          return '<th style="text-align:left;padding:5px 8px;font-size:11px;' +
+                 'letter-spacing:1px;color:#8a8377">' + h2 + '</th>';
+        }).join('') + '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+        '<div class="muted" style="margin-top:8px;font-size:12px">' +
+        'How each of these changed the monthly score is itemised on the Score screen, ' +
+        'in the deduction ledger.</div>';
+    }).catch(function(e) {
+      var box = document.getElementById('ph-body');
+      if (box) box.innerHTML = '<div class="callout danger">' + esc(e.message) + '</div>';
+    });
+  }
 
   function openPeopleAction(m, card, kind) {
     var cfg = {
@@ -2119,7 +2184,7 @@
       WARN_CATS.forEach(function(c){ if (c[0] === cat) catLabel = c[1]; });
       return (catLabel ? (catLabel + '. ') : '') +
         'About ' + (m.Name || m.Email) + ', ' + (m.Designation || '') + ', ' + (m.Department || '') + '.';
-    });
+    }, function(){ return m.Email; });
   }
 
     }).catch(function(e){
@@ -2275,7 +2340,7 @@
       var cat = val('wp-cat') || 'OTHER', catLabel = '';
       WARN_CATS.forEach(function(c){ if (c[0] === cat) catLabel = c[1]; });
       return (catLabel ? (catLabel + '. ') : '') + 'Warning letter for ' + (val('wp-person') || 'a colleague') + '.';
-    });
+    }, function(){ return val('wp-person') || ''; });
   }
   function openAckWarning(w) {
     Modal.open({
@@ -2927,7 +2992,17 @@
      full-file replacement, which is why scoring threw 'attachAiDraft is not
      defined'. It fails soft: if the AI is unavailable the button reports it and
      whatever the user typed is untouched. */
-  function attachAiDraft(textareaId, kind, contextFn) {
+  /**
+   * @param {string}   textareaId  the box to fill
+   * @param {string}   kind        warning | pip | appreciation | escalation | note
+   * @param {function} contextFn   returns a short free-text hint
+   * @param {function=} subjectFn  returns the email of the person this is ABOUT.
+   *   The server uses it to read their real record (targets, escalations,
+   *   warnings, prior PIPs) and draft from that. Without it the model only ever
+   *   saw a one-line hint, which is why an "AI-assisted" PIP was written from a
+   *   name and a job title.
+   */
+  function attachAiDraft(textareaId, kind, contextFn, subjectFn) {
     setTimeout(function() {
       var ta = document.getElementById(textareaId);
       if (!ta || ta.__aiWired) return;
@@ -2948,7 +3023,9 @@
         var rough = String(ta.value || '').trim();
         if (rough.length < 3) { toast('Write a few words first.','err'); return false; }
         btn.disabled = true; note.textContent = 'Drafting...';
-        rpc('ai.draftNote', { kind: kind, text: rough, context: contextFn ? contextFn() : '' })
+        rpc('ai.draftNote', { kind: kind, text: rough,
+              context: contextFn ? contextFn() : '',
+              Email: subjectFn ? (subjectFn() || '') : '' })
           .then(function(r) {
             ta.value = (r && r.text) ? r.text : rough;
             ta.dispatchEvent(new Event('input', { bubbles: true }));
@@ -3541,7 +3618,24 @@
           h('button',{class:'btn secondary', testid:'btn-run-25', onclick: function(){ rpc('admin.run.reminder25',{ force:true }).then(function(r){ toast('25th reminder run: sent='+r.sent+' failed='+r.failed,'ok'); }).catch(function(e){ toast(e.message,'err'); }); }},['Run 25th reminder']),
           h('button',{class:'btn secondary', testid:'btn-run-lwd', onclick: function(){ rpc('admin.run.reminderLWD',{ force:true }).then(function(r){ toast('LWD reminder run: sent='+r.sent+' failed='+r.failed,'ok'); }).catch(function(e){ toast(e.message,'err'); }); }},['Run LWD reminder']),
           h('button',{class:'btn warn', testid:'btn-run-dispatch', onclick: function(){ rpc('admin.run.dispatch',{ force:true }).then(function(r){ toast('Dispatch queued='+(r.queued||0)+' sent='+(r.sent||0)+' incomplete='+(r.incomplete||0)+' failed='+(r.failed||0)+(r.remaining?' remaining='+r.remaining:'')+(r.paused?' (paused: quota)':''), (r.failed?'err':'ok')); }).catch(function(e){ toast(e.message,'err'); }); }},['Run monthly dispatch']),
-          h('button',{class:'btn secondary', testid:'btn-run-summary', onclick: function(){ rpc('admin.run.summary',{ force:true }).then(function(r){ toast('Summary sent to '+r.admins+' admin(s): sent='+r.sent+' failed='+r.failed,'ok'); }).catch(function(e){ toast(e.message,'err'); }); }},['Run monthly summary'])
+          h('button',{class:'btn secondary', testid:'btn-run-summary', onclick: function(){ rpc('admin.run.summary',{ force:true }).then(function(r){ toast('Summary sent to '+r.admins+' admin(s): sent='+r.sent+' failed='+r.failed,'ok'); }).catch(function(e){ toast(e.message,'err'); }); }},['Run monthly summary']),
+          // Section 25. Preview first: it computes who would be nudged and sends
+          // nothing, so an admin can see the reach before any mail goes out.
+          h('button',{class:'btn secondary', testid:'btn-preview-appreciation', onclick: function(){
+            rpc('admin.appreciation.preview',{}).then(function(r){
+              var names = (r.sent||[]).map(function(x){ return x.email; }).join(', ');
+              toast(r.skipped === 'disabled'
+                ? 'Appreciation nudge is switched off in Settings.'
+                : (r.candidates||0) + ' manager(s) would be nudged for ' + r.week +
+                  (names ? ': ' + names : ''), 'info');
+            }).catch(function(e){ toast(e.message,'err'); }); }},['Preview appreciation nudge']),
+          h('button',{class:'btn secondary', testid:'btn-run-appreciation', onclick: function(){
+            rpc('admin.appreciation.run',{}).then(function(r){
+              toast(r.skipped === 'disabled'
+                ? 'Appreciation nudge is switched off in Settings.'
+                : 'Appreciation nudge: sent=' + ((r.sent||[]).length) +
+                  ' skipped=' + ((r.skipped||[]).length), 'ok');
+            }).catch(function(e){ toast(e.message,'err'); }); }},['Run appreciation nudge'])
         ])
       ]));
     });

@@ -3,7 +3,7 @@
 set -u
 cd "$(dirname "$0")/.."
 rc=0
-for t in test/lint.test.js test/security.test.js test/matrix.test.js test/scoring.test.js test/email.test.js test/kpi.test.js; do
+for t in test/lint.test.js test/security.test.js test/matrix.test.js test/scoring.test.js test/email.test.js test/kpi.test.js test/appreciation.test.js; do
   [ -f "$t" ] || continue
   echo "########## $t ##########"
   node "$t" || rc=1

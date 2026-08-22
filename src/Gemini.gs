@@ -530,15 +530,143 @@ function aiTestProvider_(payload, me) {
  * escalations, so the model records what happened rather than characterising
  * the person, and is told to invent nothing.
  */
+/**
+ * Factual snapshot of one person, assembled SERVER-SIDE from the datastore.
+ *
+ * Section 26 requires a PIP draft to use the person's actual record: performance
+ * gaps, missed targets, recurring escalations, warnings, the review period. The
+ * draft previously had none of that - the browser passed a single line holding a
+ * name, designation and department, so every "AI-assisted" plan was written from
+ * three fields and whatever the manager had already typed.
+ *
+ * Building it here rather than trusting the browser matters twice over: the facts
+ * are the real ones, and a client can no longer put arbitrary text in front of
+ * the model as though it came from the record.
+ *
+ * Authorisation is the same gate as reading the score, so drafting can never
+ * surface data about somebody the caller cannot already see.
+ */
+function personContextForAi_(email, me, monthsBack) {
+  var em = String(email || '').toLowerCase();
+  if (!em) return '';
+  if (!canViewPerson_(me, em)) throw AuthError_('You cannot draft about that person.');
+
+  var months = [];
+  var now = new Date();
+  for (var i = 0; i < (monthsBack || 3); i++) {
+    months.push(monthKey_(new Date(now.getFullYear(), now.getMonth() - i, 1)));
+  }
+  var inWindow = function(mk) { return months.indexOf(String(mk || '')) !== -1; };
+
+  var user = readTable_('USERS').filter(function(u) {
+    return String(u.Email || '').toLowerCase() === em;
+  })[0] || {};
+
+  var lines = [];
+  lines.push('PERSON: ' + (user.Name || em) + ' (' + em + ')');
+  if (user.Designation) lines.push('ROLE: ' + user.Designation +
+    (user.Department ? ', ' + user.Department : ''));
+  if (user.Manager) lines.push('REPORTS TO: ' + user.Manager);
+  if (user.DateOfJoining) lines.push('JOINED: ' + user.DateOfJoining);
+  lines.push('REVIEW PERIOD: ' + months[months.length - 1] + ' to ' + months[0]);
+
+  // Targets and achievement, per KPI, per month. The gap is the point.
+  var targetRows = readTable_('TARGETS').filter(function(t) {
+    return String(t.PersonEmail || '').toLowerCase() === em && inWindow(monthOfValue_(t.MonthKey));
+  });
+  if (targetRows.length) {
+    months.slice().reverse().forEach(function(mk) {
+      var d = targetAchievement_(em, mk);
+      if (!d.categoriesSet) return;
+      var per = (d.categories || []).filter(function(c) { return c.set; }).map(function(c) {
+        return c.Category + ' ' + c.achieved + '/' + c.target + ' (' + c.pct + '%)';
+      });
+      if (per.length) lines.push('TARGETS ' + mk + ': ' + per.join('; '));
+    });
+  } else {
+    lines.push('TARGETS: none recorded in this period.');
+  }
+
+  // Scores actually stored, with the manager's own words where present.
+  var scores = readTable_('SCORES').filter(function(x) {
+    return String(x.PersonEmail || '').toLowerCase() === em && inWindow(monthOfValue_(x.MonthKey));
+  });
+  scores.forEach(function(x) {
+    var bits = ['SCORE ' + monthOfValue_(x.MonthKey) + ': final ' + (x.FinalScore || '-') +
+      ' (target ' + (x.TargetScore || '-') + ', attributes ' + (x.AttributeScore || '-') + ')'];
+    if (x.AreasOfImprovement) bits.push('areas to improve: ' + x.AreasOfImprovement);
+    if (x.EmployeeDecision) bits.push('employee ' + String(x.EmployeeDecision).toLowerCase());
+    lines.push(bits.join(' | '));
+  });
+
+  // Escalations raised against them, and whether they were answered.
+  var escs = readTable_('ESCALATIONS').filter(function(e) {
+    return String(e.AgainstEmail || '').toLowerCase() === em
+      && inWindow(monthOfValue_(e.CreatedAt || e.Date));
+  });
+  if (escs.length) {
+    lines.push('ESCALATIONS AGAINST THEM: ' + escs.length + ' in this period.');
+    escs.slice(0, 8).forEach(function(e) {
+      lines.push('  - ' + String(e.CreatedAt || e.Date).slice(0, 10) + ' ' +
+        (e.Category || 'escalation') + ', severity ' + (e.Severity || '-') +
+        ', status ' + (e.Status || '-') +
+        (e.Description ? '. ' + String(e.Description).slice(0, 160) : ''));
+    });
+  } else {
+    lines.push('ESCALATIONS AGAINST THEM: none in this period.');
+  }
+
+  var warns = readTable_('WARNINGS').filter(function(w) {
+    return String(w.PersonEmail || '').toLowerCase() === em && inWindow(monthOfValue_(w.IssuedAt));
+  });
+  if (warns.length) {
+    lines.push('WARNINGS: ' + warns.length + ' in this period.');
+    warns.slice(0, 6).forEach(function(w) {
+      lines.push('  - ' + String(w.IssuedAt).slice(0, 10) + ' ' + (w.Category || '') +
+        ' (' + (w.Status || '') + ')' + (w.Summary ? ': ' + String(w.Summary).slice(0, 160) : ''));
+    });
+  } else {
+    lines.push('WARNINGS: none in this period.');
+  }
+
+  var events = readTable_('PEOPLE_EVENTS').filter(function(e) {
+    return String(e.PersonEmail || '').toLowerCase() === em && inWindow(monthOfValue_(e.Timestamp));
+  });
+  var appr = events.filter(function(e) { return e.Type === 'APPRECIATION'; });
+  var pips = events.filter(function(e) { return e.Type === 'PIP'; });
+  lines.push('APPRECIATIONS: ' + appr.length + ' in this period.');
+  pips.forEach(function(e) {
+    lines.push('PRIOR PIP: ' + e.StartDate + ' to ' + e.EndDate + ' (' + (e.Status || '') + ')' +
+      (e.Outcome ? ', outcome ' + e.Outcome : ''));
+  });
+
+  return lines.join('\n');
+}
+
 function aiDraftNote_(payload, me) {
   var kind = String(payload.kind || 'note');
   var rough = String(payload.text || '').trim();
+  // A hint the user typed. Kept, but clearly subordinate to the record below.
   var ctx = String(payload.context || '').trim();
   if (rough.length < 3) throw ValidationError_('Write a few words first, then let the AI tidy them up.');
 
+  // The authoritative facts, read from the datastore for whoever this is about.
+  var record = '';
+  if (payload.Email) {
+    try { record = personContextForAi_(payload.Email, me); }
+    catch (e) {
+      if (e && e.isFriendly) throw e;      // an authorisation refusal must surface
+      record = '';                          // a data hiccup must not block drafting
+    }
+  }
+
   var guidance = {
     warning: 'a factual warning note. State what happened, when, and what must change. No adjectives about the person and no threats.',
-    pip: 'a performance improvement plan summary. State the gap, the measurable target and the support offered.',
+    pip: 'a performance improvement plan. Cover, as short labelled paragraphs: ' +
+         'the specific performance gap evidenced by the record; measurable objectives ' +
+         'with figures taken only from the record; the review period; what support ' +
+         'and coaching will be provided; and what happens if there is no improvement. ' +
+         'Be direct but not punitive, and never characterise the person, only the work.',
     appreciation: 'a short appreciation. Say specifically what they did and why it mattered.',
     escalation: 'an escalation description. State the issue, the impact and what is needed.',
     note: 'a clear, professional note.'
@@ -547,12 +675,26 @@ function aiDraftNote_(payload, me) {
   var sys = 'You write internal notes for an Indian facilities-management company. ' +
     'Rewrite the user notes as ' + guidance + ' ' +
     'Use plain British English, short sentences, no jargon, no salutation and no sign-off. ' +
-    'Keep every fact the user gave and invent none. Return only the rewritten text.';
+    'Keep every fact the user gave and INVENT NONE. If a figure, date or incident is ' +
+    'not in the record or the notes, do not mention it and do not estimate it. ' +
+    'Return only the rewritten text.';
+
+  // The record is presented as the only source of facts, and the model is told
+  // in the system prompt not to add any. It stays advisory: the output lands in
+  // an editable box, is attributed to whoever pressed the button, and changes no
+  // stored value.
+  var prompt = '';
+  if (record) {
+    prompt += 'THE RECORD (these are the only facts you may use; do not add ' +
+              'numbers, dates or incidents that are not here):\n' + record + '\n\n';
+  }
+  if (ctx) prompt += 'Additional context from the manager: ' + ctx + '\n\n';
+  prompt += 'Rough notes:\n' + rough;
 
   var out = geminiCall_({
     system: sys,
-    prompt: (ctx ? ('Context: ' + ctx + '\n\n') : '') + 'Rough notes:\n' + rough,
-    temp: 0.3, maxTokens: 600
+    prompt: prompt,
+    temp: 0.3, maxTokens: kind === 'pip' ? 900 : 600
   });
-  return { text: String(out || '').trim() };
+  return { text: String(out || '').trim(), usedRecord: !!record };
 }
