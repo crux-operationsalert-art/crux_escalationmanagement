@@ -46,7 +46,14 @@ var SCHEMA = {
   // so a manager can change what their team is measured on without a code change.
   KPI_DEFS: ['KpiID','PersonEmail','Category','Position','Active','UpdatedBy','UpdatedAt'],
 
-  TARGETS: ['TargetID','PersonEmail','MonthKey','Category','TargetValue','AchievedValue',
+  // A KPI can be split across clients (section 14). ClientID names the client
+  // the slice belongs to and SubCategory labels a non-client split; BOTH blank is
+  // the single unallocated row for that KPI, which is what every pre-existing row
+  // is. The row key is therefore PersonEmail + MonthKey + Category + ClientID +
+  // SubCategory, so a KPI's slices sum to the KPI and the KPI still rolls up to
+  // the person exactly as before.
+  TARGETS: ['TargetID','PersonEmail','MonthKey','Category','ClientID','SubCategory',
+            'TargetValue','AchievedValue',
             'Notes','UpdatedBy','UpdatedAt','ClosedAt','ClosedBy'],
 
   // The computed monthly score. One row per person per month.

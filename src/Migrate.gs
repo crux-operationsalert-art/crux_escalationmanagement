@@ -400,3 +400,95 @@ function m4_(dryRun) {
   Logger.log('M4 done. Removed ' + removed + ' orphan history row(s).');
   return { dryRun: false, removed: removed, missingWarnings: missingW };
 }
+
+/* ===================================================================
+ * M5 — normalise TARGETS for client allocations (section 14).
+ *
+ * A KPI can now be divided across clients, so TARGETS gained ClientID and
+ * SubCategory. A row with both blank is the KPI's single combined figure, which
+ * is exactly what every pre-existing row is -- so no data has to move, and the
+ * three live rows keep scoring identically.
+ *
+ * What this does check is the one invariant the new model relies on: a KPI must
+ * not hold a combined row AND per-client slices at the same time, or the KPI
+ * would be counted twice. It reports any such conflict rather than guessing which
+ * shape was intended, because picking either would silently change somebody's
+ * score.
+ *
+ * It also fills the two new columns with '' where the export left them undefined,
+ * so downstream reads never see undefined.
+ *
+ * HOW TO RUN
+ *   1. Editor > normaliseTargetAllocationsDryRun > Run. Read the log.
+ *   2. Happy? Run normaliseTargetAllocations.
+ * =================================================================== */
+
+function normaliseTargetAllocationsDryRun() { return m5_(true); }
+function normaliseTargetAllocations()       { return m5_(false); }
+
+function m5_(dryRun) {
+  var tag = dryRun ? '[DRY RUN] ' : '';
+  Logger.log(tag + 'M5 — normalise TARGETS allocations');
+
+  var rows = readTable_('TARGETS');
+  Logger.log(tag + 'TARGETS rows: ' + rows.length);
+
+  var needsFill = rows.filter(function(t) {
+    return t.ClientID === undefined || t.SubCategory === undefined;
+  });
+
+  // Conflict check: same person + month + KPI holding both shapes.
+  var groups = {};
+  rows.forEach(function(t) {
+    var k = String(t.PersonEmail || '').toLowerCase() + '|' +
+            monthOfValue_(t.MonthKey) + '|' + String(t.Category || '');
+    (groups[k] = groups[k] || []).push(t);
+  });
+  var conflicts = [];
+  Object.keys(groups).forEach(function(k) {
+    var g = groups[k];
+    var combined = g.filter(function(t) {
+      return !String(t.ClientID || '').trim() && !String(t.SubCategory || '').trim();
+    });
+    var sliced = g.filter(function(t) {
+      return String(t.ClientID || '').trim() || String(t.SubCategory || '').trim();
+    });
+    if (combined.length && sliced.length) {
+      conflicts.push({ key: k, combined: combined.length, sliced: sliced.length });
+    }
+    if (combined.length > 1) {
+      conflicts.push({ key: k, duplicateCombined: combined.length });
+    }
+    if (sliced.length > KPI_ALLOCATION_MAX) {
+      conflicts.push({ key: k, overAllocationLimit: sliced.length });
+    }
+  });
+
+  Logger.log(tag + 'rows missing the new columns: ' + needsFill.length);
+  Logger.log(tag + 'conflicting KPI groups: ' + conflicts.length);
+  conflicts.forEach(function(c) { Logger.log(tag + '  ' + JSON.stringify(c)); });
+  if (conflicts.length) {
+    Logger.log(tag + 'NOTE: conflicts are REPORTED, not resolved. Choosing a shape ' +
+      'would change somebody\'s score; a manager should decide per KPI.');
+  }
+
+  if (dryRun) {
+    Logger.log('[DRY RUN] nothing written. Run normaliseTargetAllocations to apply.');
+    return { dryRun: true, rows: rows.length, filled: needsFill.length, conflicts: conflicts };
+  }
+
+  var filled = 0;
+  needsFill.forEach(function(t) {
+    updateRowById_('TARGETS', 'TargetID', t.TargetID, {
+      ClientID: String(t.ClientID || ''), SubCategory: String(t.SubCategory || '')
+    });
+    filled++;
+  });
+  if (filled) invalidateTableCache_('TARGETS');
+
+  logAudit_({ user: 'migration:M5', action: 'TARGET_ALLOCATION_NORMALISE', entity: 'TARGETS',
+    entityId: '', oldValue: String(rows.length),
+    newValue: JSON.stringify({ filled: filled, conflicts: conflicts.length }) });
+  Logger.log('M5 done. Filled ' + filled + ' row(s). Conflicts left for a human: ' + conflicts.length);
+  return { dryRun: false, filled: filled, conflicts: conflicts };
+}

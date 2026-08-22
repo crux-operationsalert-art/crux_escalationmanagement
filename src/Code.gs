@@ -289,6 +289,7 @@ var RPC_ROUTES = {
   'windows.status':       { roles: null, fn: function(p, me) { return windowStatus_(p, me); } },
   'windows.reopen':       { roles: ['ADMIN'], fn: function(p, me) { return grantWindowOverride_(p, me); } },
   'team.setTarget':       { roles: null, fn: function(p, me) { return teamSetTarget_(p, me); } },
+  'team.removeTarget':    { roles: null, fn: function(p, me) { return teamRemoveTarget_(p, me); } },
   // Any signed-in user may list people, so every form can offer a picker.
   'users.invite':         { roles: ['ADMIN'], fn: function(p, me) { return inviteUser_(p, me); } },
   'users.revokeInvite':   { roles: ['ADMIN'], fn: function(p, me) { return revokeInvite_(p, me); } },

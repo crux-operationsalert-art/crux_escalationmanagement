@@ -1744,7 +1744,6 @@
     }, 0);
   }
 
-  var TARGET_CATS = ['Revenue','Business Development','Collection'];
 
   /* All three KPI categories in one form. They are scored separately, so a strong
      Revenue month cannot paper over a Collection miss. */
@@ -1809,39 +1808,200 @@
     });
   }
 
+  /**
+   * Target editor. Driven by the person's ACTUAL KPIs, with per-client allocation.
+   *
+   * This used to iterate a hard-coded TARGET_CATS = Revenue / Business
+   * Development / Collection and offer "Save all three". Two problems: KPIs are
+   * configurable, so anybody given a custom set had their targets written against
+   * categories that were not theirs and the server rightly refused them; and a
+   * KPI could not be divided across clients at all.
+   *
+   * Now each KPI is either one combined figure or a set of client allocations,
+   * never both, matching what the server enforces.
+   */
   function openTargetForm(m, card) {
-    var cats = (m.targetsByCategory && m.targetsByCategory.length)
-      ? m.targetsByCategory
-      : TARGET_CATS.map(function(c){ return { Category:c, target:'', achieved:'' }; });
-    var rows = cats.map(function(c, i) {
-      return '<tr>' +
-        '<td style="padding:6px 8px"><b>' + esc(c.Category) + '</b></td>' +
-        '<td style="padding:6px 8px"><input id="tg-t-' + i + '" value="' + esc(String(c.target == null ? '' : c.target)) + '" placeholder="target"></td>' +
-        '<td style="padding:6px 8px"><input id="tg-a-' + i + '" value="' + esc(String(c.achieved == null ? '' : c.achieved)) + '" placeholder="achieved"></td>' +
-        '</tr>';
-    }).join('');
     Modal.open({
       title: 'Targets - ' + m.Name,
-      body: '<div class="form-row"><div class="field"><label>Month</label>' +
-            '<input id="tg-month" value="' + esc(m.MonthKey || '') + '" placeholder="2026-08"></div></div>' +
-            '<table style="width:100%;border-collapse:collapse">' +
-            '<tr><th style="text-align:left;padding:6px 8px;font-size:11px;letter-spacing:1px;color:#8a8377">KPI</th>' +
-            '<th style="text-align:left;padding:6px 8px;font-size:11px;letter-spacing:1px;color:#8a8377">TARGET</th>' +
-            '<th style="text-align:left;padding:6px 8px;font-size:11px;letter-spacing:1px;color:#8a8377">ACHIEVED</th></tr>' +
-            rows + '</table>' +
-            '<div class="field"><label>Note (optional)</label><input id="tg-note"></div>',
-      actions: [{ label:'Cancel', kind:'secondary', close:true },
-        { label:'Save all three', testid:'btn-save-target', onClick: function(){
-          var mk = val('tg-month');
-          var jobs = TARGET_CATS.map(function(cat, i) {
-            return rpc('team.setTarget', { Email: m.Email, MonthKey: mk, Category: cat,
-              TargetValue: val('tg-t-'+i), AchievedValue: val('tg-a-'+i), Notes: val('tg-note') });
-          });
-          return Promise.all(jobs)
-            .then(function(){ Modal.close(); toast('All three targets saved','ok'); renderTeam(card); })
-            .catch(function(e){ toast(e.message,'err'); });
-        } }]
+      wide: true,
+      body: '<div id="tg-body" class="empty">Loading their KPIs...</div>',
+      actions: [{ label: 'Close', kind: 'secondary', close: true }]
     });
+    var state = { mk: m.MonthKey || '', clients: [], kpis: [] };
+
+    function load() {
+      var body = document.getElementById('tg-body');
+      if (!body) return;
+      return Promise.all([
+        rpc('kpis.get', { Email: m.Email }),
+        rpc('score.get', { Email: m.Email, MonthKey: state.mk }).catch(function(){ return null; }),
+        state.clients.length ? Promise.resolve({ items: state.clients })
+                             : rpc('clients.list', {}).catch(function(){ return { items: [] }; })
+      ]).then(function(res) {
+        var kpiInfo = res[0] || {};
+        var score = res[1] || {};
+        state.clients = (res[2] && (res[2].items || res[2])) || [];
+        state.kpis = kpiInfo.categories || [];
+        state.allocMax = kpiInfo.allocationMax || 50;
+        state.canEdit = kpiInfo.canEdit !== false;
+        var byCat = {};
+        ((score.achievement && score.achievement.categories) || score.targetsByCategory || [])
+          .forEach(function(c) { byCat[c.Category] = c; });
+        paint(byCat);
+      }).catch(function(e) {
+        var b = document.getElementById('tg-body');
+        if (b) b.innerHTML = '<div class="callout danger">' + esc(e.message) + '</div>';
+      });
+    }
+
+    function clientOptions(selected) {
+      return '<option value="">- whole KPI (no client split) -</option>' +
+        state.clients.map(function(c) {
+          return '<option value="' + esc(c.ClientID) + '"' +
+            (String(selected) === String(c.ClientID) ? ' selected' : '') + '>' +
+            esc(c.ClientName) + '</option>';
+        }).join('');
+    }
+
+    function paint(byCat) {
+      var body = document.getElementById('tg-body');
+      if (!body) return;
+      var html = '<div class="form-row"><div class="field"><label>Month</label>' +
+        '<input id="tg-month" data-testid="input-target-month" value="' + esc(state.mk) +
+        '" placeholder="2026-08"></div></div>';
+
+      if (!state.kpis.length) {
+        html += '<div class="callout">No KPIs are configured for ' + esc(m.Name) +
+                ' yet. Set their KPIs first.</div>';
+        body.innerHTML = html;
+        return;
+      }
+      if (!state.canEdit) {
+        html += '<div class="callout">You can see these targets but only ' +
+                esc(m.Name) + '\u2019s reporting manager can change them.</div>';
+      }
+
+      state.kpis.forEach(function(cat, ci) {
+        var d = byCat[cat] || {};
+        var allocs = (d.allocations || []).filter(function(a) {
+          return a.ClientID || a.SubCategory;
+        });
+        html += '<div class="card" style="margin-top:12px" data-testid="kpi-block-' + ci + '">' +
+          '<h4 style="margin:0 0 8px">' + esc(cat) +
+          (d.set ? ' <span class="muted" style="font-weight:400">' +
+                   'total ' + esc(String(d.target)) + ', achieved ' + esc(String(d.achieved)) +
+                   ' (' + esc(String(d.pct)) + '%)</span>' : '') +
+          '</h4>';
+
+        if (allocs.length) {
+          html += '<table style="width:100%;border-collapse:collapse">' +
+            '<tr><th style="text-align:left;padding:4px 6px;font-size:11px;color:#8a8377">CLIENT / SPLIT</th>' +
+            '<th style="text-align:left;padding:4px 6px;font-size:11px;color:#8a8377">TARGET</th>' +
+            '<th style="text-align:left;padding:4px 6px;font-size:11px;color:#8a8377">ACHIEVED</th>' +
+            '<th></th></tr>';
+          allocs.forEach(function(a, ai) {
+            var id = ci + '-' + ai;
+            html += '<tr>' +
+              '<td style="padding:4px 6px">' + esc(a.ClientName || a.SubCategory || '-') + '</td>' +
+              '<td style="padding:4px 6px"><input id="tg-at-' + id + '" style="width:90px" value="' +
+                esc(String(a.target == null ? '' : a.target)) + '"></td>' +
+              '<td style="padding:4px 6px"><input id="tg-aa-' + id + '" style="width:90px" value="' +
+                esc(String(a.achieved == null ? '' : a.achieved)) + '"></td>' +
+              '<td style="padding:4px 6px">' +
+                '<button class="btn secondary small" data-testid="btn-alloc-save-' + id + '" ' +
+                  'data-act="save-alloc" data-cat="' + esc(cat) + '" data-cid="' + esc(a.ClientID || '') +
+                  '" data-sub="' + esc(a.SubCategory || '') + '" data-id="' + id + '">Save</button> ' +
+                '<button class="btn secondary small" data-testid="btn-alloc-remove-' + id + '" ' +
+                  'data-act="remove-alloc" data-cat="' + esc(cat) + '" data-cid="' + esc(a.ClientID || '') +
+                  '" data-sub="' + esc(a.SubCategory || '') + '">Remove</button>' +
+              '</td></tr>';
+          });
+          html += '</table>' +
+            '<div class="muted" style="margin-top:4px;font-size:12px">' +
+            allocs.length + ' of ' + state.allocMax + ' client allocations used.</div>';
+        } else {
+          // No split yet: one combined figure for the whole KPI.
+          html += '<div class="form-row">' +
+            '<div class="field"><label>Target</label><input id="tg-t-' + ci + '" data-testid="input-target-' + ci + '" value="' +
+              esc(String(d.set ? d.target : '')) + '"></div>' +
+            '<div class="field"><label>Achieved</label><input id="tg-a-' + ci + '" data-testid="input-achieved-' + ci + '" value="' +
+              esc(String(d.achievedRecorded ? d.achieved : '')) + '"></div>' +
+            '</div>' +
+            '<button class="btn secondary small" data-act="save-combined" data-cat="' + esc(cat) +
+              '" data-id="' + ci + '" data-testid="btn-save-combined-' + ci + '">Save ' + esc(cat) + '</button>' +
+            (d.set ? ' <button class="btn secondary small" data-act="remove-combined" data-cat="' + esc(cat) +
+              '" data-testid="btn-remove-combined-' + ci + '">Remove</button>' : '');
+        }
+
+        // Add a split. Offered whether or not one exists; the server refuses
+        // mixing a combined figure with slices and says why.
+        html += '<div class="form-row" style="margin-top:8px">' +
+          '<div class="field"><label>Add a client allocation</label>' +
+            '<select id="tg-nc-' + ci + '" data-testid="select-alloc-client-' + ci + '">' +
+            clientOptions('') + '</select></div>' +
+          '<div class="field"><label>or a sub-category</label>' +
+            '<input id="tg-ns-' + ci + '" data-testid="input-alloc-sub-' + ci + '" placeholder="e.g. Retail"></div>' +
+          '<div class="field"><label>Target</label><input id="tg-nt-' + ci + '" data-testid="input-alloc-target-' + ci + '"></div>' +
+          '<div class="field"><label>&nbsp;</label>' +
+            '<button class="btn secondary small" data-act="add-alloc" data-cat="' + esc(cat) +
+              '" data-id="' + ci + '" data-testid="btn-alloc-add-' + ci + '">Add</button></div>' +
+          '</div>';
+        html += '</div>';
+      });
+
+      html += '<div class="field" style="margin-top:10px"><label>Note (optional)</label>' +
+              '<input id="tg-note" data-testid="input-target-note"></div>';
+      body.innerHTML = html;
+      wire();
+    }
+
+    function wire() {
+      var body = document.getElementById('tg-body');
+      if (!body) return;
+      Array.prototype.forEach.call(body.querySelectorAll('button[data-act]'), function(btn) {
+        btn.onclick = function(ev) {
+          ev.preventDefault();
+          state.mk = val('tg-month') || state.mk;
+          var act = btn.getAttribute('data-act');
+          var cat = btn.getAttribute('data-cat');
+          var id  = btn.getAttribute('data-id');
+          var base = { Email: m.Email, MonthKey: state.mk, Category: cat, Notes: val('tg-note') };
+          var p;
+          if (act === 'save-combined') {
+            p = rpc('team.setTarget', Object.assign({}, base,
+              { TargetValue: val('tg-t-' + id), AchievedValue: val('tg-a-' + id) }));
+          } else if (act === 'remove-combined') {
+            p = rpc('team.removeTarget', base);
+          } else if (act === 'save-alloc') {
+            p = rpc('team.setTarget', Object.assign({}, base, {
+              ClientID: btn.getAttribute('data-cid'), SubCategory: btn.getAttribute('data-sub'),
+              TargetValue: val('tg-at-' + id), AchievedValue: val('tg-aa-' + id) }));
+          } else if (act === 'remove-alloc') {
+            p = rpc('team.removeTarget', Object.assign({}, base, {
+              ClientID: btn.getAttribute('data-cid'), SubCategory: btn.getAttribute('data-sub') }));
+          } else if (act === 'add-alloc') {
+            var cid = val('tg-nc-' + id), sub = val('tg-ns-' + id);
+            if (!cid && !sub) { toast('Choose a client or name a sub-category.', 'err'); return; }
+            p = rpc('team.setTarget', Object.assign({}, base,
+              { ClientID: cid, SubCategory: sub, TargetValue: val('tg-nt-' + id) }));
+          } else { return; }
+
+          btn.disabled = true;
+          p.then(function() {
+            toast('Saved', 'ok');
+            return load();                 // repaint from the server, never from guesswork
+          }).then(function() {
+            renderTeam(card);
+          }).catch(function(e) {
+            toast(e.message, 'err');
+          }).then(function() {
+            btn.disabled = false;
+          });
+        };
+      });
+    }
+
+    load();
   }
 
   /* Monthly score. Rating plus all three written sections are mandatory - a score

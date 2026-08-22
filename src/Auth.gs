@@ -834,20 +834,97 @@ function teamSetTarget_(p, me) {
   if (target !== '') assertWindowOpen_('TARGET', email, mk, me);
   if (achieved !== '') assertWindowOpen_('ACHIEVEMENT', email, mk, me);
 
-  var existing = readTable_('TARGETS').filter(function(t) {
+  // Which slice of the KPI this is. Both blank = the KPI's single unallocated
+  // row, which is how every row written before allocations existed is shaped.
+  var clientId = String(p.ClientID || '').trim();
+  var subCat = String(p.SubCategory || '').trim();
+  if (clientId) {
+    var cli = findRowById_('CLIENTS', 'ClientID', clientId);
+    if (!cli) throw ValidationError_('That client does not exist.');
+    assertClientAccess_(cli, me);
+  }
+  if (subCat.length > 60) throw ValidationError_('Sub-category name is too long.');
+
+  var all = readTable_('TARGETS');
+  var sameKpi = all.filter(function(t) {
     return String(t.PersonEmail||'').toLowerCase() === email
       && monthOfValue_(t.MonthKey) === mk
       && String(t.Category || '') === cat;
-  })[0];
+  });
+  var wantKey = clientId + '|' + subCat;
+  var existing = sameKpi.filter(function(t){ return allocationKey_(t) === wantKey; })[0];
+
+  // Section 14 ceiling. Counted before the write so the limit cannot be exceeded
+  // by one, and only for a NEW slice - editing an existing one is always allowed.
+  if (!existing && (clientId || subCat)) {
+    var already = sameKpi.filter(function(t) {
+      return String(t.ClientID || '').trim() || String(t.SubCategory || '').trim();
+    }).length;
+    if (already >= KPI_ALLOCATION_MAX) {
+      throw ValidationError_('"' + cat + '" already has the maximum of ' +
+        KPI_ALLOCATION_MAX + ' client allocations for ' + mk + '.');
+    }
+  }
+  // Mixing a whole-KPI row with per-client slices would double count the KPI, so
+  // the two shapes are mutually exclusive.
+  if ((clientId || subCat) && sameKpi.some(function(t){ return allocationKey_(t) === '|'; })) {
+    throw ValidationError_('"' + cat + '" currently has a single combined target. ' +
+      'Remove it before splitting the KPI across clients.');
+  }
+  if (!clientId && !subCat && sameKpi.some(function(t){ return allocationKey_(t) !== '|'; })) {
+    throw ValidationError_('"' + cat + '" is split across clients. ' +
+      'Set the target on each client allocation rather than as one combined figure.');
+  }
+
   var patch = { PersonEmail: email, MonthKey: "'" + mk, Category: cat,
+                ClientID: clientId, SubCategory: subCat,
                 TargetValue: target, AchievedValue: achieved,
                 Notes: String(p.Notes||''), UpdatedBy: me.email, UpdatedAt: nowIso_() };
   if (existing) updateRowById_('TARGETS','TargetID',existing.TargetID, patch);
   else { patch.TargetID = nextId_('TGT'); appendRow_('TARGETS', patch); }
   invalidateTableCache_('TARGETS');
   logAudit_({ user: me.email, action:'TARGET_SET', entity:'TARGETS',
-    entityId: email + '/' + mk + '/' + cat,
+    entityId: email + '/' + mk + '/' + cat + (wantKey === '|' ? '' : '/' + wantKey),
     oldValue: existing ? JSON.stringify(existing) : '', newValue: JSON.stringify(patch) });
+  return { ok: true, MonthKey: mk, Category: cat, ClientID: clientId, SubCategory: subCat };
+}
+
+/**
+ * Remove one target row: either a single client allocation, or the combined
+ * unallocated row for a KPI.
+ *
+ * Needed because a KPI cannot hold a combined figure and per-client slices at the
+ * same time without double counting, so moving between the two shapes requires
+ * removing what is there. Without this the manager reached a dead end: the error
+ * told them to remove the combined target and nothing could.
+ */
+function teamRemoveTarget_(p, me) {
+  var email = String(p.Email || '').toLowerCase();
+  assertScoreManage_(me, email);
+  var mk = String(p.MonthKey || '').trim() || monthKey_(new Date());
+  var cat = String(p.Category || '').trim();
+  var wantKey = String(p.ClientID || '').trim() + '|' + String(p.SubCategory || '').trim();
+
+  var row = readTable_('TARGETS').filter(function(t) {
+    return String(t.PersonEmail || '').toLowerCase() === email
+      && monthOfValue_(t.MonthKey) === mk
+      && String(t.Category || '') === cat
+      && allocationKey_(t) === wantKey;
+  })[0];
+  if (!row) throw ValidationError_('That target line no longer exists.');
+
+  // Removing a target changes a score, so it is bound by the same window as
+  // setting one. Otherwise the window could be sidestepped by delete-and-recreate.
+  assertWindowOpen_('TARGET', email, mk, me);
+  if (String(row.ClosedAt || '').trim()) {
+    throw ValidationError_('That target has been closed and can no longer be removed.');
+  }
+
+  deleteRowById_('TARGETS', 'TargetID', row.TargetID);
+  invalidateTableCache_('TARGETS');
+  logAudit_({ user: me.email, action: 'TARGET_REMOVE', entity: 'TARGETS',
+    entityId: email + '/' + mk + '/' + cat + (wantKey === '|' ? '' : '/' + wantKey),
+    oldValue: JSON.stringify(row), newValue: '' });
   return { ok: true, MonthKey: mk, Category: cat };
 }
 
@@ -865,7 +942,13 @@ function getScore_(p, me) {
     stored: stored,
     canScore: canManagePerson_(me, email) && String(me.email).toLowerCase() !== email,
     isSelf: String(me.email).toLowerCase() === email,
-    categories: TARGET_CATEGORIES
+    // The person's ACTUAL KPIs, not the global default list. Returning the
+    // constant meant a score screen for anybody on a custom KPI set showed the
+    // three standard headings while the score underneath was computed from
+    // theirs - two different answers on one page.
+    categories: kpisFor_(email),
+    orgDefaultCategories: TARGET_CATEGORIES,
+    allocationMax: KPI_ALLOCATION_MAX
   };
 }
 
@@ -1131,21 +1214,76 @@ function monthOfValue_(v) {
 }
 
 /** Achievement across the three categories, as a percentage of target. */
+/** Label for one allocation row. Blank ClientID and SubCategory = unallocated. */
+function allocationKey_(t) {
+  return String(t.ClientID || '').trim() + '|' + String(t.SubCategory || '').trim();
+}
+
+/**
+ * Achievement per KPI, rolled up from its client allocations.
+ *
+ * A KPI may be split across clients (section 14). The KPI's target is the SUM of
+ * its slices and its achievement is the SUM of theirs, so the percentage is
+ * computed once at KPI level. Summing first and dividing once matters: averaging
+ * the slice percentages would let a tiny fully-achieved allocation offset a large
+ * missed one, which is not what a revenue target means.
+ *
+ * A KPI with no split has exactly one row with both allocation fields blank,
+ * which is the shape of every row that predates allocations, so those keep
+ * working untouched.
+ */
 function targetAchievement_(email, monthKey, rows) {
   var em = String(email).toLowerCase();
   var CATS = kpisFor_(em);
   var mine = (rows || readTable_('TARGETS')).filter(function(t) {
     return String(t.PersonEmail || '').toLowerCase() === em && monthOfValue_(t.MonthKey) === monthKey;
   });
+  var clientName = {};
+  try {
+    readTable_('CLIENTS').forEach(function(c){ clientName[c.ClientID] = c.ClientName; });
+  } catch (e) {}
+
   var per = [], detail = [];
   CATS.forEach(function(cat) {
-    var r = mine.filter(function(t){ return String(t.Category || '') === cat; })[0];
-    if (!r) { detail.push({ Category: cat, set: false }); return; }
-    var tgt = Number(r.TargetValue), ach = Number(r.AchievedValue || 0);
-    if (!tgt || isNaN(tgt)) { detail.push({ Category: cat, set: false }); return; }
-    var pct = Math.max(0, (isNaN(ach) ? 0 : ach) / tgt * 100);
+    var slices = mine.filter(function(t){ return String(t.Category || '') === cat; });
+    if (!slices.length) { detail.push({ Category: cat, set: false, allocations: [] }); return; }
+
+    var tgt = 0, ach = 0, allocations = [], achRecorded = false;
+    slices.forEach(function(r) {
+      var st = Number(r.TargetValue), sa = Number(r.AchievedValue || 0);
+      if (isNaN(st)) st = 0;
+      if (isNaN(sa)) sa = 0;
+      // "no achievement recorded yet" and "an achievement of zero" are different
+      // facts: RAG counts a KPI as closed once an achievement exists, so treating
+      // a blank as 0 would mark every unfilled KPI complete.
+      if (String(r.AchievedValue === null || r.AchievedValue === undefined ? '' : r.AchievedValue).trim() !== '') {
+        achRecorded = true;
+      }
+      tgt += st; ach += sa;
+      allocations.push({
+        ClientID: String(r.ClientID || ''),
+        ClientName: clientName[String(r.ClientID || '')] || '',
+        SubCategory: String(r.SubCategory || ''),
+        target: st, achieved: sa,
+        pct: st ? Math.round(Math.max(0, sa / st * 100)) : null
+      });
+    });
+    allocations.sort(function(a, b) {
+      return String(a.ClientName + a.SubCategory).localeCompare(String(b.ClientName + b.SubCategory));
+    });
+    var allocCount = allocations.filter(function(a) {
+      return a.ClientID || a.SubCategory; }).length;
+    if (!tgt) {
+      detail.push({ Category: cat, set: false, achievedRecorded: achRecorded,
+                    allocations: allocations, allocationCount: allocCount });
+      return;
+    }
+    var pct = Math.max(0, ach / tgt * 100);
     per.push(Math.min(pct, 100));   // over-achievement does not subsidise a miss
-    detail.push({ Category: cat, set: true, target: tgt, achieved: ach, pct: Math.round(pct) });
+    detail.push({ Category: cat, set: true, target: tgt, achieved: ach,
+                  achievedRecorded: achRecorded,
+                  pct: Math.round(pct), allocations: allocations,
+                  allocationCount: allocCount });
   });
   // A person with no targets set scores 0 on the target component rather than
   // 100 - an unset target must never read as full marks.
@@ -1523,20 +1661,28 @@ function prevMonthKey_(mk) {
   return y + '-' + (m < 10 ? '0' : '') + m;
 }
 
+/**
+ * Per-KPI targets for one person and month, for the profile and the team list.
+ *
+ * Delegates the roll-up to targetAchievement_, which is the one place that knows
+ * how client allocations sum into a KPI. This used to take the FIRST TARGETS row
+ * per category, so once a KPI was split across clients it displayed one arbitrary
+ * slice as though it were the whole target - while scoring used the correct total.
+ * Two different answers from two implementations of the same question.
+ */
 function targetsFor_(email, mk) {
   var em = String(email).toLowerCase();
-  var CATS = kpisFor_(em);
-  var rows = readTable_('TARGETS').filter(function(t) {
-    return String(t.PersonEmail||'').toLowerCase() === em && monthOfValue_(t.MonthKey) === mk;
-  });
-  return CATS.map(function(cat) {
-    var r = rows.filter(function(t){ return String(t.Category||'') === cat; })[0] || {};
-    var tgt = Number(r.TargetValue), ach = Number(r.AchievedValue);
+  var d = targetAchievement_(em, mk);
+  return (d.categories || []).map(function(c) {
     return {
-      Category: cat,
-      target: isNaN(tgt) ? '' : tgt,
-      achieved: (r.AchievedValue === '' || r.AchievedValue == null || isNaN(ach)) ? '' : ach,
-      pct: (!isNaN(tgt) && tgt > 0) ? Math.round((isNaN(ach)?0:ach) / tgt * 100) : null
+      Category: c.Category,
+      target: c.set ? c.target : '',
+      // Blank, not 0, when nothing has been recorded - ragTargets_ counts a KPI
+      // as closed on `achieved !== ''`.
+      achieved: c.achievedRecorded ? c.achieved : '',
+      pct: c.set ? c.pct : null,
+      allocations: c.allocations || [],
+      allocationCount: c.allocationCount || 0
     };
   });
 }
@@ -1747,6 +1893,9 @@ function myWindows_(p, me) {
  */
 var KPI_DEFAULTS = ['Revenue', 'Business Development', 'Collection'];
 var KPI_MAX = 5;
+// Each KPI may be divided across up to this many client / sub-category slices
+// (section 14). Counted per person, per month, per KPI.
+var KPI_ALLOCATION_MAX = 50;
 
 /** The KPIs this person is measured on, in order. */
 function kpisFor_(email) {
@@ -1821,6 +1970,7 @@ function getKpis_(p, me) {
     categories: kpisFor_(em),
     orgDefault: kpisFor_(''),
     max: KPI_MAX,
+    allocationMax: KPI_ALLOCATION_MAX,
     isCustom: readTable_('KPI_DEFS').some(function(k) {
       return String(k.PersonEmail||'').toLowerCase() === em;
     }),
