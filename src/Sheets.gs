@@ -21,7 +21,12 @@ var SCHEMA = {
   ESCALATION_MATRIX: ['MatrixID','ClientID','Location','BranchID','Level','LevelName','ContactName','Mobile','Email','UpdatedAt','UpdatedBy'],
   HOLIDAYS: ['HolidayID','Date','Name','Status','CreatedAt'],
   EMAIL_TEMPLATES: ['Key','Subject','Body','UpdatedAt','UpdatedBy'],
-  EMAIL_LOG: ['LogID','Timestamp','Type','ClientID','BranchID','ToAddr','CcAddr','Subject','Trigger','SentBy','Status','Attempt','Error','MessageRef','IdempotencyKey'],
+  // RetryBody holds the rendered HTML of a send that FAILED, and only while it
+  // is still retryable. Without it a retry had nothing to resend: it posted a
+  // placeholder line and marked the row SENT, so the recipient never received
+  // the escalation and the failure looked resolved. Cleared once sent or spent,
+  // so the column stays empty in normal operation.
+  EMAIL_LOG: ['LogID','Timestamp','Type','ClientID','BranchID','ToAddr','CcAddr','Subject','Trigger','SentBy','Status','Attempt','Error','MessageRef','IdempotencyKey','RetryBody','NextRetryAt'],
   REMINDER_LOG: ['JobKey','Type','Month','ExecutedAt','ExecutedBy','Result','Notes'],
   // A2 QUEUE: one row per dispatch target per month. Lets the 1st-of-month send
   // be resumable across many short executions and spread across days to stay

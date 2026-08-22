@@ -183,7 +183,12 @@ function sendEmail_(options) {
       Subject: subject, Trigger: opt.trigger || '',
       SentBy: (Session.getEffectiveUser() || {}).getEmail && Session.getEffectiveUser().getEmail() || '',
       Status: status, Attempt: attempt, Error: errorMsg,
-      MessageRef: messageRef, IdempotencyKey: opt.idempotencyKey || ''
+      MessageRef: messageRef, IdempotencyKey: opt.idempotencyKey || '',
+      // Keep the body ONLY while this send is still retryable. A retry previously
+      // had nothing to resend, so it posted a placeholder and marked the row SENT
+      // -- the failure looked handled and the recipient got nothing.
+      RetryBody: status === 'FAILED' ? String(opt.htmlBody || '').slice(0, 45000) : '',
+      NextRetryAt: status === 'FAILED' ? isoPlusMinutes_(EMAIL_RETRY_BACKOFF_MIN[0]) : ''
     });
     // Keep the in-execution index current so a later send in this same run sees it.
     if (opt.idempotencyKey && status === 'SENT') sentKeyIndex_()[String(opt.idempotencyKey)] = logId;
@@ -214,24 +219,121 @@ function sendTestEmail_(payload, me) {
   });
 }
 
+/* Minutes to wait before each retry. Index by attempts already made. */
+var EMAIL_RETRY_BACKOFF_MIN = [5, 15, 60, 180, 360, 720, 720, 720, 720, 720];
+
+function isoPlusMinutes_(min) {
+  return Utilities.formatDate(new Date(new Date().getTime() + (min || 0) * 60000),
+    getTz_(), "yyyy-MM-dd'T'HH:mm:ssXXX");
+}
+
+/**
+ * Resend one failed email, with its ORIGINAL body.
+ *
+ * The previous version sent the literal text '(retry) See original log <id>' and
+ * then wrote Status: SENT. So a retried escalation delivered a meaningless line,
+ * the recipient still had no escalation, and the log said the problem was fixed.
+ * The body is now kept on the failed row (EMAIL_LOG.RetryBody) precisely so this
+ * can resend the real message; when no body was captured the retry is refused
+ * rather than sending a placeholder.
+ *
+ * @param {object} payload  { logId }
+ * @param {object} me       caller, or null for the automatic sweep
+ */
 function retryEmail_(payload, me) {
   var log = findRowById_('EMAIL_LOG', 'LogID', payload.logId);
   if (!log) throw ValidationError_('Log not found.');
   if (log.Status === 'SENT') return { skipped: true, reason: 'already sent' };
-  var limit = parseInt(getSetting_('RETRY_LIMIT','3'), 10);
-  if ((parseInt(log.Attempt || 1, 10)) >= limit) throw ValidationError_('Retry limit reached.');
+
+  var limit = parseInt(getSetting_('RETRY_LIMIT', '3'), 10) || 3;
+  var made = parseInt(log.Attempt || 1, 10);
+  if (made >= limit) {
+    // Abandoned, but the Status stays FAILED on purpose. Every dashboard, the
+    // monthly digest and the AI snapshot count EMAIL_LOG failures by
+    // Status === 'FAILED'; inventing a FAILED_FINAL status would make a
+    // permanently undelivered escalation disappear from all of them, which is
+    // exactly the silent failure this is meant to prevent. Abandonment is
+    // recorded by clearing RetryBody (so the sweep stops picking it up) and
+    // saying so in Error.
+    updateRowById_('EMAIL_LOG', 'LogID', log.LogID, {
+      NextRetryAt: '', RetryBody: '',
+      Error: String(log.Error || '') + ' | abandoned after ' + made + ' attempts (RETRY_LIMIT)'
+    });
+    logAudit_({ user: me ? me.email : 'system:retry', action: 'EMAIL_ABANDONED',
+      entity: 'EMAIL_LOG', entityId: log.LogID,
+      oldValue: String(log.Type || ''), newValue: 'attempts exhausted: ' + made });
+    if (me) throw ValidationError_('Retry limit reached for this message.');
+    return { skipped: true, reason: 'retry limit reached' };
+  }
+
+  var body = String(log.RetryBody || '');
+  if (!body) {
+    // Status stays FAILED so it keeps being reported; see the note above.
+    updateRowById_('EMAIL_LOG', 'LogID', log.LogID,
+      { NextRetryAt: '',
+        Error: String(log.Error || '') + ' | not retryable: original body was not captured' });
+    if (me) throw ValidationError_(
+      'This message cannot be resent because its content was not captured. ' +
+      'Re-run the action that produced it.');
+    return { skipped: true, reason: 'no body captured' };
+  }
+
   var res = sendEmail_({
     type: log.Type, clientId: log.ClientID, branchId: log.BranchID,
     to: parseListStr_(log.ToAddr), cc: parseListStr_(log.CcAddr),
-    subject: log.Subject, htmlBody: '(retry) See original log ' + log.LogID,
-    trigger: 'admin.email.retry',
-    idempotencyKey: log.IdempotencyKey ? log.IdempotencyKey + '-retry-' + (parseInt(log.Attempt || 1, 10) + 1) : ''
+    subject: log.Subject, htmlBody: body,
+    trigger: me ? 'admin.email.retry' : 'scheduler.email.retry',
+    idempotencyKey: log.IdempotencyKey ? log.IdempotencyKey + '-retry-' + (made + 1) : ''
   });
+
+  var sent = res.status === 'SENT';
   updateRowById_('EMAIL_LOG', 'LogID', log.LogID, {
-    Attempt: (parseInt(log.Attempt || 1, 10) + 1),
-    Status: res.status, Error: res.error || ''
+    Attempt: made + 1,
+    Status: res.status,
+    Error: res.error || '',
+    // Drop the stored body as soon as it is delivered or finally abandoned.
+    RetryBody: sent ? '' : body,
+    NextRetryAt: sent ? '' : isoPlusMinutes_(EMAIL_RETRY_BACKOFF_MIN[Math.min(made, EMAIL_RETRY_BACKOFF_MIN.length - 1)])
   });
+  logAudit_({ user: me ? me.email : 'system:retry', action: 'EMAIL_RETRY', entity: 'EMAIL_LOG',
+    entityId: log.LogID, oldValue: 'attempt ' + made, newValue: res.status });
   return res;
+}
+
+/**
+ * Automatic retry sweep, called from the scheduler tick.
+ *
+ * A failed send previously sat in EMAIL_LOG forever: RETRY_LIMIT was configured
+ * at 10 but nothing ever re-attempted anything, so the only recovery was an
+ * administrator noticing the row and pressing Retry. Eleven escalation, people
+ * and test emails failed on 19 August for a sender-alias permission error and
+ * were never sent, with nothing surfacing that fact.
+ *
+ * Bounded on purpose: a few per tick, only when due, so a systemic outage cannot
+ * burn the daily Gmail quota on retries.
+ */
+var EMAIL_RETRY_PER_TICK = 5;
+
+function retryFailedEmails_() {
+  var now = new Date();
+  var due = readTable_('EMAIL_LOG').filter(function(r) {
+    if (String(r.Status || '') !== 'FAILED') return false;
+    if (!String(r.RetryBody || '')) return false;
+    var at = String(r.NextRetryAt || '').trim();
+    if (!at) return true;                        // never scheduled: due now
+    var t = new Date(at).getTime();
+    return !t || isNaN(t) || t <= now.getTime();
+  }).slice(0, EMAIL_RETRY_PER_TICK);
+
+  var out = { attempted: 0, sent: 0, stillFailing: 0 };
+  due.forEach(function(r) {
+    out.attempted++;
+    try {
+      var res = retryEmail_({ logId: r.LogID }, null);
+      if (res && res.status === 'SENT') out.sent++; else out.stillFailing++;
+    } catch (e) { out.stillFailing++; }
+  });
+  return out;
 }
 
 /* ---------- Rendering helpers used by scheduler/dispatch ---------- */

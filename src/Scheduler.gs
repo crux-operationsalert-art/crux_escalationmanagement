@@ -54,6 +54,17 @@ function tick() {
     if (today === sumDay && hhmm >= sumTime && !jobDone_(month, JOB_TYPES.SUM)) {
       runMonthlySummary_('auto');
     }
+    // Resend anything that failed. RETRY_LIMIT was configured but nothing ever
+    // re-attempted a failed send, so a transient sender-alias error left eleven
+    // escalation and people emails permanently undelivered with nothing
+    // surfacing it. Bounded per tick so an outage cannot burn the daily quota.
+    try { retryFailedEmails_(); }
+    catch (e) { logAudit_({ user:'auto', action:'EMAIL_RETRY_ERROR', entity:'EMAIL_LOG',
+      entityId:'', oldValue:'', newValue:String(e && e.message || e) }); }
+
+    // Session housekeeping: drop rows that can no longer authenticate anything.
+    try { if (typeof purgeDeadSessions_ === 'function') purgeDeadSessions_(); }
+    catch (e) { /* never let housekeeping break the tick */ }
   } finally {
     lock.releaseLock();
   }
