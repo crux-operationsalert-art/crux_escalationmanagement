@@ -825,6 +825,7 @@
       h('h3',{},['Overview']),
       kvRow('Client name', c.ClientName), kvRow('Client code', c.ClientCode),
       kvRow('Primary email', c.ClientEmail), kvRow('CC', c.ClientCC || '—'),
+      kvRow('Head office', c.HeadOfficeEmail || '—'), kvRow('Head office CC', c.HeadOfficeCC || '—'),
       kvRow('Default Location Head', c.DefaultLocationHead || '—'),
       kvRow('Status', c.Status || 'ACTIVE'),
       kvRow('Effective', (c.EffectiveFrom || '—') + ' → ' + (c.EffectiveTo || 'open')),
@@ -982,11 +983,22 @@
   function renderLocationDefaultMatrix(body, d) {
     var clientId = d.client.ClientID;
     var branches = (d.branches || []).filter(function(b){ return b.Status !== 'INACTIVE'; });
-    var locations = [];
-    branches.forEach(function(b) {
-      var l = String(b.Location || '').trim();
-      if (l && locations.indexOf(l) === -1) locations.push(l);
-    });
+    // Case-insensitive, because the matrix resolver matches location that way.
+    // A plain indexOf listed 'PUNE' and 'pune' as two separate location defaults
+    // while the server treated them as one, so editing either silently
+    // overwrote the other. Show one entry, using the commonest spelling.
+    var locations = (function() {
+      var byKey = {};
+      branches.forEach(function(b) {
+        var l = String(b.Location || '').trim();
+        if (!l) return;
+        var k = l.toUpperCase();
+        var e = byKey[k] || (byKey[k] = { counts: {}, best: l, n: 0 });
+        e.counts[l] = (e.counts[l] || 0) + 1;
+        if (e.counts[l] > e.n) { e.n = e.counts[l]; e.best = l; }
+      });
+      return Object.keys(byKey).sort().map(function(k){ return byKey[k].best; });
+    })();
     var sel = state.routeParams.mxLoc;
     if (sel === undefined) sel = locations.length ? locations[0] : '';
 
@@ -1031,6 +1043,12 @@
               '<div class="field"><label>Client email*</label><input id="f-email" data-testid="input-client-email" value="'+esc(c && c.ClientEmail || '')+'"></div>'+
               '<div class="field"><label>Client CC (comma-separated)</label><input id="f-cc" data-testid="input-client-cc" value="'+esc(c && c.ClientCC || '')+'"></div>'+
             '</div>'+
+            // Level 5 of the matrix is "Head Office", but there was nowhere to
+            // record the address, so a head-office escalation had no recipient.
+            '<div class="form-row">'+
+              '<div class="field"><label>Head office email</label><input id="f-ho" data-testid="input-client-ho" value="'+esc(c && c.HeadOfficeEmail || '')+'" placeholder="Used for a level 5 (Head Office) escalation"></div>'+
+              '<div class="field"><label>Head office CC (comma-separated)</label><input id="f-hocc" data-testid="input-client-hocc" value="'+esc(c && c.HeadOfficeCC || '')+'"></div>'+
+            '</div>'+
             '<div class="form-row">'+
               '<div class="field"><label>Default Location Head (email)</label><input id="f-lh" data-testid="input-client-lh" value="'+esc(c && c.DefaultLocationHead || state.user.email)+'"></div>'+
               '<div class="field"><label>Status</label><select id="f-status" data-testid="select-client-status"><option value="ACTIVE">ACTIVE</option><option value="INACTIVE"'+((c && c.Status)==='INACTIVE'?' selected':'')+'>INACTIVE</option></select></div>'+
@@ -1043,6 +1061,7 @@
             ClientID: c && c.ClientID,
             ClientName: val('f-name'), ClientCode: val('f-code'),
             ClientEmail: val('f-email'), ClientCC: val('f-cc'),
+            HeadOfficeEmail: val('f-ho'), HeadOfficeCC: val('f-hocc'),
             DefaultLocationHead: val('f-lh'), Status: val('f-status'), Notes: val('f-notes')
           };
           return rpc('clients.upsert', payload).then(function(){ Modal.close(); toast('Saved','ok'); loadClients(); if (state.route === 'client-detail') render(); }).catch(function(e){ toast(e.message,'err'); });
@@ -1127,9 +1146,13 @@
       e.preventDefault();
       var kind = val('imp-kind');
       var tpl = {
-        CLIENTS: 'ClientName,ClientCode,ClientEmail,ClientCC,DefaultLocationHead,Status\nABC Bank,ABCB,ops@abc.example,cc@abc.example,rahul@crux.example,ACTIVE',
+        CLIENTS: 'ClientName,ClientCode,ClientEmail,ClientCC,HeadOfficeEmail,HeadOfficeCC,DefaultLocationHead,Status\nABC Bank,ABCB,ops@abc.example,cc@abc.example,ho@abc.example,,rahul@crux.example,ACTIVE',
         BRANCHES: 'ClientName,BranchName,BranchCode,Address,CruxPOCName,CruxPOCMobile,CruxPOCEmail,BranchManagerName,BranchManagerMobile,BranchManagerEmail,LocationHead,Location,Zone\nABC Bank,Andheri,ABCB-001,"Andheri, Mumbai",Rahul Sharma,9876543210,rahul@crux.example,Priya Nair,9812345670,priya@abcb.example,rahul@crux.example,Mumbai,West',
-        MATRIX: 'ClientName,Level,ContactName,Mobile,Email\nABC Bank,1,SPOC ABC,9800000001,spoc@abcb.example\nABC Bank,2,TL ABC,9800000002,tl@abcb.example\nABC Bank,3,BM ABC,9800000003,bm@abcb.example\nABC Bank,4,ZM ABC,9800000004,zm@abcb.example\nABC Bank,5,HO ABC,9800000005,ho@abcb.example'
+        // Location / BranchCode decide WHICH matrix a row belongs to:
+        //   both blank  -> the client-wide default (last resort)
+        //   Location    -> that client's default for that location
+        //   BranchCode  -> that one branch only
+        MATRIX: 'ClientName,Location,BranchCode,Level,ContactName,Mobile,Email\nABC Bank,,,1,SPOC ABC,9800000001,spoc@abcb.example\nABC Bank,Pune,,1,SPOC Pune,9800000011,spoc.pune@abcb.example\nABC Bank,Pune,,5,HO Pune,9800000015,ho.pune@abcb.example\nABC Bank,Mumbai,,1,SPOC Mumbai,9800000021,spoc.mum@abcb.example\nABC Bank,,ABCB-001,3,BM Akurdi,9800000031,bm.akurdi@abcb.example'
       };
       document.getElementById('imp-rows').value = tpl[kind] || '';
     });

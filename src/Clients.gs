@@ -44,10 +44,13 @@ function upsertClient_(payload, me) {
   var c = payload || {};
   if (!req_(c.ClientName)) throw ValidationError_('Client Name is required.');
   if (c.ClientEmail && !isEmail_(c.ClientEmail)) throw ValidationError_('Client email format is invalid.');
+  if (c.HeadOfficeEmail && !isEmail_(c.HeadOfficeEmail)) throw ValidationError_('Head office email format is invalid.');
   var existing = c.ClientID ? findRowById_('CLIENTS', 'ClientID', c.ClientID) : null;
   var patch = {
     ClientName: c.ClientName, ClientCode: c.ClientCode || '',
     ClientEmail: c.ClientEmail || '', ClientCC: c.ClientCC || '',
+    HeadOfficeEmail: String(c.HeadOfficeEmail || '').trim().toLowerCase(),
+    HeadOfficeCC: String(c.HeadOfficeCC || '').trim(),
     DefaultLocationHead: (c.DefaultLocationHead || '').toString().toLowerCase(),
     Status: c.Status || 'ACTIVE',
     EffectiveFrom: c.EffectiveFrom || '', EffectiveTo: c.EffectiveTo || '',
@@ -126,7 +129,11 @@ function upsertBranch_(payload, me) {
     CruxPOCMobile: b.CruxPOCMobile || '', CruxPOCEmail: b.CruxPOCEmail || '',
     BranchManagerName: b.BranchManagerName || '', BranchManagerMobile: b.BranchManagerMobile || '', BranchManagerEmail: b.BranchManagerEmail || '',
     LocationHead: String(b.LocationHead || '').toLowerCase(),
-    Location: b.Location || '', Zone: b.Zone || '',
+    // Trimmed and whitespace-collapsed so 'Pune ' and 'Pune' cannot become two
+    // locations. Case is preserved for display; every comparison upstream is
+    // case-insensitive.
+    Location: String(b.Location || '').trim().replace(/\s+/g, ' '),
+    Zone: String(b.Zone || '').trim().replace(/\s+/g, ' '),
     Status: b.Status || 'ACTIVE',
     EffectiveFrom: b.EffectiveFrom || '', EffectiveTo: b.EffectiveTo || '',
     Notes: b.Notes || '', UpdatedAt: nowIso_(), UpdatedBy: me.email
@@ -558,4 +565,84 @@ function resolveMatrixRows_(clientId, branchId, location, allRows) {
       _inheritedEmail: own ? '' : (eff.Email || '')
     };
   });
+}
+
+/* =========================================================================
+ * MATRIX-BASED EMAIL ROUTING (section 6)
+ *
+ * Recipient resolution used to read only the BRANCHES and CLIENTS columns, so a
+ * fully-populated escalation matrix had no effect on who actually received an
+ * email. A level-4 escalation went to the branch manager exactly like a level-1
+ * one, and level 5 ("Head Office") had nowhere to send at all because no head
+ * office address was recorded anywhere.
+ *
+ * These helpers route through resolveMatrixRows_, so email inherits the same
+ * branch -> client+location -> client-wide precedence as the matrix screen. One
+ * resolver, one precedence, one answer.
+ * ========================================================================= */
+
+/** The matrix contact for one level at one branch, or null. */
+function matrixContactForLevel_(clientId, branchId, location, level, allRows) {
+  var rows = resolveMatrixRows_(clientId, branchId, location, allRows);
+  var hit = rows.filter(function(r) { return Number(r.Level) === Number(level); })[0];
+  if (!hit) return null;
+  if (!isEmail_(hit.Email)) return null;
+  return { level: Number(level), name: hit.LevelName, contactName: hit.ContactName,
+           email: String(hit.Email).trim(), mobile: hit.Mobile || '', source: hit._source };
+}
+
+/**
+ * Head office recipients for a client, most specific first:
+ *   1. matrix level 5, resolved for this branch/location
+ *   2. the client's own HeadOfficeEmail
+ *   3. the HEAD_OFFICE_EMAIL setting (Crux head office)
+ * Returns { to: [], cc: [], source: '' }.
+ */
+function headOfficeRecipients_(client, branchId, location, allRows) {
+  var to = [], cc = [], source = 'NONE';
+  var c = client || {};
+
+  var viaMatrix = matrixContactForLevel_(c.ClientID, branchId, location, 5, allRows);
+  if (viaMatrix) { to.push(viaMatrix.email); source = 'MATRIX_L5/' + viaMatrix.source; }
+
+  if (!to.length && isEmail_(c.HeadOfficeEmail)) {
+    to.push(String(c.HeadOfficeEmail).trim()); source = 'CLIENT_HEAD_OFFICE';
+  }
+  if (!to.length) {
+    var fallback = String(getSetting_('HEAD_OFFICE_EMAIL', '') || '').trim();
+    if (isEmail_(fallback)) { to.push(fallback); source = 'SETTING_HEAD_OFFICE_EMAIL'; }
+  }
+
+  parseList_(c.HeadOfficeCC).forEach(function(e) { if (isEmail_(e)) cc.push(e); });
+  parseList_(getSetting_('HEAD_OFFICE_CC', '')).forEach(function(e) { if (isEmail_(e)) cc.push(e); });
+
+  return { to: to, cc: dedupeEmails_(cc), source: source };
+}
+
+/** Case-insensitive de-duplication, first spelling wins. */
+function dedupeEmails_(list) {
+  var seen = {}, out = [];
+  (list || []).forEach(function(e) {
+    var v = String(e || '').trim();
+    if (!isEmail_(v)) return;
+    var k = v.toLowerCase();
+    if (seen[k]) return;
+    seen[k] = true; out.push(v);
+  });
+  return out;
+}
+
+/**
+ * Everyone the matrix names for a branch, from level 1 up to `maxLevel`.
+ * Used when an escalation has climbed: level 3 reaches levels 1-3, not only 3,
+ * so the people already involved stay on the thread.
+ */
+function matrixRecipientsUpToLevel_(clientId, branchId, location, maxLevel, allRows) {
+  var rows = resolveMatrixRows_(clientId, branchId, location, allRows);
+  var out = [];
+  rows.forEach(function(r) {
+    if (Number(r.Level) > Number(maxLevel)) return;
+    if (isEmail_(r.Email)) out.push(String(r.Email).trim());
+  });
+  return dedupeEmails_(out);
 }

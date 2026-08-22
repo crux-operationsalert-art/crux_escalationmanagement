@@ -224,3 +224,91 @@ function m2_(dryRun) {
   return { dryRun: false, cleared: cleared, adminsCleared: admins.length,
            sessionsRevoked: killedSessions };
 }
+
+/* ===================================================================
+ * M3 — canonicalise Location spelling.
+ *
+ * BRANCHES.Location was free text, so the same place was recorded several ways:
+ * CLI-00024 has 'PUNE' on eight branches and 'Pune' on one; CLI-00010 has 'PUNE'
+ * and 'pune'. The matrix resolver compares location case-insensitively, so the
+ * server treats those as ONE location - but the branch screen listed them
+ * separately, so an operator could open what looked like two independent location
+ * defaults and have each save overwrite the other.
+ *
+ * This picks the commonest spelling per client+location and rewrites the rest, in
+ * BRANCHES and in ESCALATION_MATRIX, so storage agrees with the resolver.
+ *
+ * HOW TO RUN
+ *   1. Editor > canonicaliseLocationsDryRun > Run. Read the log.
+ *   2. Happy? Run canonicaliseLocations.
+ * =================================================================== */
+
+function canonicaliseLocationsDryRun() { return m3_(true); }
+function canonicaliseLocations()       { return m3_(false); }
+
+function m3_(dryRun) {
+  var tag = dryRun ? '[DRY RUN] ' : '';
+  Logger.log(tag + 'M3 — canonicalise Location spelling');
+
+  var branches = readTable_('BRANCHES');
+  var matrix   = readTable_('ESCALATION_MATRIX');
+
+  // Commonest spelling per client + upper-cased location.
+  var tally = {};
+  branches.forEach(function(b) {
+    var loc = String(b.Location || '').trim().replace(/\s+/g, ' ');
+    if (!loc) return;
+    var k = String(b.ClientID) + '|' + loc.toUpperCase();
+    var e = tally[k] || (tally[k] = { counts: {}, best: loc, n: 0 });
+    e.counts[loc] = (e.counts[loc] || 0) + 1;
+    if (e.counts[loc] > e.n) { e.n = e.counts[loc]; e.best = loc; }
+  });
+
+  var canon = function(clientId, loc) {
+    var v = String(loc || '').trim().replace(/\s+/g, ' ');
+    if (!v) return '';
+    var e = tally[String(clientId) + '|' + v.toUpperCase()];
+    return e ? e.best : v;
+  };
+
+  var brFix = branches.filter(function(b) {
+    var want = canon(b.ClientID, b.Location);
+    return want && want !== String(b.Location || '');
+  });
+  var mxFix = matrix.filter(function(m) {
+    if (!String(m.Location || '').trim()) return false;   // client-wide / branch row
+    var want = canon(m.ClientID, m.Location);
+    return want && want !== String(m.Location || '');
+  });
+
+  Logger.log(tag + 'distinct client+location groups: ' + Object.keys(tally).length);
+  Logger.log(tag + 'BRANCHES rows to rewrite: ' + brFix.length);
+  brFix.forEach(function(b) {
+    Logger.log(tag + '  ' + b.BranchID + '  "' + b.Location + '" -> "' + canon(b.ClientID, b.Location) + '"');
+  });
+  Logger.log(tag + 'ESCALATION_MATRIX rows to rewrite: ' + mxFix.length);
+  mxFix.forEach(function(m) {
+    Logger.log(tag + '  ' + m.MatrixID + '  "' + m.Location + '" -> "' + canon(m.ClientID, m.Location) + '"');
+  });
+
+  if (dryRun) {
+    Logger.log('[DRY RUN] nothing written. Run canonicaliseLocations to apply.');
+    return { dryRun: true, branches: brFix.length, matrix: mxFix.length };
+  }
+
+  brFix.forEach(function(b) {
+    updateRowById_('BRANCHES', 'BranchID', b.BranchID,
+      { Location: canon(b.ClientID, b.Location), UpdatedAt: nowIso_(), UpdatedBy: 'migration:M3' });
+  });
+  mxFix.forEach(function(m) {
+    updateRowById_('ESCALATION_MATRIX', 'MatrixID', m.MatrixID,
+      { Location: canon(m.ClientID, m.Location), UpdatedAt: nowIso_(), UpdatedBy: 'migration:M3' });
+  });
+  if (brFix.length) invalidateTableCache_('BRANCHES');
+  if (mxFix.length) invalidateTableCache_('ESCALATION_MATRIX');
+
+  logAudit_({ user: 'migration:M3', action: 'LOCATION_CANONICALISE', entity: 'BRANCHES', entityId: '',
+    oldValue: '', newValue: JSON.stringify({ branches: brFix.length, matrix: mxFix.length }) });
+  Logger.log('M3 done. BRANCHES: ' + brFix.length + ', ESCALATION_MATRIX: ' + mxFix.length);
+  return { dryRun: false, branches: brFix.length, matrix: mxFix.length };
+}

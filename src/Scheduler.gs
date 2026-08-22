@@ -162,7 +162,7 @@ function remainingQuota_() {
  * Returns an array. Previously it returned only the first match, so a branch
  * dispatch could only ever reach one person.
  */
-function branchRecipients_(branch, client) {
+function branchRecipients_(branch, client, allMatrixRows) {
   var raw = String(getSetting_('BRANCH_RECIPIENT', 'BRANCH_MANAGER,CRUX_POC'));
   var wanted = raw.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
   var byRole = {
@@ -174,21 +174,39 @@ function branchRecipients_(branch, client) {
   };
   var out = [];
   wanted.forEach(function(w) {
-    var val = isEmail_(w) ? w : byRole[w.toUpperCase()];
-    if (isEmail_(val) && out.indexOf(val) === -1) out.push(val);
+    var role = w.toUpperCase();
+
+    // MATRIX_n routes to whoever the escalation matrix names at level n for THIS
+    // branch, honouring branch -> client+location -> client-wide precedence. A
+    // populated matrix had no effect on routing before this.
+    var mx = /^MATRIX_([1-5])$/.exec(role);
+    if (mx) {
+      var hit = matrixContactForLevel_(client.ClientID, branch.BranchID,
+        branch.Location, Number(mx[1]), allMatrixRows);
+      if (hit) out.push(hit.email);
+      return;
+    }
+    if (role === 'HEAD_OFFICE') {
+      var ho = headOfficeRecipients_(client, branch.BranchID, branch.Location, allMatrixRows);
+      ho.to.forEach(function(e) { out.push(e); });
+      return;
+    }
+    var val = isEmail_(w) ? w : byRole[role];
+    if (isEmail_(val)) out.push(val);
   });
+
+  out = dedupeEmails_(out);
   // Never send nothing: fall back down the chain if the configured roles are blank.
   if (!out.length) {
-    [branch.BranchManagerEmail, branch.CruxPOCEmail, client.ClientEmail].forEach(function(v) {
-      if (isEmail_(v) && !out.length) out.push(v);
-    });
+    out = dedupeEmails_([branch.BranchManagerEmail, branch.CruxPOCEmail, client.ClientEmail])
+      .slice(0, 1);
   }
   return out;
 }
 
 /** Back-compat: first recipient only. Kept for the queue Recipient column. */
-function branchRecipient_(branch, client) {
-  var list = branchRecipients_(branch, client);
+function branchRecipient_(branch, client, allMatrixRows) {
+  var list = branchRecipients_(branch, client, allMatrixRows);
   return list.length ? list.join(', ') : '';
 }
 
@@ -212,6 +230,10 @@ function planDispatch_(executedBy) {
     var branches = readTable_('BRANCHES').filter(function(b){ return b.Status !== 'INACTIVE'; });
     var byClient = {};
     clients.forEach(function(c){ byClient[c.ClientID] = c; });
+    // Read the matrix ONCE. Recipient resolution is now matrix-aware, and at 800+
+    // branches letting each call re-read a 470-row table would be 800 full scans
+    // inside one six-minute execution.
+    var matrixRows = readTable_('ESCALATION_MATRIX');
     branches.forEach(function(b) {
       var c = byClient[b.ClientID];
       if (!c) return;                       // orphan or inactive client
@@ -219,7 +241,7 @@ function planDispatch_(executedBy) {
         QueueID: 'DQ-' + monthKey + '-' + (++seq),
         MonthKey: monthKey, Granularity: 'BRANCH',
         ClientID: b.ClientID, BranchID: b.BranchID,
-        Recipient: branchRecipient_(b, c),
+        Recipient: branchRecipient_(b, c, matrixRows),
         Status: 'PENDING', Attempt: 0, PlannedAt: nowIso_(),
         SentAt: '', Error: '',
         IdempotencyKey: monthKey + '-DISPATCH-' + b.BranchID

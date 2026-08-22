@@ -9,7 +9,7 @@
 var IMPORT_SPEC = {
   CLIENTS: {
     required: ['ClientName'],
-    fields:   ['ClientName','ClientCode','ClientEmail','ClientCC','DefaultLocationHead','Status','EffectiveFrom','EffectiveTo','Notes'],
+    fields:   ['ClientName','ClientCode','ClientEmail','ClientCC','HeadOfficeEmail','HeadOfficeCC','DefaultLocationHead','Status','EffectiveFrom','EffectiveTo','Notes'],
     key: 'ClientName'
   },
   BRANCHES: {
@@ -17,10 +17,15 @@ var IMPORT_SPEC = {
     fields:   ['ClientName','BranchName','BranchCode','Address','CruxPOCName','CruxPOCEmpID','CruxPOCMobile','CruxPOCEmail','BranchManagerName','BranchManagerMobile','BranchManagerEmail','LocationHead','Location','Zone','Status','EffectiveFrom','EffectiveTo','Notes'],
     key: ['ClientName','BranchCode']
   },
+  // Location / BranchCode are what make a bulk import able to express the real
+  // hierarchy. Without them every imported row landed as a CLIENT-WIDE default,
+  // so importing a matrix silently overwrote one shared set of contacts for every
+  // branch of the client - the exact problem the three-tier resolver exists to
+  // fix. Leave both blank for a genuine client-wide default.
   MATRIX: {
     required: ['ClientName','Level','ContactName','Email'],
-    fields:   ['ClientName','Level','ContactName','Mobile','Email'],
-    key: ['ClientName','Level']
+    fields:   ['ClientName','Location','BranchCode','Level','ContactName','Mobile','Email'],
+    key: ['ClientName','BranchCode','Location','Level']
   }
 };
 
@@ -97,6 +102,7 @@ function commitImport_(payload, me) {
           ClientID: (findRowById_('CLIENTS','ClientName', row.ClientName) || {}).ClientID,
           ClientName: row.ClientName, ClientCode: row.ClientCode || '',
           ClientEmail: row.ClientEmail || '', ClientCC: row.ClientCC || '',
+          HeadOfficeEmail: row.HeadOfficeEmail || '', HeadOfficeCC: row.HeadOfficeCC || '',
           DefaultLocationHead: row.DefaultLocationHead || '',
           Status: row.Status || 'ACTIVE',
           EffectiveFrom: row.EffectiveFrom || '', EffectiveTo: row.EffectiveTo || '',
@@ -116,10 +122,27 @@ function commitImport_(payload, me) {
       } else if (kind === 'MATRIX') {
         var m = item.row;
         var levelName = (MATRIX_LEVELS[parseInt(m.Level,10)-1] || {}).name || '';
-        saveMatrix_({ clientId: m._clientId, rows: [{
-          Level: parseInt(m.Level,10), LevelName: levelName,
-          ContactName: m.ContactName || '', Mobile: m.Mobile || '', Email: m.Email || ''
-        }]}, me);
+        // A BranchCode targets one branch; a Location targets that client's
+        // default for that location; neither targets the client-wide default.
+        var mBranchId = '';
+        var mCode = String(m.BranchCode || '').trim();
+        if (mCode) {
+          var br = readTable_('BRANCHES').filter(function(x) {
+            return String(x.ClientID) === String(m._clientId)
+              && String(x.BranchCode || '').trim().toUpperCase() === mCode.toUpperCase();
+          })[0];
+          if (!br) throw new Error('No branch with code "' + mCode + '" for this client.');
+          mBranchId = br.BranchID;
+        }
+        saveMatrix_({
+          clientId: m._clientId,
+          branchId: mBranchId,
+          location: mBranchId ? '' : String(m.Location || '').trim(),
+          rows: [{
+            Level: parseInt(m.Level,10), LevelName: levelName,
+            ContactName: m.ContactName || '', Mobile: m.Mobile || '', Email: m.Email || ''
+          }]
+        }, me);
       }
       ok++;
     } catch (e) {

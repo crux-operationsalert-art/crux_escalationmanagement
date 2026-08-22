@@ -11,7 +11,10 @@ var SCHEMA = {
   // A user is also auto-scoped to any branch where their email is the
   // LocationHead, BranchManager or Crux POC - so a branch manager needs no setup.
   USERS:    ['UserID','Name','Email','Mobile','Department','Designation','Role','EmployeeType','PartnerCompany','EmployeeID','DateOfJoining','EmploymentStatus','AdminAccess','AccessToken','InvitedAt','InviteStatus','LocationHead','Manager','ScopeZones','ScopeLocations','ScopeBranchIDs','ScopeClientIDs','Status','CreatedAt','UpdatedAt','UpdatedBy'],
-  CLIENTS:  ['ClientID','ClientName','ClientCode','ClientEmail','ClientCC','DefaultLocationHead','Status','EffectiveFrom','EffectiveTo','Notes','CreatedAt','UpdatedAt','UpdatedBy'],
+  // HeadOfficeEmail / HeadOfficeCC: the client's own head office. Level 5 of the
+  // escalation matrix is 'Head Office', but there was nowhere to record the
+  // address, so a level-5 escalation had no one to reach.
+  CLIENTS:  ['ClientID','ClientName','ClientCode','ClientEmail','ClientCC','HeadOfficeEmail','HeadOfficeCC','DefaultLocationHead','Status','EffectiveFrom','EffectiveTo','Notes','CreatedAt','UpdatedAt','UpdatedBy'],
   BRANCHES: ['BranchID','ClientID','BranchName','BranchCode','Address','CruxPOCName','CruxPOCEmpID','CruxPOCMobile','CruxPOCEmail','BranchManagerName','BranchManagerMobile','BranchManagerEmail','LocationHead','Location','Zone','Status','EffectiveFrom','EffectiveTo','Notes','CreatedAt','UpdatedAt','UpdatedBy'],
   // BranchID: '' means a client-level row (pre-migration legacy). After
   // migrateMatrixToBranchLevel() every row carries a real BranchID.
@@ -87,7 +90,9 @@ var DEFAULT_SETTINGS = [
   ['DISPATCH_GRANULARITY','BRANCH','CLIENT = one email per client (default). BRANCH = one email per branch. Switch to BRANCH only after the per-branch matrix is populated.'],
   ['DISPATCH_BATCH_SIZE','200','SAFETY CEILING only. The worker is self-tuning: it sends until ~3.5 min of its 6-min budget is used, then resumes on the next tick. Lower this only to deliberately throttle.'],
   ['DISPATCH_QUOTA_RESERVE','200','Email recipients held back each day for reminders and manual sends. The worker stops when remaining daily quota falls below this.'],
-  ['BRANCH_RECIPIENT','BRANCH_MANAGER,CRUX_POC','Comma separated roles who receive a branch dispatch: BRANCH_MANAGER, CRUX_POC (the SPOC), CLIENT, LOCATION_HEAD. Plain email addresses may also be listed.'],
+  ['BRANCH_RECIPIENT','BRANCH_MANAGER,CRUX_POC','Comma separated roles who receive a branch dispatch: BRANCH_MANAGER, CRUX_POC (the SPOC), CLIENT, LOCATION_HEAD, HEAD_OFFICE, or MATRIX_1..MATRIX_5 to use whoever the escalation matrix names at that level. Plain email addresses may also be listed.'],
+  ['HEAD_OFFICE_EMAIL','','Crux head office mailbox. Used for a head-office (level 5) escalation when the client has no HeadOfficeEmail of its own and the matrix names nobody at level 5.'],
+  ['HEAD_OFFICE_CC','','Always copied on any head-office escalation. Comma separated.'],
   ['FROM_ADDRESS','','Sender address. MUST be a verified "Send mail as" alias on the deploying account, or blank to use that account\'s own address.'],
   ['REPLY_TO','','Reply-to address (blank uses sender)'],
   ['DEFAULT_CC','','Default CC (comma separated)'],
