@@ -56,7 +56,12 @@ var SCHEMA = {
   DISPATCH_QUEUE: ['QueueID','MonthKey','Granularity','ClientID','BranchID','Recipient','Status','Attempt','PlannedAt','SentAt','Error','IdempotencyKey'],
   ESCALATIONS: ['EscalationID','Type','Date','Time','ClientID','BranchID','BranchCode','ContactName','ContactPhone','Category','Severity','EscalatedAgainst','AgainstEmail','Description','AssignedOwner','RequiredAction','TargetDate','Status','ClosureDate','ClosureRemarks','ExceptionBy','ExceptionAt','ExceptionReason','LastActivityAt','CreatedBy','CreatedAt','UpdatedAt'],
   ESCALATION_HISTORY: ['HistoryID','EscalationID','Timestamp','User','Field','OldValue','NewValue','Note'],
-  AUDIT_LOG: ['LogID','Timestamp','User','Action','Entity','EntityID','OldValue','NewValue']
+  AUDIT_LOG: ['LogID','Timestamp','User','Action','Entity','EntityID','OldValue','NewValue'],
+  // Server-side sessions for colleagues whose Google identity this deployment
+  // cannot read (personal Gmail under executeAs: USER_DEPLOYING). The browser
+  // only ever holds SessionID, in sessionStorage - never in the URL. See
+  // Session.gs for why the old permanent ?t= token had to go.
+  SESSIONS: ['SessionID','PersonEmail','CreatedAt','LastSeenAt','ExpiresAt','Fingerprint','Source','RevokedAt','RevokedBy']
 };
 
 var DEFAULT_SETTINGS = [

@@ -29,12 +29,54 @@ function doGet(e) {
   var params = (e && e.parameter) || {};
   if (params.view === 'portal') return renderPortal_(params);
   var tpl = HtmlService.createTemplateFromFile('Index');
-  var boot = sanitizeForClient_(getBootstrap_(String(params.t || '')));
+
+  // A `t` parameter is a SINGLE-USE INVITE CODE, not a standing credential.
+  // Exchange it here, once, for a server-side session; the code is burned in the
+  // process. The browser is handed only the session id, which it keeps in
+  // sessionStorage and strips from the address bar, so the credential never
+  // lives in browser history, a bookmark, a screenshot or a Referer header.
+  //
+  // This is the P0 fix. Previously `t` WAS the identity on every request, so
+  // anyone who obtained the URL became its owner permanently - and when the URL
+  // belonged to an administrator, they became an administrator.
+  //
+  // NOTE ON THE DEPLOYMENT MODE: this web app stays `ANYONE_ANONYMOUS` on
+  // purpose. The same doGet also serves the read-only client portal
+  // (?view=portal), which is sent to client contacts who have no Google account
+  // at all - requiring a Google sign-in would break every one of those links.
+  // Anonymous reach is therefore contained in code rather than by the manifest:
+  // an unidentified visitor resolves to an inert guest (whoAmI_), gets the login
+  // card, and every RPC except auth.me is refused server-side.
+  var sessionId = '';
+  var signInError = '';
+  var inviteCode = String(params.t || '').trim();
+
+  // A Crux Workspace sign-in always wins, and needs no code. Checking this first
+  // means an administrator following an old link is identified by Google rather
+  // than being refused by the invite path, and their code is not spent for
+  // nothing.
+  var googleIdentity = '';
+  try { googleIdentity = (Session.getActiveUser().getEmail() || '').trim(); } catch (eId) {}
+
+  if (inviteCode && !googleIdentity) {
+    try {
+      var ex = exchangeInviteCode_(inviteCode, clientMetaFromRequest_(e));
+      if (ex) sessionId = ex.sessionId;
+      else signInError = 'That sign-in link has already been used or has expired. ' +
+                         'Please ask your administrator for a new one.';
+    } catch (err) {
+      signInError = (err && err.isFriendly) ? err.message
+                  : 'That sign-in link could not be used.';
+    }
+  }
+
+  var boot = sanitizeForClient_(getBootstrap_(sessionId, clientMetaFromRequest_(e)));
   // Deep links: ?route=clients&tab=Matrix&action=raise
   // and ?preview=LOCATION_HEAD to see the app as an ordinary user sees it.
   // preview only changes what the BROWSER draws - every RPC is still authorised
   // server-side against the real signed-in role, so it grants nothing.
-  boot.accessToken = String(params.t || '');
+  boot.sessionId = sessionId;
+  boot.signInError = signInError;
   boot.deepLink = {
     route:  String(params.route  || ''),
     tab:    String(params.tab    || ''),
@@ -46,6 +88,16 @@ function doGet(e) {
     .setTitle('Crux — Client Escalation Matrix')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+/**
+ * Client hints available to a doGet. Apps Script does not expose headers, so this
+ * is deliberately thin - the session binding it feeds is a speed bump layered on
+ * top of expiry and the administrator ceiling, never the primary control.
+ */
+function clientMetaFromRequest_(e) {
+  var p = (e && e.parameter) || {};
+  return { ua: String(p.ua || ''), lang: String(p.lang || ''), tz: String(p.tz || '') };
 }
 
 /** Renders the tokenised read-only client portal view. */
@@ -110,11 +162,11 @@ function include(name) {
 }
 
 /** Bootstrap payload passed to the SPA on first load. */
-function getBootstrap_(token) {
+function getBootstrap_(sessionId, meta) {
   ensureSpreadsheet_();
-  // The token arrives from doGet as a URL parameter. There is no payload here -
-  // a blanket rename put one in, which broke the app on first load.
-  var me = whoAmI_(token);
+  // Identity is resolved from the Google sign-in, or from the session just
+  // minted by doGet. Never from a raw URL token - see whoAmI_.
+  var me = whoAmI_(sessionId, meta);
   return {
     user: me,
     app: {
@@ -143,11 +195,21 @@ function getBootstrap_(token) {
 function rpc(action, payload) {
   var t0 = Date.now();
   try {
-    // The client returns the invite token on every call. Without it a visitor on
-    // a personal Gmail account would be identified on first load and anonymous
-    // for every action afterwards, because Google gives us no identity for them.
-    var me = whoAmI_(payload && payload.__t);
+    // The client returns its SESSION ID on every call (__s). Without it a
+    // colleague on a personal Gmail account would be identified on first load
+    // and anonymous for every action afterwards, because Google reveals no
+    // identity for them under executeAs: USER_DEPLOYING.
+    //
+    // __t is accepted no longer: an invite code is exchanged once, in doGet, and
+    // must never authenticate an RPC. Anything arriving in __t is ignored.
+    var me = whoAmI_(payload && payload.__s, payload && payload.__m);
     if (!me.active && action !== 'auth.me' && action !== 'auth.requestAccess') {
+      // Distinguish "no account at all" from "waiting for approval" so the person
+      // is told something true and an administrator can act on it.
+      if (me.unknown || !me.email) {
+        throw AuthError_('You do not have access to this tool. ' +
+          'Please ask your administrator to create your profile and send you an invitation.');
+      }
       throw AuthError_('Your account is not yet approved. Please contact Admin.');
     }
     var handler = RPC_ROUTES[action];
@@ -201,6 +263,10 @@ var RPC_ROUTES = {
   // Auth
   'auth.me':              { roles: null, fn: function(p, me) { return me; } },
   'auth.requestAccess':   { roles: null, fn: function(p, me) { return requestAccess_(p, me); } },
+  // Sign-out must work for a guest too, so no role gate.
+  'auth.signOut':         { roles: null, fn: function(p, me) { return endMySession_(p, me); } },
+  'admin.sessions.list':  { roles: ['ADMIN'], fn: function(p, me) { return listSessions_(p, me); } },
+  'admin.sessions.revoke':{ roles: ['ADMIN'], fn: function(p, me) { return adminRevokeSession_(p, me); } },
   // Team management. Every handler re-checks the reporting chain server-side,
   // so a role alone is not enough - you must actually manage that person.
   'signature.get':        { roles: ['ADMIN'], fn: function(p, me) { return signaturePreview_(p, me); } },
@@ -214,7 +280,6 @@ var RPC_ROUTES = {
   'team.pipClose':        { roles: null, fn: function(p, me) { return teamClosePip_(p, me); } },
   'team.appreciate':      { roles: null, fn: function(p, me) { return teamAppreciate_(p, me); } },
   'windows.mine':         { roles: null, fn: function(p, me) { return myWindows_(p, me); } },
-  'windows.reopen':       { roles: ['ADMIN'], fn: function(p, me) { return reopenWindow_(p, me); } },
   'kpis.get':             { roles: null, fn: function(p, me) { return getKpis_(p, me); } },
   'kpis.set':             { roles: null, fn: function(p, me) { return setKpis_(p, me); } },
   'score.get':            { roles: null, fn: function(p, me) { return getScore_(p, me); } },

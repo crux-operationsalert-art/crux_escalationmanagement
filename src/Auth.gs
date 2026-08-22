@@ -11,63 +11,110 @@
 var VALID_ROLES = ['ADMIN','MANAGER','LOCATION_HEAD','VIEWER'];
 
 var _ME_CACHE = null;
+var _ME_CACHE_KEY = null;
 var _IDENTITY_SOURCE = 'GOOGLE';
 
-function whoAmI_(token) {
-  if (_ME_CACHE && !token) return _ME_CACHE;
+/**
+ * Resolve the caller.
+ *
+ * Identity has exactly two sources, in this order:
+ *
+ *  1. GOOGLE  - Session.getActiveUser().getEmail(). Authoritative. This is the
+ *     only source that can carry administrator rights.
+ *  2. SESSION - a server-side session row, established by exchanging a
+ *     single-use invite code (see Session.gs). Identifies out-of-domain
+ *     colleagues whose Google identity this deployment cannot read. Capped:
+ *     never an administrator.
+ *
+ * There is NO third source and NO fallback. getEffectiveUser() is never
+ * consulted: under executeAs: USER_DEPLOYING it always returns the publishing
+ * account, so consulting it authenticates strangers as that administrator.
+ *
+ * When we cannot identify the caller we return an inert guest. Failing closed is
+ * the whole point - every RPC except auth.me is refused for a guest.
+ *
+ * @param {string} cred     session id (preferred) or, on first load only, an invite code
+ * @param {object} meta     { ua, lang, tz } client hints used to bind the session
+ */
+function whoAmI_(cred, meta) {
+  var key = String(cred || '') + '|' + String((meta && meta.ua) || '');
+  // Cache per credential, not globally: a guest resolved earlier in this
+  // execution must never be handed back for a later authenticated call.
+  if (_ME_CACHE && _ME_CACHE_KEY === key) return _ME_CACHE;
+
   var email = '';
-  // SECURITY: identity MUST come only from getActiveUser() — the visitor.
-  // This deployment runs with executeAs: USER_DEPLOYING, under which
-  // getEffectiveUser() ALWAYS returns the deploying account (the admin who
-  // published the web app). The previous code was:
-  //     getActiveUser().getEmail() || getEffectiveUser().getEmail()
-  // getActiveUser() legitimately returns '' in some contexts (notably mobile,
-  // and any session where Google withholds the visitor's identity — the
-  // "unknown" rows in AUDIT_LOG are that happening). Whenever it did, the ||
-  // fallback silently authenticated the visitor AS THE DEPLOYING ADMIN,
-  // granting full ADMIN access to anyone holding the link.
-  // If we cannot identify the visitor, we must fail closed, never fall back.
+  _IDENTITY_SOURCE = 'GOOGLE';
   try { email = (Session.getActiveUser().getEmail() || '').toLowerCase(); } catch (e) {}
 
-  // A Workspace identity always wins. Only when Google gives us nothing - which
-  // is every visitor outside the domain - do we fall back to the personal invite
-  // token. The token identifies WHO they are; it grants nothing on its own,
-  // because role, scope and admin access are still read from their USERS row.
-  if (!email && token) {
-    var viaToken = emailFromToken_(token);
-    if (viaToken) {
-      email = viaToken;
-      _IDENTITY_SOURCE = 'TOKEN';
+  if (!email && cred) {
+    // A session id is the normal case. An invite code reaching this point means
+    // the browser replayed one instead of exchanging it in doGet; exchange is
+    // deliberately NOT done here, because RPCs must not mint sessions.
+    var viaSession = emailFromSession_(cred, meta);
+    if (viaSession) { email = viaSession; _IDENTITY_SOURCE = 'SESSION'; }
+  }
+
+  if (!email) {
+    _ME_CACHE_KEY = key;
+    _ME_CACHE = { email: '', role: 'VIEWER', active: false, name: 'Guest',
+                  pending: true, identitySource: 'NONE' };
+    return _ME_CACHE;
+  }
+
+  var user = readTable_('USERS').filter(function(u) {
+    return String(u.Email || '').toLowerCase() === email;
+  })[0];
+
+  if (!user) {
+    // An unrecognised visitor gets NOTHING and no USERS row is created.
+    //
+    // The previous code auto-provisioned a PENDING row for any email that
+    // reached this point. That was two problems at once: it let an outsider
+    // write to the datastore just by loading the page, and it put a row in
+    // USERS that an administrator could make ACTIVE without ever having decided
+    // to grant access. Access now starts with an administrator adding the
+    // person deliberately - never with the stranger's own page load.
+    //
+    // The one exception is genuine first-run bootstrap, and only for an address
+    // on the hard-coded BOOTSTRAP_ADMINS allowlist. The old code promoted
+    // WHOEVER ARRIVED FIRST to ADMIN whenever no active admin row existed,
+    // which turned an empty or mis-edited USERS sheet into a full takeover.
+    if (BOOTSTRAP_ADMINS.indexOf(email) !== -1) {
+      var boot = {
+        UserID: nextId_('USR'), Name: email.split('@')[0], Email: email, Mobile: '',
+        Department: 'Operations', Designation: 'Admin', Role: 'ADMIN', AdminAccess: 'YES',
+        LocationHead: '', Manager: '', Status: 'ACTIVE',
+        CreatedAt: nowIso_(), UpdatedAt: nowIso_(), UpdatedBy: 'system:bootstrap'
+      };
+      appendRow_('USERS', boot);
+      invalidateTableCache_('USERS');
+      logAudit_({ user: email, action: 'AUTH_BOOTSTRAP_ADMIN', entity: 'USERS',
+        entityId: boot.UserID, oldValue: '', newValue: 'allowlisted bootstrap administrator' });
+      user = boot;
+    } else {
+      try {
+        logAudit_({ user: email, action: 'AUTH_UNKNOWN_VISITOR', entity: 'USERS', entityId: '',
+          oldValue: _IDENTITY_SOURCE, newValue: 'no account - access refused, no row created' });
+      } catch (e) {}
+      _ME_CACHE_KEY = key;
+      _ME_CACHE = { email: email, role: 'VIEWER', active: false, name: email.split('@')[0],
+                    pending: false, unknown: true, identitySource: _IDENTITY_SOURCE };
+      return _ME_CACHE;
     }
   }
-  if (!email) { _ME_CACHE = { email: '', role: 'VIEWER', active: false, name: 'Guest', pending: true }; return _ME_CACHE; }
-  var user = readTable_('USERS').filter(function(u){ return String(u.Email || '').toLowerCase() === email; })[0];
-  if (!user) {
-    var newU = {
-      UserID: nextId_('USR'),
-      Name: email.split('@')[0], Email: email, Mobile: '', Designation: '',
-      // SECURITY: an unrecognised visitor gets the LOWEST role, not a branch role.
-      // This row is created only so an admin can see the request; Status PENDING
-      // means every RPC is refused until somebody approves them. Creating them as
-      // LOCATION_HEAD meant that the moment an admin flipped Status to ACTIVE -
-      // without reading the role - they inherited branch and matrix access.
-      Role: 'VIEWER', LocationHead: '', Manager: '',
-      Status: 'PENDING', CreatedAt: nowIso_(), UpdatedAt: nowIso_(), UpdatedBy: 'system'
-    };
-    // First-run bootstrap only. Once any admin exists this can never promote.
-    var admins = readTable_('USERS').filter(function(u) {
-      return (u.Role === 'ADMIN' || String(u.AdminAccess||'').toUpperCase() === 'YES') && u.Status === 'ACTIVE';
-    });
-    if (admins.length === 0) { newU.Role = 'ADMIN'; newU.Status = 'ACTIVE'; }
-    appendRow_('USERS', newU);
-    user = newU;
-  }
+
+  // Belt and braces. emailFromSession_ already refuses an administrator row, but
+  // assert it here too so no future caller of whoAmI_ can bypass the ceiling.
+  if (_IDENTITY_SOURCE === 'SESSION') assertNotPrivileged_(user, 'SESSION');
+
+  _ME_CACHE_KEY = key;
   _ME_CACHE = {
     email: user.Email, name: user.Name, role: user.Role,
-    active: user.Status === 'ACTIVE',
-    pending: user.Status === 'PENDING',
+    active: String(user.Status || '') === 'ACTIVE',
+    pending: String(user.Status || '') === 'PENDING',
     userId: user.UserID,
-    locationHead: user.LocationHead || ''
+    locationHead: user.LocationHead || '',
+    identitySource: _IDENTITY_SOURCE
   };
   return _ME_CACHE;
 }
@@ -1347,25 +1394,39 @@ function hrCloseScore_(p, me) {
   return { ok: true };
 }
 
-/* ============ INVITATIONS AND TOKEN IDENTITY ============
+/* ============ INVITATIONS ============
  * Some colleagues have personal Gmail addresses rather than Workspace accounts.
  * Widening the deployment alone does not help them: with executeAs USER_DEPLOYING,
  * Session.getActiveUser() returns EMPTY for anyone outside the domain, so they
  * would fail closed and still be unable to sign in.
  *
- * So each person gets a personal invite link carrying a long random token. The
- * token IDENTIFIES them; it grants nothing by itself - role, scope and admin
- * access still come from their USERS row, and every existing guard still applies.
- * A token can be revoked by clearing the column, and a Workspace identity always
- * wins over a token when both are present.
+ * Each such person therefore gets a personal invite link carrying a long random
+ * INVITE CODE. The code is SINGLE-USE and SHORT-LIVED: opening the link exchanges
+ * it for a server-side session and burns the code (see Session.gs). It is not a
+ * standing credential, so a forwarded invite email is inert, and it can never
+ * yield administrator rights.
+ *
+ * The previous design treated this column as a permanent bearer token matched on
+ * every request. That is what allowed anyone holding the URL - including a
+ * non-Crux address - to open the tool as its owner, an administrator included.
  */
 function newAccessToken_() {
-  var raw = Utilities.getUuid() + Utilities.getUuid() + String(new Date().getTime());
+  var raw = Utilities.getUuid() + Utilities.getUuid() + Utilities.getUuid();
   return Utilities.base64EncodeWebSafe(
     Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, raw)).replace(/=+$/, '');
 }
 
-/** Resolve a visitor from an invite token. Returns '' when it does not match. */
+/**
+ * Resolve a visitor from an INVITE CODE, without consuming it.
+ *
+ * This is now a read-only predicate used by the self-test and by admin screens.
+ * It is deliberately NOT part of the sign-in path: authenticating on a bare
+ * invite code is precisely what let a leaked URL impersonate its owner forever.
+ * Sign-in goes through exchangeInviteCode_() -> a session (see Session.gs).
+ *
+ * Administrator rows resolve to '' here, matching the ceiling enforced at
+ * exchange time, so no caller can use this to reach an administrator identity.
+ */
 function emailFromToken_(token) {
   var t = String(token || '').trim();
   if (t.length < 20) return '';
@@ -1374,6 +1435,9 @@ function emailFromToken_(token) {
   })[0];
   if (!u) return '';
   if (String(u.Status || '') !== 'ACTIVE') return '';
+  if (String(u.InviteStatus || '').toUpperCase() === 'REVOKED') return '';
+  if (String(u.InviteStatus || '').toUpperCase() === 'USED') return '';
+  if (hasAdminAccess_(u) || String(u.Role || '').toUpperCase() === 'ADMIN') return '';
   return String(u.Email || '').toLowerCase();
 }
 
@@ -1390,10 +1454,20 @@ function inviteUser_(p, me) {
     return String(x.Email || '').toLowerCase() === email;
   })[0];
   if (!u) throw ValidationError_('Add them as a user first, then invite them.');
+  // An administrator cannot be given a link: a link identity is capped below
+  // administrator (Session.gs), so the link would only ever be refused. Say so
+  // here rather than emailing somebody a credential that cannot work.
+  if (hasAdminAccess_(u) || String(u.Role || '').toUpperCase() === 'ADMIN') {
+    throw ValidationError_(
+      'Administrators sign in with their Crux Google account, so they do not need ' +
+      'a personal link. Remove admin access first if a link is genuinely required.');
+  }
 
-  var token = String(u.AccessToken || '').trim();
+  // A resend always mints a FRESH code, because the previous one is single-use
+  // and may already be spent. Reusing a spent code is what made "resend" appear
+  // to work while the recipient still could not get in.
   var reissue = p.reissue === true;
-  if (!token || reissue) token = newAccessToken_();
+  var token = newAccessToken_();
 
   updateRowById_('USERS', 'Email', email, {
     AccessToken: token, InvitedAt: nowIso_(), InviteStatus: 'SENT',
@@ -1417,8 +1491,9 @@ function inviteUser_(p, me) {
     '</table>' +
     '<p><a href="' + escHtml_(link) + '" style="background:#17150f;color:#fff;padding:10px 18px;' +
     'border-radius:4px;text-decoration:none;display:inline-block">Open the portal</a></p>' +
-    '<p style="color:#666;font-size:12px">This link is personal to you. Please do not forward it - ' +
-    'anyone holding it can open the portal as you. Tell your administrator at once if it is shared by mistake.</p>', me);
+    '<p style="color:#666;font-size:12px">This link is personal to you and can be used <b>once</b>. ' +
+    'It stops working after ' + INVITE_CODE_VALID_DAYS + ' days, or as soon as you have opened it. ' +
+    'Please do not forward it. If it is shared by mistake, tell your administrator and they will issue a new one.</p>', me);
 
   logAudit_({ user: me.email, action: reissue ? 'INVITE_REISSUE' : 'INVITE_SEND', entity: 'USERS',
     entityId: email, oldValue: String(u.InviteStatus || ''), newValue: 'SENT' });
@@ -1432,9 +1507,12 @@ function revokeInvite_(p, me) {
   updateRowById_('USERS', 'Email', email,
     { AccessToken: '', InviteStatus: 'REVOKED', UpdatedAt: nowIso_(), UpdatedBy: me.email });
   invalidateTableCache_('USERS');
+  // Clearing the code alone left anyone already signed in with a working
+  // session, so "revoke" did not actually end their access. Kill both.
+  var killed = revokeSessionsFor_(email, me.email);
   logAudit_({ user: me.email, action:'INVITE_REVOKE', entity:'USERS', entityId: email,
-    oldValue:'SENT', newValue:'REVOKED' });
-  return { ok: true };
+    oldValue:'SENT', newValue:'REVOKED; sessions ended: ' + killed.revoked });
+  return { ok: true, sessionsEnded: killed.revoked };
 }
 
 /* ---------- RAG helpers for team process compliance ---------- */
@@ -1546,18 +1624,89 @@ function windowOverrideKey_(kind, email, monthKey) {
   return 'WINOVR:' + kind + ':' + String(email).toLowerCase() + ':' + monthKey;
 }
 
+/**
+ * THE window reopen/re-close handler. Admin only, always audited.
+ *
+ * There were two of these: grantWindowOverride_ and reopenWindow_, both bound to
+ * the RPC key 'windows.reopen'. The second binding silently won, so the richer
+ * handler was dead code - and it referenced an undefined WINDOW_RULES global, so
+ * it would have thrown ReferenceError had it ever been reached. Worse, it wrote
+ * the override value as 'OPEN' while assertWindowOpen_ tests for the 'OPEN:'
+ * prefix, so even its happy path would not have reopened anything.
+ *
+ * One handler now, with the behaviour that was wanted from both: validation,
+ * re-close, notification, and the value format the guard actually reads.
+ *
+ * Policy (section 11): an admin may reopen a closed window only up to the 15th
+ * of the MONTH AFTER the month being reopened. After that the record is settled
+ * and reopening needs a higher authority that this tool does not model.
+ */
+var WINDOW_KINDS = {
+  TARGET:      { label: 'target setting' },
+  ACHIEVEMENT: { label: 'achievement update' }
+};
+var REOPEN_CUTOFF_DAY = 15;
+
+/** Is `monthKey` still reopenable today? Returns {allowed, reason}. */
+function reopenAllowedFor_(monthKey, now) {
+  now = now || new Date();
+  var m = /^(\d{4})-(\d{2})$/.exec(String(monthKey || ''));
+  if (!m) return { allowed: false, reason: 'That month is not a valid period.' };
+  var y = Number(m[1]), mo = Number(m[2]);           // mo is 1-12
+  // Cutoff = the 15th of the following month, end of day.
+  var cutoff = new Date(y, mo, REOPEN_CUTOFF_DAY, 23, 59, 59);
+  if (now.getTime() <= cutoff.getTime()) return { allowed: true, reason: '' };
+  return {
+    allowed: false,
+    reason: 'The window for ' + monthKey + ' can no longer be reopened. Reopening is ' +
+            'permitted only until the ' + REOPEN_CUTOFF_DAY + 'th of the following month.'
+  };
+}
+
 function grantWindowOverride_(p, me) {
   if (!hasAdminAccess_(userRow_(me))) throw AuthError_('Only an administrator can reopen a window.');
   var kind = String(p.Kind || 'TARGET').toUpperCase();
+  if (!WINDOW_KINDS[kind]) throw ValidationError_('Choose target setting or achievement update.');
   var email = String(p.Email || '').trim().toLowerCase();
   var mk = String(p.MonthKey || monthKey_(new Date()));
   var reason = String(p.Reason || '').trim();
+  var close = p.Close === true;
   if (!isEmail_(email)) throw ValidationError_('Choose a person.');
-  if (reason.length < 10) throw ValidationError_('Record why this window is being reopened.');
-  setSetting_(windowOverrideKey_(kind, email, mk), 'OPEN:' + me.email + ':' + reason, me.email);
-  logAudit_({ user: me.email, action:'WINDOW_REOPEN', entity:'SETTINGS',
-    entityId: windowOverrideKey_(kind, email, mk), oldValue:'', newValue: reason });
-  return { ok: true };
+  if (reason.length < 10) throw ValidationError_('Record why this window is being reopened (at least 10 characters).');
+
+  // Re-closing is always allowed - withdrawing an exception can never be the
+  // unsafe direction. Only granting one is time-limited.
+  if (!close) {
+    var gate = reopenAllowedFor_(mk);
+    if (!gate.allowed) throw ValidationError_(gate.reason);
+  }
+
+  var key = windowOverrideKey_(kind, email, mk);
+  var before = String(getSetting_(key, '') || '');
+  // Value format matters: assertWindowOpen_ tests for the 'OPEN:' prefix.
+  // It also carries who granted it and why, so the exception is self-describing
+  // in SETTINGS without a join.
+  var value = close ? '' : ('OPEN:' + me.email + ':' + nowIso_() + ':' + reason);
+  setSetting_(key, value, me.email);
+
+  logAudit_({
+    user: me.email, action: close ? 'WINDOW_CLOSE' : 'WINDOW_REOPEN', entity: 'SETTINGS',
+    entityId: key,
+    oldValue: before,
+    newValue: JSON.stringify({ kind: kind, forPerson: email, monthKey: mk,
+                               reason: reason, by: me.email, at: nowIso_() })
+  });
+
+  if (!close) {
+    notifyPerson_(email,
+      'Your ' + WINDOW_KINDS[kind].label + ' window for ' + mk + ' has been reopened',
+      '<p>Dear ' + escHtml_(personName_(email)) + ',</p>' +
+      '<p>An administrator has reopened your <b>' + escHtml_(WINDOW_KINDS[kind].label) +
+      '</b> window for <b>' + escHtml_(mk) + '</b>.</p>' +
+      '<p><b>Reason given</b><br>' + escHtml_(reason) + '</p>' +
+      '<p>Please complete it as soon as you can.</p>', me);
+  }
+  return { ok: true, kind: kind, monthKey: mk, forPerson: email, reopened: !close };
 }
 
 function assertWindowOpen_(kind, email, monthKey, me) {
@@ -1574,31 +1723,6 @@ function assertWindowOpen_(kind, email, monthKey, me) {
 
 function windowStatus_(p, me) {
   return { target: windowState_('TARGET'), achievement: windowState_('ACHIEVEMENT') };
-}
-
-/** Admin reopens (or re-closes) a window for one person and one month. Audited. */
-function reopenWindow_(p, me) {
-  if (!hasAdminAccess_(userRow_(me))) throw AuthError_('Only an administrator can reopen a window.');
-  var kind = String(p.Kind || '').toUpperCase();
-  if (!WINDOW_RULES[kind]) throw ValidationError_('Choose target or achievement.');
-  var email = String(p.Email || '').trim().toLowerCase();
-  if (!isEmail_(email)) throw ValidationError_('A valid person is required.');
-  var mk = String(p.MonthKey || monthKey_(new Date()));
-  var reason = String(p.Reason || '').trim();
-  if (reason.length < 10) throw ValidationError_('Record why the window is being reopened (at least 10 characters).');
-  var close = p.Close === true;
-  setSetting_(windowOverrideKey_(kind, email, mk), close ? '' : 'OPEN', me.email);
-  logAudit_({ user: me.email, action: close ? 'WINDOW_CLOSE' : 'WINDOW_REOPEN', entity: 'SETTINGS',
-    entityId: kind + '/' + email + '/' + mk, oldValue: '', newValue: reason });
-  if (!close) {
-    notifyPerson_(email, 'Your ' + WINDOW_RULES[kind].label + ' window for ' + mk + ' has been reopened',
-      '<p>Dear ' + escHtml_(personName_(email)) + ',</p>' +
-      '<p>An administrator has reopened your ' + escHtml_(WINDOW_RULES[kind].label) +
-      ' window for <b>' + escHtml_(mk) + '</b>.</p>' +
-      '<p><b>Reason given</b><br>' + escHtml_(reason) + '</p>' +
-      '<p>Please complete it as soon as you can.</p>', me);
-  }
-  return { ok: true, kind: kind, monthKey: mk, reopened: !close };
 }
 
 /** Which windows are open right now. The UI uses this to explain itself. */

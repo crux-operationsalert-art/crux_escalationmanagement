@@ -44,13 +44,56 @@
     var sp = document.getElementById('busy');
     if (sp) sp.style.display = _rpcPending > 0 ? 'flex' : 'none';
   }
+  /* ---------------- session credential ----------------
+     The server hands us a session id once, when an invite link is exchanged in
+     doGet. We keep it in sessionStorage - per tab, cleared when the tab closes,
+     and never in the URL, so it cannot be bookmarked, shared, screenshotted or
+     leaked in a Referer header. The address bar is scrubbed immediately below.
+
+     This replaces the old permanent ?t= token, which was the identity on every
+     request and therefore turned the URL itself into a transferable credential. */
+  var SESSION_KEY = 'crux.sid';
+  function readSid() {
+    try { return window.sessionStorage.getItem(SESSION_KEY) || ''; } catch (e) { return ''; }
+  }
+  function writeSid(v) {
+    try { v ? window.sessionStorage.setItem(SESSION_KEY, v)
+            : window.sessionStorage.removeItem(SESSION_KEY); } catch (e) {}
+  }
+  if (BOOT && BOOT.sessionId) writeSid(BOOT.sessionId);
+
+  // Client hints, so the server can bind the session to this browser.
+  var CLIENT_META = (function() {
+    var tz = '';
+    try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {}
+    return { ua: navigator.userAgent || '', lang: navigator.language || '', tz: tz };
+  })();
+
+  // Remove the one-time code from the visible URL so it cannot be copied or
+  // re-opened. The exchange already burned it server-side; this stops a stale
+  // link sitting in history and confusing the next person on this machine.
+  (function scrubUrl() {
+    try {
+      if (!window.history || !window.history.replaceState) return;
+      var loc = window.location;
+      if (loc.search.indexOf('t=') === -1) return;
+      var kept = loc.search.replace(/^\?/, '').split('&').filter(function(kv) {
+        return kv && kv.split('=')[0] !== 't';
+      }).join('&');
+      window.history.replaceState({}, document.title,
+        loc.pathname + (kept ? '?' + kept : '') + loc.hash);
+    } catch (e) {}
+  })();
+
   function rpc(action, payload) {
-    // Carry the personal invite token on every call. Colleagues on personal Gmail
-    // accounts have no Workspace identity for the server to read, so without this
-    // they would be identified on the first page load and anonymous thereafter.
-    if (typeof BOOT !== 'undefined' && BOOT && BOOT.accessToken) {
+    // Carry the session id on every call. Colleagues on personal Gmail accounts
+    // have no Workspace identity for the server to read, so without this they
+    // would be identified on the first page load and anonymous thereafter.
+    var sid = readSid();
+    if (sid) {
       payload = payload || {};
-      if (payload.__t === undefined) payload.__t = BOOT.accessToken;
+      if (payload.__s === undefined) payload.__s = sid;
+      if (payload.__m === undefined) payload.__m = CLIENT_META;
     }
     setBusy(true);
     var slowTimer = setTimeout(function(){ toast('Still working… Google Sheets can be slow. Please wait.', 'info'); }, 8000);
@@ -199,6 +242,11 @@
     }
     try {
       if (!state.user.email) return renderLogin(app);
+      // "Signed in, but no profile here" is a different thing from "registered and
+      // waiting". The approval form patches an existing USERS row, so showing it
+      // to somebody with no row asked them to fill in a form that could never
+      // save. Tell them the truth instead.
+      if (state.user.unknown) return renderNoAccess(app);
       if (!state.user.active) return renderPendingApproval(app);
       app.innerHTML = '';
       var shell = h('div', { class: 'app-shell' }, [renderSidebar(), renderMain()]);
@@ -235,7 +283,12 @@
         h('div',{}, [h('b',{}, [state.user.name || state.user.email])]),
         h('div',{class:'muted'},[state.user.email]),
         h('div',{style:'margin-top:6px'}, [h('span',{class:'role-pill'},[state.user.role])]),
-        state.app.testMode ? h('div',{style:'margin-top:6px'}, [h('span',{class:'badge warn'}, ['TEST MODE'])]) : null
+        state.app.testMode ? h('div',{style:'margin-top:6px'}, [h('span',{class:'badge warn'}, ['TEST MODE'])]) : null,
+        // Somebody handing a shared machine to a colleague had no way to end
+        // their own session, so the next person inherited it.
+        h('div',{style:'margin-top:8px'},[
+          h('button',{class:'btn secondary small', testid:'btn-signout', onclick: signOut},['Sign out'])
+        ])
       ])
     ]);
   }
@@ -254,13 +307,44 @@
   /* --------------------- Login / Pending --------------------- */
   function renderLogin(app) {
     app.innerHTML = '';
-    var card = h('div',{class:'login-shell'},[
+    var kids = [
       h('div',{class:'brand-tag'},['Crux Risk Management']),
-      h('h1',{},['Client Escalation Matrix']),
-      h('p',{class:'muted'},['Please sign in with your Crux Google Workspace account to continue. Access is restricted to authorised users.']),
-      h('div',{class:'callout'},['This tool is deployed as a domain-restricted Google Apps Script Web App. Sign-in happens through your Google session.'])
-    ]);
-    app.appendChild(card);
+      h('h1',{},['Client Escalation Matrix'])
+    ];
+    // A used or expired invite link is the most likely reason somebody lands
+    // here, so say exactly that rather than a generic sign-in message.
+    if (BOOT && BOOT.signInError) {
+      kids.push(h('div',{class:'callout err', testid:'signin-error'},[BOOT.signInError]));
+    }
+    kids.push(h('p',{class:'muted'},['Sign in with your Crux Google account to continue. If you use a personal email address for work, open the tool from the personal invitation link your administrator sent you.']));
+    kids.push(h('div',{class:'callout'},['Access is restricted to authorised users. Your invitation link works once - if you need another, ask your administrator to resend it.']));
+    app.appendChild(h('div',{class:'login-shell'}, kids));
+  }
+
+  /* Signed in with a real Google account that has no profile in this tool. */
+  function renderNoAccess(app) {
+    app.innerHTML = '';
+    app.appendChild(h('div',{class:'login-shell'},[
+      h('div',{class:'brand-tag'},['Access']),
+      h('h1',{},['No access to this tool']),
+      h('div',{class:'callout err', testid:'no-access'},[
+        'You are signed in as ' + (state.user.email || 'an unrecognised account') +
+        ', which does not have a profile on the Crux Escalation Matrix.']),
+      h('p',{class:'muted'},['Nothing has been created for you and no data has been shared. If you should have access, ask an administrator to add your profile and send you an invitation.']),
+      h('div',{style:'margin-top:14px'},[
+        h('button',{class:'btn secondary', testid:'btn-signout', onclick: signOut},['Sign out'])
+      ])
+    ]));
+  }
+
+  /* End the session on this browser. Server-side revoke, then local clear. */
+  function signOut() {
+    var done = function() {
+      writeSid('');
+      try { window.sessionStorage.clear(); } catch (e) {}
+      window.location.reload();
+    };
+    rpc('auth.signOut', {}).then(done).catch(done);
   }
   function renderPendingApproval(app) {
     app.innerHTML = '';
