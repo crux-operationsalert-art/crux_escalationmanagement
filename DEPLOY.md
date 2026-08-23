@@ -1,62 +1,64 @@
 # Deploying these changes
 
-> **Before anything here: read [SECURITY-URGENT.md](SECURITY-URGENT.md).**
-> The Apps Script project is currently shared *anyone with the link can edit*, and
-> the datastore spreadsheet is *anyone with the link can read*. Neither is a code
-> bug, so no deployment fixes them — they are sharing settings, and they are more
-> severe than the token bypass this branch fixes. Both take a few clicks.
-
-
 The code in `src/` is the Apps Script project
 `1pueB41g1P2lzQDcGz3aIQrXlfRME6voGWddfL2bRTDz2ZN54aSONbnFB`, exported verbatim at
-commit `5cec037` and changed from there. It has **not** been pushed back to Apps
-Script: this session could read the project through the Drive connector but had no
-write path to it, so nothing here is live yet.
+commit `5cec037` and changed from there. It is **not live yet**: as of 2026-08-23 the
+project on Google is still byte-identical to `main` — the 19 files were compared and
+only `Escalation.gs`, `PortalSvc.gs`, `Utils.gs`, `Index.html` and `Portal.html`
+match `src/`, `Session.gs` is absent entirely, and nothing is half-written.
 
 Deploy by **updating the existing deployment**, never creating a new one — the
 `/exec` URL is already shared with every user and must not change.
 
-## 1. Install the code (no local tooling, and the live project's manifest is never edited)
+> The earlier sharing exposures on both Google files are now closed; see
+> [SECURITY-URGENT.md](SECURITY-URGENT.md) for the record and for the two
+> follow-up checks that are still worth doing.
 
-`tools/deployer/` is a small, separate Apps Script project that installs this repo
-into the live one. It downloads the code from the public GitHub repo and writes it
-back through the Apps Script API, then repoints the **existing** deployment so the
-`/exec` URL is unchanged.
+## 1. Install the code — two functions, already staged
 
-It deliberately lives in its own scratch project rather than inside the production
-one. Rewriting a project needs the `script.projects` scope, and granting that to a
-throwaway project is far safer than adding it to the live web app's manifest — and
-it means the production manifest is never hand-edited, which is the step most
-likely to go wrong.
+`bootstrap.gs` is **already pasted into the live project**, and the manifest already
+carries the two scopes it needs (`script.projects`, `script.deployments`). So the
+remaining work is two Runs:
 
-**1a.** Turn the Apps Script API on for the Google account that owns the project —
-one toggle, once: https://script.google.com/home/usersettings
+**1a.** Open the project, pick `step1_check` in the function dropdown, Run.
+Authorise when prompted. **It writes nothing.** Read the Execution log; it ends with
+`READY` or `NOT READY`, and a failure line says what to do.
 
-**1b.** Go to https://script.new — this makes a fresh, empty Apps Script project.
-Name it something like `Crux deployer`.
+**1b.** Once it says READY, pick `step2_deploy` and Run.
 
-**1c.** Replace the contents of `Code.gs` with
-[`tools/deployer/Code.gs.txt`](tools/deployer/Code.gs.txt).
+**1c.** Reload the editor. `bootstrap.gs` is gone and the manifest is back to the
+clean scope set — that is the intended end state, not an error.
 
-**1d.** Show the manifest: gear icon (Project Settings) → tick *Show
-"appsscript.json" manifest file in editor*. Open `appsscript.json` and replace all
-of it with [`tools/deployer/appsscript.json.txt`](tools/deployer/appsscript.json.txt).
-Save.
+If `step1_check` fails on the very first line with HTTP 403, the Apps Script API is
+switched off for the account. One toggle, once, then Run it again:
+https://script.google.com/home/usersettings
 
-**1e.** Choose `check` in the function dropdown and Run. Authorise when prompted.
-It writes nothing. Read the Execution log — every line is `[OK]` or `[FAIL]`, and it
-ends with `READY` or `NOT READY`. A `[FAIL]` line says what to do about it.
+What makes this safe to run: it downloads all 19 files *before* writing anything, so
+a failed download cannot leave the project half-updated; it refuses to create a
+deployment when it cannot find the existing one, because a new deployment means a
+new `/exec` URL; and if it fails *after* writing the code it says so plainly and
+names the manual finish rather than reporting success. All 19 raw URLs were verified
+on 2026-08-23 to fetch unauthenticated and to byte-match this branch (742 KB), so
+the download step will not be what fails.
 
-**1f.** Once it says READY, choose `deploy` and Run.
+### If `bootstrap.gs` is no longer in the project
 
-It downloads all 19 files before writing anything, so a failed download cannot
-leave the live project half-updated. It refuses to create a deployment if it cannot
-find the existing one, because a new deployment means a new `/exec` URL. If it
-fails *after* writing the code, the error says so plainly and names the manual
-finish rather than reporting success.
+Use `tools/deployer/` instead: a small, separate Apps Script project that does the
+same job from the outside, so the production manifest is never hand-edited.
 
-Keep the deployer project — running `deploy` again picks up any later commits on
-the branch.
+**a.** Turn the Apps Script API on for the account that owns the project, if it is
+not already: https://script.google.com/home/usersettings
+
+**b.** Go to https://script.new — a fresh, empty project. Name it `Crux deployer`.
+
+**c.** Replace `Code.gs` with [`tools/deployer/Code.gs.txt`](tools/deployer/Code.gs.txt).
+
+**d.** Gear icon (Project Settings) → tick *Show "appsscript.json" manifest file in
+editor*. Open `appsscript.json`, replace all of it with
+[`tools/deployer/appsscript.json.txt`](tools/deployer/appsscript.json.txt). Save.
+
+**e.** Run `check` (writes nothing), then `deploy`. Keep the project — running
+`deploy` again picks up later commits on the branch.
 
 ## 2. Or, the manual way (if you prefer clasp)
 
@@ -71,7 +73,12 @@ pencil icon → **Version: New version** → Deploy.
 
 Do *not* use "New deployment". That mints a new `/exec` URL.
 
-`src/appsscript.json` is unchanged from what is live (`executeAs: USER_DEPLOYING`,
+Note that `clasp login --no-localhost` no longer works: it uses Google's
+out-of-band OAuth redirect, which Google retired. `clasp login` on a machine with a
+browser is fine.
+
+`src/appsscript.json` differs from what is live only in dropping the two temporary
+deploy scopes. The web app settings are unchanged (`executeAs: USER_DEPLOYING`,
 `access: ANYONE_ANONYMOUS`). That access mode is deliberate — the same `doGet`
 serves the read-only client portal (`?view=portal`) to client contacts who have no
 Google account, so requiring sign-in would break every portal link. See the note in
@@ -127,7 +134,20 @@ reminded, sends nothing) and **Run appreciation nudge**.
 
 ## 6. Verify
 
-Run the built-in self-check: **Admin → Setup → Preflight**.
+**First, the one thing the two security fixes could have broken.** The web app runs
+`executeAs: USER_DEPLOYING`, so it reaches the datastore as whichever account last
+deployed it. The spreadsheet is owned by `shantanu.suravase@cruxindia.co.in` and is
+now *Restricted*, while the script project is owned by
+`operations.alert@cruxindia.co.in`. Until it was restricted, the sheet was readable
+by anyone, which masked whether the deploying account has real access.
+
+So if `step2_deploy` is run by an account that is not the sheet's owner, check
+straight afterwards that the app can still read *and write* the sheet — load any
+screen that writes (raise a test escalation, or Admin → Setup → Preflight). If it
+errors on the spreadsheet, the fix is to share the sheet as **Editor** with the
+account that deployed, not to loosen the sharing again.
+
+Then run the built-in self-check: **Admin → Setup → Preflight**.
 
 Then confirm the P0 fix by hand, which is the scenario that was reported:
 
