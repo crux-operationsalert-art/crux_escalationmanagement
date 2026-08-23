@@ -1,5 +1,12 @@
 # Deploying these changes
 
+> **Before anything here: read [SECURITY-URGENT.md](SECURITY-URGENT.md).**
+> The Apps Script project is currently shared *anyone with the link can edit*, and
+> the datastore spreadsheet is *anyone with the link can read*. Neither is a code
+> bug, so no deployment fixes them — they are sharing settings, and they are more
+> severe than the token bypass this branch fixes. Both take a few clicks.
+
+
 The code in `src/` is the Apps Script project
 `1pueB41g1P2lzQDcGz3aIQrXlfRME6voGWddfL2bRTDz2ZN54aSONbnFB`, exported verbatim at
 commit `5cec037` and changed from there. It has **not** been pushed back to Apps
