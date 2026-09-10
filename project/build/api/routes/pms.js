@@ -14,8 +14,10 @@ const { one, many, tx } = require('../db');
 const { requireChair, mayWriteChair } = require('../scope');
 
 const r = Router();
+// app_setting is the only copy — the appraisal engine, the Settings screen and
+// this file all read the same row.
 const setting = async (k, d) => {
-  const s = await one(`select value from setting where key = $1`, [k]);
+  const s = await one(`select value from app_setting where key = $1`, [k]);
   return s ? s.value : d;
 };
 
@@ -26,6 +28,15 @@ const holderOf = (chairId) => one(
     order by is_primary desc, from_date asc
     limit 1`,
   [chairId]
+);
+
+// The chair a person currently sits in. Authority is resolved against this.
+const chairOf = (personId) => one(
+  `select chair_id from chair_holder
+    where person_id = $1 and to_date is null
+    order by is_primary desc, from_date asc
+    limit 1`,
+  [personId]
 );
 
 // A cycle, with the chair its person currently sits in — that chair is what the
@@ -51,21 +62,30 @@ r.get('/cycle/current', requireChair, async (req, res, next) => {
     );
     if (!cycle) return res.json({ cycle: null, empty: 'No cycle is open. HR opens the window.' });
 
-    const [mayOpen, components, balance] = await Promise.all([
+    const [mayOpen, components, score, ledger] = await Promise.all([
       one(`select pms_window_may_open($1, $2) as ok`, [req.person.id, cycle.period]),
       many(
         `select kind, raw, weight_pct, note from pms_component
           where cycle_id = $1 order by kind`,
         [cycle.id]
       ),
-      one(`select pms_attribute_balance($1) as balance`, [cycle.id]),
+      one(`select * from pms_cycle_score($1)`, [cycle.id]),
+      many(
+        `select source_kind, half, points, reason, applied, over_cap, at
+           from pms_adjustment where cycle_id = $1 order by at, id`,
+        [cycle.id]
+      ),
     ]);
 
     res.json({
-      cycle, components, attributeBalance: balance.balance,
+      cycle, components, score, ledger,
       mayOpen: mayOpen.ok,
       blocked: mayOpen.ok ? null : 'Someone below you has not closed. Your window opens when they do.',
-      cap: Number(await setting('pms_monthly_cap', '2')),
+      cap: Number(await setting('pms_cut_cap', '2')),
+      // final is null, not zero, when HR has not set the cycle's bases yet
+      unscored: score && score.final === null
+        ? 'Your cycle is open but its starting scores have not been set yet.'
+        : null,
     });
   } catch (e) { next(e); }
 });
@@ -124,6 +144,92 @@ r.post('/adjustment', requireChair, async (req, res, next) => {
       );
       return { id: a.id, half: a.half, overCap, cap };
     });
+    res.status(201).json(out);
+  } catch (e) { next(e); }
+});
+
+// Raising an escalation, warning, appreciation or approved idea against a
+// person, and letting it move their score automatically.
+//
+// The cascade itself lives in the database (pms_cascade_apply): Attributes
+// absorb first and floor at zero, the remainder spills into KPI at that kind's
+// rate, and the month's spill is capped — what the cap refuses is recorded and
+// flagged to HR rather than dropped. Every number it uses is an app_setting
+// row, so changing a rule is a config edit and never a deploy.
+//
+// Deliberately NOT wired to case creation: an escalation that has only been
+// alleged must not dock somebody's appraisal before it is upheld. The caller
+// fires this when the outcome is decided.
+r.post('/raise', requireChair, async (req, res, next) => {
+  const { kind, aboutPersonId, body, caseId, period } = req.body;
+  try {
+    if (!['ESCALATION', 'WARNING', 'APPRECIATION', 'ASSISTANCE'].includes(kind))
+      return res.status(400).json({ error: 'bad_kind' });
+    if (!aboutPersonId) return res.status(400).json({ error: 'about_person_required' });
+    if (aboutPersonId === req.person.id)
+      return res.status(403).json({ error: 'not_about_yourself',
+        reason: 'You cannot raise something against yourself that moves your own score.' });
+
+    const chair = await chairOf(aboutPersonId);
+    if (!chair) return res.status(409).json({ error: 'person_unseated',
+      reason: 'That person holds no chair, so there is no line of authority to check this against.' });
+    if (!(await mayWriteChair(req.scope, chair.chair_id)))
+      return res.status(403).json({ error: 'out_of_subtree',
+        reason: 'You may only raise this against chairs at or below your own.' });
+
+    // the period a cycle is keyed by is the first of the month
+    const p = period || new Date().toISOString().slice(0, 7) + '-01';
+
+    const out = await tx(req.person.id, async (t) => {
+      // A raisable must land somewhere even if HR has not opened the window
+      // yet — the movement is evidence and cannot be lost. The cycle is
+      // created PENDING; its bases stay unset until HR opens it.
+      const cycle = (await t.q(
+        `insert into pms_cycle (person_id, period, chair_id, state)
+         values ($1, $2, $3, 'PENDING')
+         on conflict (person_id, period) do update set person_id = excluded.person_id
+         returning id`,
+        [aboutPersonId, p, chair.chair_id]
+      )).rows[0];
+
+      const ref = (await t.q(
+        `select 'RSE-' || lpad((coalesce(max(substring(ref from 5)::int),0)+1)::text, 5, '0') as ref
+           from raisable`
+      )).rows[0].ref;
+
+      const rs = (await t.q(
+        `insert into raisable (kind, ref, raised_by, about_person, case_id, body)
+         values ($1,$2,$3,$4,$5,$6) returning id, ref`,
+        [kind, ref, req.person.id, aboutPersonId, caseId || null, body || null]
+      )).rows[0];
+
+      // ASSISTANCE carries no score impact of its own; it becomes a task on
+      // the responder and only escalates if it is ignored.
+      let movements = [];
+      if (kind !== 'ASSISTANCE') {
+        movements = (await t.q(
+          `select * from pms_cascade_apply($1,$2,$3,$4,$5)`,
+          [cycle.id, kind, rs.id, req.person.id, rs.ref + ' — ' + kind.toLowerCase()]
+        )).rows;
+        const applied = movements.filter((m) => m.applied)
+          .reduce((s, m) => s + Number(m.points), 0);
+        await t.q(`update raisable set pms_points = $2 where id = $1`, [rs.id, applied]);
+      }
+
+      await t.audit('RAISABLE_RAISED', 'person', aboutPersonId, null,
+        { kind, ref: rs.ref, movements });
+      return { ref: rs.ref, cycleId: cycle.id, movements };
+    });
+
+    // what the cap refused is HR's business, not a silent no-op
+    if (out.movements.some((m) => !m.applied)) {
+      await tx(req.person.id, (t) => t.q(
+        `insert into notification (person_id, at, kind, text)
+         select p.id, now(), 'PMS_OVER_CAP', $1 from person p
+          where p.department = 'Human Resources' and p.employment_status = 'ACTIVE'`,
+        [out.ref + ' went beyond the monthly cascade cap. It is recorded against the cycle but was not taken off the score.']
+      ));
+    }
     res.status(201).json(out);
   } catch (e) { next(e); }
 });
