@@ -65,6 +65,7 @@ app.use('/api/matrix', auth.requirePerson, require('./routes/matrix'));
 app.use('/api/pms', auth.requirePerson, require('./routes/pms'));
 app.use('/api/people', auth.requirePerson, require('./routes/people'));
 app.use('/api/penalties', auth.requirePerson, require('./routes/penalties'));
+app.use('/api/upload', auth.requirePerson, require('./routes/upload'));
 
 // operational visibility: the two numbers that would have caught the storm
 app.get('/api/ops/mail', auth.requirePerson, async (_req, res) => {
