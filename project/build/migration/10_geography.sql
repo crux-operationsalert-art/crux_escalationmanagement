@@ -54,7 +54,7 @@ on conflict do nothing;
 
 -- every distinct city string in BRANCHES that we can place
 insert into geo_node (parent_id, level, name)
-select distinct s.id, 'CITY', stg.norm_name(b.city)
+select distinct s.id, 'CITY'::geo_level, stg.norm_name(b.city)
 from stg.branches b
 join stg.city_state cs on lower(cs.city) = lower(btrim(b.city))
 join geo_node s on s.level = 'STATE' and s.name = cs.state

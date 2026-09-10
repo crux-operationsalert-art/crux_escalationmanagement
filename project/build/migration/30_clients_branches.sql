@@ -10,7 +10,7 @@
 
 insert into client (code, name, status, source_ref)
 select btrim(c.code), stg.norm_name(c.name),
-       case when upper(coalesce(c.status,'ACTIVE')) = 'INACTIVE' then 'INACTIVE' else 'ACTIVE' end,
+       case when upper(coalesce(c.status,'ACTIVE')) = 'INACTIVE' then 'INACTIVE' else 'ACTIVE' end::entity_status,
        'CLIENTS!' || c.row_no
 from stg.clients c where stg.present(c.code)
 on conflict (code) do nothing;
@@ -25,7 +25,7 @@ on conflict do nothing;
 
 -- client zones keep the client's own vocabulary and point at our geography
 insert into client_zone (client_id, name, geo_node_id)
-select distinct cl.id, stg.norm_name(b.zone), null
+select distinct cl.id, stg.norm_name(b.zone), null::uuid
 from stg.branches b join client cl on cl.code = btrim(b.client_code)
 where stg.present(b.zone)
 on conflict do nothing;
@@ -57,7 +57,7 @@ select * from keyed;
 insert into branch (client_id, code, name, address, geo_node_id, client_zone_id, status, notes, source_ref)
 select p.client_uuid, p.final_code, coalesce(stg.norm_name(p.name), p.final_code), nullif(btrim(p.address),''),
        g.id, cz.id,
-       case when upper(coalesce(p.status,'ACTIVE')) in ('INACTIVE','CLOSED') then 'INACTIVE' else 'ACTIVE' end,
+       case when upper(coalesce(p.status,'ACTIVE')) in ('INACTIVE','CLOSED') then 'INACTIVE' else 'ACTIVE' end::entity_status,
        case when p.no_code = 1 then 'Code synthesised during migration — confirm the real branch code.' end,
        'BRANCHES!' || p.row_no
 from branch_pick p

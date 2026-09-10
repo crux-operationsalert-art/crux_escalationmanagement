@@ -36,7 +36,7 @@ with per as (
   select person_id, role, count(*) as n_branches,
          count(distinct client_id) as n_clients,
          count(distinct client_zone_id) as n_zones,
-         min(client_id) as client_id, min(client_zone_id) as client_zone_id,
+         min(client_id::text)::uuid as client_id, min(client_zone_id::text)::uuid as client_zone_id,
          min(ref) as ref
   from observed group by person_id, role
 ), whole_client as (

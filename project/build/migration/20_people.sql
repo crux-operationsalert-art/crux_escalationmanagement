@@ -50,8 +50,8 @@ select coalesce(c.full_name, initcap(replace(split_part(c.email,'@',1), '.', ' '
        c.email,
        d.id,
        c.department,
-       case when c.best_pref = 1 then 'VIEWER' else 'VIEWER' end,
-       case when upper(coalesce(c.status,'ACTIVE')) in ('INACTIVE','LEFT','EXITED') then 'INACTIVE' else 'ACTIVE' end,
+       'VIEWER'::role_kind,
+       case when upper(coalesce(c.status,'ACTIVE')) in ('INACTIVE','LEFT','EXITED') then 'INACTIVE' else 'ACTIVE' end::entity_status,
        c.source_ref
 from cand c left join designation d on d.title = stg.norm_name(c.designation)
 on conflict do nothing;

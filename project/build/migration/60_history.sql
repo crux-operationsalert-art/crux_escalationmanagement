@@ -58,16 +58,24 @@ select btrim(j.job_key), stg.ts(j.started_at), stg.ts(j.finished_at),
 from stg.job_log j where stg.present(j.job_key);
 
 -- every legacy job arrives disabled with the reason visible (no silent pause)
-insert into job_config (job_key, enabled, disabled_reason)
-select distinct btrim(job_key), false,
-       'Migrated disabled. Re-enable only after the outbox has run one clean cycle (defect 1).'
+-- NOTE: job_config.reason requires disabled_by (see job_disable_needs_reason);
+-- migration has no human actor to attribute this to, so disabled_by is left null
+-- here — harmless while stg.job_log is empty, but this insert will need a real
+-- actor id (e.g. an admin/system person) before real legacy job rows are loaded.
+insert into job_config (job_key, enabled, cron, reason, disabled_by)
+select distinct btrim(job_key), false, 'LEGACY',
+       'Migrated disabled. Re-enable only after the outbox has run one clean cycle (defect 1).',
+       null::uuid
 from stg.job_log where stg.present(job_key)
 on conflict (job_key) do nothing;
 
--- H-04 · window overrides out of the settings tab
-insert into submission_window (kind, opens_at, closes_at, note)
-select split_part(s.key, ':', 2), stg.ts(split_part(s.value, '|', 1)), stg.ts(split_part(s.value, '|', 2)),
-       'Migrated from SETTINGS!' || s.row_no || ' — was a transaction in a config tab'
+-- H-04 · window overrides out of the settings tab. submission_window requires
+-- person_id and period, which a bare 'WINOVR:<kind>' key does not carry — so
+-- this is logged for a human to resolve rather than guessed into a row.
+insert into migration_review (entity_type, entity_ref, question, context)
+select 'submission_window', 'SETTINGS!' || s.row_no,
+       'WINOVR override needs a person and a period to become a real submission_window row — key only carries kind.',
+       concat_ws(' | ', s.key, s.value)
 from stg.settings s where s.key like 'WINOVR:%'
 on conflict do nothing;
 
@@ -83,7 +91,7 @@ create table if not exists stg.sheet4_archive as select * from stg.sheet4;
 comment on table stg.sheet4_archive is 'Rule H-05. Production debug scratchpad, kept for evidence. Not a source for any app table.';
 
 -- holidays and warnings were empty though the rules claimed to use them
-insert into holiday (holiday_date, name)
+insert into holiday (day, name)
 select stg.ts(h.holiday_date)::date, coalesce(nullif(btrim(h.name),''),'Holiday')
 from stg.holidays h where stg.present(h.holiday_date)
 on conflict do nothing;

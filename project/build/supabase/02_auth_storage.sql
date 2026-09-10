@@ -29,8 +29,8 @@ begin
       using hint = 'HR loads the person first. Signing in does not create an employee.';
   end if;
 
-  if p.status <> 'ACTIVE' then
-    raise exception 'Sign-in refused: % is marked %.', email, p.status
+  if p.employment_status <> 'ACTIVE' then
+    raise exception 'Sign-in refused: % is marked %.', email, p.employment_status
       using hint = 'A leaver keeps their history and loses their access. HR reactivates if this is wrong.';
   end if;
 
@@ -61,7 +61,7 @@ create or replace function otp_gate(p_mobile text) returns uuid
 language plpgsql security definer set search_path = public as $$
 declare p person%rowtype;
 begin
-  select * into p from person where mobile = p_mobile and status = 'ACTIVE';
+  select * into p from person where mobile = p_mobile and employment_status = 'ACTIVE';
   if not found then
     raise exception 'No active person holds that number.'
       using hint = 'The number must match the people master exactly. HR corrects it.';

@@ -18,7 +18,7 @@ create or replace function app_person_id() returns uuid
 language sql stable security definer set search_path = public as $$
   select p.id from person p
    where p.work_email = lower(nullif(current_setting('request.jwt.claims', true)::json->>'email',''))
-     and p.status = 'ACTIVE'
+     and p.employment_status = 'ACTIVE'
    limit 1
 $$;
 
@@ -40,7 +40,7 @@ language sql stable security definer set search_path = public as $$
   with recursive below as (
     select id from person where id = app_person_id()
     union all
-    select p.id from person p join below b on p.manager_id = b.person_id
+    select p.id from person p join below b on p.manager_id = b.id
   )
   select id from below
 $$;
@@ -102,7 +102,7 @@ create policy daily_update_own on daily_count for update
       received_at::date = current_date
       or exists (select 1 from day_reopen r
                   where r.person_id = daily_count.person_id
-                    and r.day = daily_count.for_day
+                    and r.day = daily_count.count_date
                     and r.closed_at is null
                     and now() < r.closes_at)
     )
@@ -182,12 +182,12 @@ create policy penalty_no_self_waive on penalty_instance for update
 -- sides can read it; only the raiser and admin can write it.
 create policy raisable_read on raisable for select
   using (
-    against_person_id in (select person_id from app_subtree())
+    about_person in (select person_id from app_subtree())
     or raised_by = app_person_id()
     or app_is_admin());
 
 create policy raisable_insert on raisable for insert
-  with check (raised_by = app_person_id() and against_person_id <> app_person_id());
+  with check (raised_by = app_person_id() and about_person <> app_person_id());
 
 create policy letter_read on letter for select
   using (person_id in (select person_id from app_subtree()) or person_id = app_person_id() or app_is_admin());

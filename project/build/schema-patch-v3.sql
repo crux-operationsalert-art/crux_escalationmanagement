@@ -24,7 +24,7 @@ alter table outbox add column if not exists sent_at    timestamptz;
 --     the UI renders the buttons from this and the API validates from it too
 alter table escalation_action add column if not exists sets_status     case_status;
 alter table escalation_action add column if not exists valid_statuses  case_status[];
-alter table escalation_action add column if not exists allowed_parts   text[] not null default '{}';
+alter table escalation_action add column if not exists allowed_parts   esc_party[] not null default '{}';
 alter table escalation_action add column if not exists needs_note      boolean not null default false;
 
 -- 4 · settings: 44 PMS numbers and every threshold live here, never in code
@@ -54,7 +54,7 @@ begin
   while left_ > 0 loop
     if extract(dow from cur) = 0
        or (extract(dow from cur) = 6 and not sat_on)
-       or exists (select 1 from holiday h where h.holiday_date = cur::date) then
+       or exists (select 1 from holiday h where h.day = cur::date) then
       cur := date_trunc('day', cur) + interval '1 day' + (open_h || ' hours')::interval;
       continue;
     end if;

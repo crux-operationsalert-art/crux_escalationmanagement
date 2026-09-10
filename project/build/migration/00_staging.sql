@@ -45,7 +45,7 @@ $$ language sql immutable;
 
 create or replace function stg.norm_name(t text) returns text as $$
   select case when not stg.present(t) then null else
-    regexp_replace(initcap(lower(btrim(t))), '\\s+', ' ', 'g') end;
+    regexp_replace(initcap(lower(btrim(t))), '\s+', ' ', 'g') end;
 $$ language sql immutable;
 
 create or replace function stg.norm_mobile(t text) returns text as $$
@@ -55,8 +55,8 @@ $$ language sql immutable;
 
 create or replace function stg.ts(t text) returns timestamptz as $$
   select case when not stg.present(t) then null else
-    (case when t ~ '^\\d{4}-\\d{2}-\\d{2}' then t::timestamptz
-          when t ~ '^\\d{1,2}/\\d{1,2}/\\d{4}' then to_timestamp(t, 'DD/MM/YYYY HH24:MI:SS')
+    (case when t ~ '^\d{4}-\d{2}-\d{2}' then t::timestamptz
+          when t ~ '^\d{1,2}/\d{1,2}/\d{4}' then to_timestamp(t, 'DD/MM/YYYY HH24:MI:SS')
           else null end) end;
 $$ language sql immutable;
 

@@ -100,17 +100,17 @@ create table client_contact (
   kind       text not null,             -- 'PRIMARY' | 'CC' | 'HEAD_OFFICE' | 'HEAD_OFFICE_CC'
   name       text,
   email      text not null,
-  mobile     text,
-  constraint client_contact_uniq unique (client_id, kind, lower(email))
+  mobile     text
 );
+create unique index client_contact_uniq on client_contact (client_id, kind, lower(email));
 
 create table client_zone (
   id          uuid primary key default gen_random_uuid(),
   client_id   uuid not null references client(id) on delete cascade,
   name        text not null,            -- the client's own vocabulary
-  geo_node_id uuid references geo_node(id),
-  constraint client_zone_uniq unique (client_id, lower(name))
+  geo_node_id uuid references geo_node(id)
 );
+create unique index client_zone_uniq on client_zone (client_id, lower(name));
 
 create table branch (
   id             uuid primary key default gen_random_uuid(),
@@ -226,9 +226,9 @@ declare clash record;
 begin
   select r.id, r.scope_type, count(*) as n into clash
   from coverage_rule r
+  cross join lateral (select 1 from coverage_resolve(r) x where x in (select coverage_resolve(new))) hit
   where r.person_id = new.person_id and r.role = new.role and r.id <> new.id
     and (r.effective_to is null or r.effective_to >= current_date)
-  cross join lateral (select 1 from coverage_resolve(r) x where x in (select coverage_resolve(new))) hit
   group by r.id, r.scope_type
   limit 1;
   if clash.id is not null then
@@ -286,6 +286,7 @@ create table case_event (
   case_id    uuid not null references "case"(id) on delete cascade,
   at         timestamptz not null default now(),
   actor_id   uuid references person(id),
+  kind       text,       -- 'RAISED', an escalation_action.code, etc
   field      text,
   old_value  text,
   new_value  text,
@@ -310,10 +311,10 @@ create table template (
 create table outbox (
   id              uuid primary key default gen_random_uuid(),
   idempotency_key text not null,
-  kind            text not null,
+  template_key    text not null,
   entity_type     text,
   entity_id       uuid,
-  to_addr         text not null,
+  recipient       text not null,
   cc_addr         text,
   subject         text not null,
   body            text not null,
@@ -330,8 +331,10 @@ create index outbox_due_idx on outbox (not_before) where state = 'QUEUED';
 create table delivery (
   id           uuid primary key default gen_random_uuid(),
   outbox_id    uuid references outbox(id),
-  to_addr      text not null,
+  channel      text not null default 'EMAIL',
+  recipient    text not null,
   state        text not null,
+  error        text,
   at           timestamptz not null default now(),
   provider_ref text,
   entity_type  text,
@@ -352,6 +355,8 @@ create table job_run (
   job_key     text not null,
   started_at  timestamptz not null default now(),
   finished_at timestamptz,
+  state       text,        -- RUNNING|OK|NOOP|ERROR, as the worker actually writes it
+  note        text,        -- free-text outcome, e.g. 'sent=3 failed=0'
   result      job_result,
   counts      jsonb,
   error       text,
@@ -388,7 +393,7 @@ create table submission_window (
 create table person_event (
   id         uuid primary key default gen_random_uuid(),
   person_id  uuid not null references person(id),
-  type       person_event_kind not null,
+  kind       text not null,     -- free text: NOTE, ACTIVATION_ISSUED, etc — not every kind the api writes fits the original enum
   at         timestamptz not null default now(),
   start_on   date,
   end_on     date,
@@ -424,6 +429,7 @@ create table audit_entry (
   action      text not null,
   entity_type text not null,
   entity_id   uuid,
+  entity_ref  text,        -- the api's generic actor-facing reference (ref/code/id-as-text)
   old_value   jsonb,
   new_value   jsonb
 );
@@ -619,7 +625,6 @@ create table escalation_action (
   id            uuid primary key default gen_random_uuid(),
   code          text not null unique,
   label         text not null,
-  allowed_part  esc_party not null,
   pms_impact    boolean not null,              -- does it count in the performance score
   unlock_after_working_days int,               -- 'escalate' unlocks at 7
   sets_tat_hours int,                          -- 'needs immediate action' sets 24
@@ -627,12 +632,12 @@ create table escalation_action (
 );
 
 create table escalation_action_log (
-  id         uuid primary key default gen_random_uuid(),
-  case_id    uuid not null references "case"(id),
-  action_id  uuid not null references escalation_action(id),
-  actor_id   uuid not null references person(id),
-  at         timestamptz not null default now(),
-  note       text
+  id          uuid primary key default gen_random_uuid(),
+  case_id     uuid not null references "case"(id),
+  action_code text not null references escalation_action(code),
+  actor_id    uuid not null references person(id),
+  at          timestamptz not null default now(),
+  note        text
 );
 
 -- warning and notice letters, issuable by managers and upper management
@@ -765,6 +770,12 @@ alter table penalty_rule
   add column applies_to_list text[] not null default '{Everybody}';
 comment on column penalty_rule.applies_to_list is
   'Multi-select: Everybody | a department | a named chair | Managers with reportees | Executives | Team Leaders | Branch Managers | Regional Managers | Franchise Partners | Interns';
+
+alter table person
+  add column if not exists employee_type text not null default 'EMPLOYEE'
+    check (employee_type in ('EMPLOYEE','PARTNER'));
+comment on column person.employee_type is
+  'PARTNER = franchise partner: in scope for PMS/penalties but billed by Finance, not payroll.';
 
 -- partners are billed by Finance; employees are recovered through payroll by HR
 create or replace function penalty_recovery_for(p_person uuid, p_rule uuid) returns text as $$
@@ -1113,16 +1124,15 @@ comment on table mail_bounce is
 -- =====================================================================
 
 alter table person
-  add column user_id text,
-  add column mobile  text,
-  add column mobile_verified_at timestamptz;
+  add column if not exists user_id text,
+  add column if not exists mobile_verified_at timestamptz;
 
 create unique index person_user_id_key on person (lower(user_id)) where left_on is null;
 create unique index person_mobile_key  on person (mobile)         where left_on is null;
 
 -- e-mail is optional, shared, and grants nothing
-drop index if exists person_work_email_key;
-comment on column person.email is
+drop index if exists person_work_email_uniq;
+comment on column person.work_email is
   'Optional. Often a shared branch inbox, so NOT unique and NOT a credential.';
 comment on column person.mobile is
   'Required and unique. The identity for sign-in, OTP activation and password reset.';
@@ -1165,11 +1175,11 @@ comment on table holiday is
 
 -- Mon-Fri run day_start..day_end; Saturday is a half day of sat_hours;
 -- Sunday is off. Held as settings so the working week is administrator data.
-insert into app_setting (key, value, note) values
-  ('day_start',  '10:00', 'Start of the working day. Every TAT counts only minutes inside the window.'),
-  ('day_end',    '19:00', 'End of the working day.'),
-  ('sat',        'Yes - half day', 'Yes - half day | Yes - full day | No.'),
-  ('sat_hours',  '4',     'Hours counted on a Saturday when it is a half day: 10:00-14:00.')
+insert into app_setting (key, value, plain_language, group_name) values
+  ('day_start',  '10:00', 'Start of the working day. Every TAT counts only minutes inside the window.', 'clocks'),
+  ('day_end',    '19:00', 'End of the working day.', 'clocks'),
+  ('sat',        'Yes - half day', 'Yes - half day | Yes - full day | No.', 'clocks'),
+  ('sat_hours',  '4',     'Hours counted on a Saturday when it is a half day: 10:00-14:00.', 'clocks')
 on conflict (key) do nothing;
 
 -- --------------------------------------------------------- cycle + gates
@@ -1206,7 +1216,7 @@ returns boolean as $$
     from chair_holder ch
     join chair c on c.id = ch.chair_id
     join chair_holder sub_h on true
-    join chair sub on sub.id = sub_h.chair_id and sub.reports_to_chair_id = c.id
+    join chair sub on sub.id = sub_h.chair_id and sub.parent_id = c.id
     left join pms_cycle pc on pc.person_id = sub_h.person_id and pc.period = p_period
     where ch.person_id = p_person and ch.to_date is null and sub_h.to_date is null
       and coalesce(pc.state, 'PENDING') <> 'CLOSED'
@@ -1372,7 +1382,7 @@ comment on column person_request.returned_to is
 -- chair whose request is past due is shown as risk. This view is what the
 -- org chart reads, so the rule lives in one place.
 create or replace view chair_status as
-select c.id, c.code, c.title,
+select c.id as chair_id, c.id, c.code, c.title,
   h.person_id,
   case
     when h.person_id is not null then 'FILLED'
@@ -1380,7 +1390,10 @@ select c.id, c.code, c.title,
     when r.id is not null then 'REQUESTED'
     else 'DORMANT'
   end as state,
-  r.due_at
+  r.due_at,
+  (h.person_id is null) as vacant,
+  case when r.id is not null and r.due_at < now()
+       then greatest(0, extract(day from now() - r.due_at)::int) else 0 end as overdue_days
 from chair c
 left join chair_holder h on h.chair_id = c.id and h.to_date is null and h.is_primary
 left join person_request r on r.chair_id = c.id and r.state in ('DRAFT','AWAITING_HR','AWAITING_ADMIN');
