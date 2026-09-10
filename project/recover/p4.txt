@@ -1,0 +1,238 @@
+
+
+    // ---------- ideathon ----------
+    // Deciding is Business Excellence's alone. Everybody else may share an idea,
+    // watch their own and their team's, chase, and once it is running, update
+    // the piece assigned to them.
+    const isBex = me.dept === 'Business Excellence' || me.level === 'admin';
+    const ideaRaw = [
+      { id:'IDE-021', title:'Auto-fill verification reports from the branch master', by:'Girish Kate · Team Leaders — Pune', stage:'Initiated',
+        detail:'Charter signed with Business Excellence and Technology. Saves an estimated 40 minutes per executive per day.',
+        progress:[{ step:'Shared', at:'12 Aug', done:true },{ step:'Reviewed by Business Excellence', at:'16 Aug', done:true },{ step:'Accepted', at:'20 Aug', done:true },{ step:'Sponsor assigned · Nitish Bhope', at:'24 Aug', done:true },{ step:'Initiated with charter', at:'28 Aug', done:true },{ step:'Build · Technology', at:'in progress', done:false },{ step:'Delivered', at:'due 30 Sep', done:false }],
+        myPart:'You own the field mapping. Update it here; Business Excellence sees your update without you chasing them.' },
+      { id:'IDE-019', title:'Single WhatsApp confirmation to the branch before a visit', by:'Akanksha Pawar · Field Executives — Pune', stage:'Accepted',
+        detail:'Accepted by Business Excellence, awaiting a sponsor from Operations before it becomes a project.',
+        progress:[{ step:'Shared', at:'22 Aug', done:true },{ step:'Reviewed', at:'27 Aug', done:true },{ step:'Accepted', at:'30 Aug', done:true },{ step:'Sponsor assigned', at:'pending', done:false },{ step:'Initiated', at:'—', done:false },{ step:'Delivered', at:'—', done:false }],
+        myPart:'' },
+      { id:'IDE-017', title:'Collections dashboard by branch manager, not by region', by:'Sneha Radhe · Finance Head', stage:'In review',
+        detail:'Under review with MIS. Needs a view of who owns which branch, which the coverage rules now provide.',
+        progress:[{ step:'Shared', at:'1 Sep', done:true },{ step:'Reviewed by Business Excellence', at:'in progress', done:false },{ step:'Decision', at:'due 5 Sep', done:false }],
+        myPart:'' },
+      { id:'IDE-014', title:'Print client matrix as a laminated card for each branch', by:'Vrunda Potdar · Location Head', stage:'On hold',
+        detail:'Held pending the print layout work in Reports. Business Excellence will revisit after the October dispatch.',
+        progress:[{ step:'Shared', at:'20 Aug', done:true },{ step:'Reviewed', at:'23 Aug', done:true },{ step:'Held · reason given', at:'25 Aug', done:true },{ step:'Revisit', at:'due Oct', done:false }],
+        myPart:'' }
+    ];
+    const ideas = ideaRaw.filter(i => this.canSeeIdea(i, me)).map(i => {
+      i = { ...i, progress:i.progress.map(p => ({ ...p, pending:!p.done })) };
+      const acts = isBex
+        ? ['Accept','Initiate as a project','Assign a sponsor','Hold','Reject','Invite a collaborator']
+        : (i.myPart ? ['Update my part','Follow up with Business Excellence'] : ['Follow up with Business Excellence']);
+      return { ...i,
+        acts: acts.map(a => ({ label:a, run: a === 'Follow up with Business Excellence'
+            ? () => this.setState({ toast:'Follow-up sent on ' + i.id + '. Business Excellence has it as a task with a due time — you are not left wondering.' })
+            : () => this.setState({ form: a === 'Update my part' ? 'ideaProgress' : 'ideaAction', toast:'' }) })) };
+    });
+
+    // ---------- HR workspace ----------
+    const hrBlocks = [
+      { title:'Onboarding', note:'6 joiners in flight', how:'Counted from person_request rows not yet ACTIVE. Every manager contributes by adding their joiner; HR approves the chair, the administrator creates the account.', items:['Sagar Mane · chair approved, account pending','Priya Shinde · awaiting HR approval','Induction booked for 3 · documents complete for 4','Buddy assigned for 2 of 6'] },
+      { title:'Employee information', note:'55 people', how:'Completeness across contact, address, emergency contact and documents. Each person edits their own details in My profile; the edit becomes an HR approval task, so the number moves when people update themselves.', items:['Contact and address current for 51','Emergency contact missing for 4','Chair and reporting line current for 55','Documents complete for 49'] },
+      { title:'Satisfaction', note:'Pulse, monthly', how:'Mean of the monthly pulse response, 1–10, plus open grievances. Every employee contributes one anonymous response a month from their dashboard.', items:['Last pulse: 78% responded, score 7.6','Two open grievances, both with HR','Exit interviews: 1 pending','Engagement visit due in North East'] },
+      { title:'Performance', note:'Not payroll', how:'Open appraisals, unacknowledged letters and active PIPs, read from pms_score and person_event. Contribution is the daily count, the open note and the manager score — nothing here is typed by HR.', items:['4 appraisals open for August','2 warning letters unacknowledged','1 PIP active, review due 12 Sep','PMS weighting: 70% KPI / 30% Attributes'] }
+    ];
+
+    // ---------- admin/HR people panel ----------
+    // A chair belongs to a department; a person does not get to belong to a
+    // different one. Where the two disagree the row says so rather than
+    // showing a department nobody set.
+    const DEPT_OF_CHAIR = [
+      [/collection/i, 'Central Collections'], [/finance|account/i, 'Finance & Accounts'],
+      [/human resource|^hr\b/i, 'Human Resources'], [/legal|complian|assurance/i, 'Compliance & Assurance'],
+      [/technolog|administrator|system/i, 'Technology'], [/mis|analytic/i, 'MIS'],
+      [/business excellence/i, 'Business Excellence'], [/business development/i, 'Business Development'],
+      [/admin & facilities|facilit/i, 'Admin & Facilities'], [/franchise|partner/i, 'Partner Network']
+    ];
+    const deptOfChair = c => { const hit = DEPT_OF_CHAIR.filter(d => d[0].test(c || ''))[0]; return hit ? hit[1] : 'Operations'; };
+    const rolePanel = (Component.TEAM_BY_PERSONA[S.persona] || []).map(p => {
+      const chairDept = deptOfChair(p.chair);
+      const stated = p.dept || chairDept;
+      return {
+      name:p.name, chair:p.chair, dept:chairDept,
+      deptMismatch:stated !== chairDept,
+      deptNote:stated !== chairDept
+        ? 'Recorded under ' + stated + ', but the chair sits in ' + chairDept + '. The chair decides — HR should correct the record, and until then reports count them in ' + chairDept + '.'
+        : '',
+      visibility: p.direct ? 'Own branches + reportees' : 'Own branches',
+      editRole: () => this.setState({ form:'editRole', toast:'' }) };
+    });
+
+    const routeGuide = { dash:'daily', clients:'matrix', escalations:'escalation', pms:'target' };
+    const guides = {
+      matrix:{ title:'Fix an incomplete matrix', steps:['Open the branch from the list on the left.','Find the level with no name — it is marked "incomplete".','Type the person\u2019s name and either a mobile or an e-mail. One of the two is enough.','Press Save level. The branch turns green and enters the next dispatch automatically.'], why:'While a level is blank the client gets nothing for that branch, and rule P-06 charges ₹500 after 14 days.' },
+      daily:{ title:'Submit your daily update', steps:['Open Dashboard.','Type today\u2019s number against each KPI. Targets are grey because your manager sets them.','Press Submit daily update.','You can revise until 23:59; after that the day locks.'], why:'Rule P-01 adds ₹200 to your monthly recovery if the window closes empty.' },
+      escalation:{ title:'Answer an escalation raised against you', steps:['Open the escalation from Escalations.','Read what was raised and who raised it.','If you agree, press Accept and resolve and say what you did.','If you do not agree, press Dispute — it goes to the raiser\u2019s manager and HR, and the clock pauses.'], why:'Rule P-02 charges ₹500 if there is no response inside 48 working hours, or 24 hours when marked immediate.' },
+      target:{ title:'Set a target for a reportee', steps:['Open Performance, then your team.','Press Set targets next to the person.','Last month is shown beside each KPI — set from that evidence.','Add sub-categories if you want the target split by client or location.'], why:'Rule P-03 charges you ₹1,000 if any reportee has no target by 18:00 on the 3rd.' }
+    };
+
+    return {
+      isPms:S.route === 'pms', isProfile:S.route === 'profile', isVisits:S.route === 'visits',
+      pmsDaily:!!(Component.PERSONAS[S.persona] || {}).daily,
+      dailyPromptHead:S.submittedToday ? 'Today\u2019s update is in' : 'Today\u2019s update is not in yet',
+      dailyPromptNote:S.submittedToday
+        ? 'Filed against your KPIs and your Attributes record. Change it on the same screen until the day closes \u2014 after that it is the day\u2019s reading and stands.'
+        : 'The daily numbers and the note live with your KPIs and your appraisal, because they are the same process \u2014 one screen, not three.',
+      dailyPromptCta:S.submittedToday ? 'Open today\u2019s update' : 'Submit today\u2019s update',
+      goDaily:() => this.setState({ route:'pms', toast:'' }),
+      isIdeathon:S.route === 'ideathon', isHr:S.route === 'hr',
+      raisable:Component.RAISABLE.map(r => ({ ...r, run:() => this.setState({ form:r.key, toast:'' }) })),
+      kpis, hasKpis:kpiLive.length > 0, noKpis:kpiLive.length === 0, kpiOwnerNote,
+      kpiCanAdd, kpiAdd, kpiCanReset:canKpi && !!kpiOv, kpiReset,
+      noKpiNote:'Your chair has no KPIs set yet. Your manager sets them; until then only Attributes count towards your score.',
+      kpiWeight:weightKpi + '%', attrWeight:weightAttr + '%',
+      kpiScoreLabel:kpiScore.toFixed(1), attrScoreLabel:attrScore.toFixed(1), finalScoreLabel:finalScore.toFixed(1),
+      pmsNote:'Your score is ' + weightKpi + '% KPIs and ' + weightAttr + '% Attributes. The split is set by the administrator — for everybody, or per team.',
+      attributes:Component.ATTRIBUTE_ITEMS,
+      openNote:S.openNote || '',
+      setOpenNote: e => this.setState({ openNote:e.target.value }),
+      submitNote: t('Note recorded. The assistant reads it and either files it as an Attribute with a suggested heading, or keeps it as FYI on your record. Either way it appears in your review summary, so your manager scores from evidence rather than memory.'),
+      myTaskCount: myTasks.length,
+      // A dashboard should answer four questions on sight: what is owed by me,
+      // what is at stake, how am I tracking, and what is going wrong.
+      dashTiles:[
+        { n:String(myTasks.length), label:'Owed by me', note:myTasks.length ? 'oldest ' + (myTasks[0].due || '') : 'nothing waiting', tone:myTasks.length ? 'warn' : 'ok', flat:false },
+        { n:(me.dept === 'Human Resources' ? '₹3,400' : me.dept === 'Finance & Accounts' ? '₹1,500' : me.key === 'PARTNER' ? '₹700' : '₹0'), label:'At stake this month', note:'penalties applied or pending', tone:'warn', flat:false },
+        { n:(me.daily ? (S.submittedToday ? 'Done' : 'Open') : '—'), label:'Daily count', note:me.daily ? (S.submittedToday ? 'submitted today' : 'closes 23:59 · ₹200') : 'not required for your chair', tone:me.daily && !S.submittedToday ? 'warn' : 'ok', flat:!me.daily },
+        { n:'3', label:'Escalations live', note:'1 by you · 2 on your team', tone:'ok', flat:false }
+      ],
+      goTasks: () => this.setState({ route: me.nav.indexOf('profile') > -1 ? 'profile' : 'dash', toast:'' }),
+      dashAsk: myTasks.length
+        ? 'Clear ' + myTasks.length + ' items and you are square for today.'
+        : 'Nothing is waiting on you.',
+      rollUp: rollUpFor[me.key] || null, ...rollKpiBits, ...tgtBits,
+      rollUpNote:'Every number below is somebody\u2019s own daily count. Expand a row to see whose, all the way down to the person who typed it.',
+      toggleRoll: k => () => this.setState(s => ({ peopleOpen: { ...s.peopleOpen, ['r:' + k]: !s.peopleOpen['r:' + k] } })),
+      teamTargets, canSetTargets: ['branch','region','national','function','admin','partner'].indexOf(me.level) > -1,
+      adminPms: me.level === 'admin' || me.dept === 'Human Resources',
+      setWeighting: () => this.setState({ form:'weighting', toast:'' }),
+      myTasks, profileSections:[
+        { title:'Employment', items:['Employee number · EMP-0114','Chair · Branch Manager — Pune','Reports to · Nitish Bhope','Date of joining · 12 Jan 2023','Employment type · Employee'] },
+        { title:'Contact', items:['Mobile · 9021469966','Work e-mail · amit.kulkarni@cruxindia.co.in','Address · Kothrud, Pune','Emergency contact · on record'] },
+        { title:'Documents', items:['ID proof · verified','Address proof · revision requested by HR','Qualification · verified','Bank details · with Accounts'] }
+      ],
+      raiseRequest: () => this.setState({ form:'request', toast:'' }),
+      editProfile: () => this.setState({ form:'profile', toast:'' }),
+      visitFields: visitFields[me.dept] || visitFields.Operations,
+      visitNote:'The visit form is shaped for ' + me.dept + '. Every department has its own fields, because an HR engagement visit and a Finance reconciliation visit are not the same visit.',
+      logVisit: () => this.setState({ form:'visit', toast:'' }),
+      claims:claims.map(c => ({ ...c, act: () => this.setState({ form:'claimStage', toast:'' }) })), claimFlow:'Raise → Operations approve → HR approve → Accounts. Accounts either pays and records the payment details, or disputes it for more detail — which sets it back to not approved and returns it to whoever raised it.',
+      newClaim: () => this.setState({ form:'claim', toast:'' }),
+      ideaVisibility:'you see your own and your team\u2019s ideas · Business Excellence decides',
+      ideas,
+      ideaRights: isBex
+        ? 'You are Business Excellence: accepting, initiating, assigning a sponsor, holding and rejecting are yours alone.'
+        : 'You may share an idea, watch yours and your team\u2019s, chase Business Excellence, and update the part assigned to you once it is running. Deciding is theirs.',
+      newIdea: () => this.setState({ form:'idea', toast:'' }),
+      hrBlocks, rolePanel,
+      canRolePanel: me.level === 'admin',
+      guideOn: !S.guideOff && !!guides[S.reportKey || routeGuide[S.route]],
+      guideCanOpen: !!guides[S.reportKey || routeGuide[S.route]],
+      openGuide: () => this.setState({ guideOff:false }),
+      guideTitle: (guides[S.reportKey || routeGuide[S.route]] || {}).title || '',
+      guideSteps: (guides[S.reportKey || routeGuide[S.route]] || {}).steps || [],
+      guideWhy: (guides[S.reportKey || routeGuide[S.route]] || {}).why || '',
+      closeGuide: () => this.setState({ reportKey:'', guideOff:true }),
+      alertGo: goGuide
+    };
+  }
+
+  rest(me){
+    const S = this.state, t = m => () => this.setState({ toast:m });
+    const view = Component.CLIENT_VIEW[me.dept] || 'none';
+    const client = Component.CLIENTS[0];
+    const homeLoc = { PARTNER:'Nagpur' }[S.persona] || 'Pune';
+    const loc = S.location || homeLoc;
+    const branches = Component.BRANCHES.filter(b => b.location === loc);
+    const inherited = branches.filter(b => b.inherited).length;
+
+    // ---- clients ----
+    // Scope: you see a client location only if your coverage resolves to it,
+    // directly or through somebody reporting to you.
+    const myScope = { BM_P:{ clients:['CLI-00024'], locations:['Pune'] },
+                      RM_W:{ clients:['CLI-00024','CLI-00007','CLI-00011'], locations:['Pune','Thane','Nashik'] },
+                      PARTNER:{ clients:['CLI-00024'], locations:['Nagpur'] },
+                      COL:{ clients:['CLI-00024','CLI-00007'], locations:['Pune','Thane'] },
+                      LEG:null, OPS:null, ADM:null, FIN:null };
+    const scope = myScope[me.key] === undefined ? null : myScope[me.key];
+    const clientTree = Component.CLIENTS
+      .filter(c => !scope || scope.clients.indexOf(c.id) > -1)
+      .map(c => ({
+        name:c.name, meta:c.id + ' · ' + c.branches + ' branches · ' + c.dispatchable + ' dispatchable',
+        locations:c.locations
+          .filter(l => !scope || scope.locations.indexOf(l) > -1)
+          .map(l => ({ name:l, count: c.id === 'CLI-00024' && l === 'Pune' ? '5 branches' : '—',
+            on: c.id === 'CLI-00024' && l === loc, pick: () => this.setState({ location:l, addingBranch:false }) }))
+      }))
+      .filter(c => c.locations.length);
+    const defaultMatrix = [
+      { n:1, role:'SPOC', name:'Akanksha Pawar', contact:'9145428137 · am.pune@cruxindia.co.in' },
+      { n:2, role:'Team Leader', name:'Girish Kate', contact:'8552906535 · bo.pune@cruxindia.co.in' },
+      { n:3, role:'Branch Manager', name:'Avinash Chaskar', contact:'9021469966 · avinash.chaskar@cruxindia.co.in' },
+      { n:4, role:'Zonal Manager', name:'Nitish Bhope', contact:'9762348486 · nitish.bhope@cruxindia.co.in' },
+      { n:5, role:'Head Office', name:'Manish Shukla', contact:'9870066855 · manish.s@cruxindia.co.in' }
+    ];
+    // Was this month's matrix actually sent? If not, why not, and can it be
+    // sent again — the question the old tool could never answer.
+    const dispatchOf = b => {
+      if (b.complete < 5) return { sent:false, mark:'Not sent', tint:'#b4562f',
+        why:'Blocked · matrix incomplete at level ' + (b.complete + 1) + '. Rule R-01 gates the send, so the client received nothing for this branch.',
+        canSend:false, fix:'Fix the matrix first' };
+      if (!b.code) return { sent:false, mark:'Not sent', tint:'#b4562f',
+        why:'Blocked · the branch has no code, so the client cannot identify it on the sheet.',
+        canSend:false, fix:'Add a branch code first' };
+      if (b.id === 'BR-00748') return { sent:false, mark:'Failed', tint:'#b4562f',
+        why:'Attempted 1 Sep 09:04, hard bounce from the client contact. Three bounces mark the address unreachable — this was the second.',
+        canSend:true, fix:'Send again' };
+      return { sent:true, mark:'Sent 1 Sep', tint:'#2f7355',
+        why:'Delivered 1 Sep 09:02 to 2 recipients. Next automatic send 1 Oct 09:00.',
+        canSend:true, fix:'Send again' };
+    };
+    const branchRows = branches.map(b => {
+      const d = dispatchOf(b);
+      const common = {
+        name:b.name, id:b.id, code:b.code || '— missing —',
+        sentMark:d.mark, sentTint:d.tint, sentWhy:d.why, canSend:d.canSend, sendLabel:d.fix,
+        open: S.branchOpen === b.id,
+        toggle: () => this.setState(s => ({ branchOpen: s.branchOpen === b.id ? '' : b.id, toast:'' })),
+        send: () => this.setState({ toast: d.canSend
+          ? 'Matrix for ' + b.id + ' ' + b.name + ' queued in the outbox and will go out within five minutes. It is the current matrix, not a copy of what was sent in September. A duplicate cannot be sent twice — the outbox key prevents it.'
+          : d.fix + ' — the send is gated until then, and gating it is what stops a client receiving a half-filled matrix.' }),
+        detail: Component.BRANCH_DETAIL[b.id] || Component.BRANCH_DETAIL.DEFAULT,
+        editDetail: () => this.setState({ form:'branchDetail', toast:'' })
+      };
+      return view === 'matrix' ? { ...common,
+        c3: b.complete === 5 ? (b.inherited ? 'Inherits client default · 5 of 5' : 'Own matrix · 5 of 5') : 'Own matrix · ' + b.complete + ' of 5',
+        action: b.complete === 5 ? (b.inherited ? 'Enter own matrix' : 'Edit matrix') : 'Fix level ' + (b.complete + 1), plain:'',
+        act: () => this.setState({ form:'matrixBranch', toast:'' })
+      } : { ...common, c3: b.bm, plain:b.poc, action:'' };
+    });
+
+    // ---- team ----
+    // Decision D8: no chair may borrow another chair's data. A chair with no
+    // roster says so — it never falls through to somebody else's team.
+    const teamRoster = Component.TEAM_BY_PERSONA[S.persona] || [];
+    const directs = teamRoster.filter(p => p.direct).map(p => {
+      const kids = teamRoster.filter(k => !k.direct && k.via === p.name);
+      const open = !!S.peopleOpen[p.email];
+      return { name:p.name, chair:p.chair, target:p.target, daily:p.daily, penalty:p.penalty,
+        needsTarget: p.target === 'not set',
+        targetLabel: p.target === 'not set' ? 'Set targets' : 'Change targets',
+        targetTint: p.target === 'not set' ? '#b4562f' : '#3a5a80',
+        setTarget: () => this.setState({ form:'targets', toast:'' }),
+        assignTask: () => this.setState({ form:'task', toast:'' }),
+        hasIndirect: kids.length > 0, expanded: open && kids.length > 0,
+        toggleLabel: open ? 'Hide ' + kids.length + ' indirect' : 'Show ' + kids.length + ' indirect',
+        toggle: () => this.setState(s => ({ peopleOpen: { ...s.peopleOpen, [p.email]: !s.peopleOpen[p.email] } })),
+        indirect: kids, indirectNote: 'These report to ' + p.name + ', not to you. You can see their state; only ' + p.name + ' can set their targets.',
+        ...this.chairFile(p.chair, p.email) };
+    });

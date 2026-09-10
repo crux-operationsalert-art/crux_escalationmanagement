@@ -1,0 +1,235 @@
+
+    const isApprover = me.dept === 'Human Resources' || me.level === 'admin';
+    const approvalQueue = isApprover ? [
+      { name:'Sagar Mane', meta:'Field Executives — Pune · added by Girish Kate, 2 Sep · ' + (me.level === 'admin' ? 'HR approved 2 Sep — account not yet created' : 'awaiting HR approval of chair and terms'),
+        cta: me.level === 'admin' ? 'Create account' : 'Approve chair', approve: () => this.setState({ form:'approve', toast:'' }), reject: () => this.setState({ form:'approve', toast:'' }) },
+      { name:'Priya Shinde', meta:'Back Office Executives — Thane · added by Vaibhavi Kanavaje, 2 Sep · awaiting HR approval',
+        cta: me.level === 'admin' ? 'Waiting on HR' : 'Approve chair', approve: () => this.setState({ form:'approve', toast:'' }), reject: () => this.setState({ form:'approve', toast:'' }) }
+    ] : null;
+
+    // ---- penalty ledger ----
+    const allLedger = [
+      { person:'Rupam Das', chair:'Field Executives — Pune', rule:'P-01 · daily count', cutoff:'1 Sep, 23:59', evidence:'No submission recorded', amount:'₹200', recover:'HR · payroll', state:'Applied', fam:'payroll' },
+      { person:'Rupam Das', chair:'Field Executives — Pune', rule:'P-01 · daily count', cutoff:'2 Sep, 23:59', evidence:'No submission recorded', amount:'₹200', recover:'HR · payroll', state:'Applied', fam:'payroll' },
+      { person:'Bhaskar Nath', chair:'Field Executives — Pune', rule:'P-01 · daily count', cutoff:'2 Sep, 23:59', evidence:'No submission recorded', amount:'₹200', recover:'HR · payroll', state:'Applied', fam:'payroll' },
+      { person:'Yash Desai', chair:'Field Executives — Pune', rule:'P-02 · escalation TAT', cutoff:'48 working hours', evidence:'ESC-00193 · no response in 7 working days', amount:'₹500', recover:'HR · payroll', state:'Disputed', fam:'payroll' },
+      { person:'Amit Kulkarni', chair:'Branch Manager — Pune', rule:'P-03 · targets not set', cutoff:'3 Sep, 18:00', evidence:'Vaibhavi Kanavaje has no September target', amount:'₹1,000', recover:'HR · payroll', state:'Pending cutoff', fam:'payroll' },
+      { person:'Vaibhavi Kanavaje', chair:'Back Office — Thane', rule:'P-04 · appraisal late', cutoff:'10 Aug, 18:00', evidence:'August appraisal not closed', amount:'₹1,000', recover:'HR · payroll', state:'Applied', fam:'payroll' },
+      { person:'Girish Kate', chair:'Team Leaders — Pune', rule:'P-06 · matrix incomplete', cutoff:'14 days incomplete', evidence:'BR-00762 level 4 empty since 23 Aug', amount:'₹500', recover:'Finance · billed', state:'Applied', fam:'finance' },
+      { person:'Vrunda Potdar', chair:'Location Head', rule:'P-06 · matrix incomplete', cutoff:'14 days incomplete', evidence:'BR-00196 levels 2 and 4 empty', amount:'₹1,000', recover:'Finance · billed', state:'Applied', fam:'finance' }
+    ];
+    let ledgerRows = me.dept === 'Finance & Accounts' ? allLedger.filter(r => r.fam === 'finance')
+      : me.dept === 'Human Resources' ? allLedger.filter(r => r.fam === 'payroll')
+      : allLedger;
+    const lf = S.ledgerFilter || 'all';
+    if (lf !== 'all') ledgerRows = ledgerRows.filter(r => r.state.toLowerCase().indexOf(lf) === 0);
+    const ls = S.ledgerSort || 'amount';
+    const amt = r => Number(String(r.amount).replace(/[^0-9]/g, ''));
+    ledgerRows = ledgerRows.slice().sort((a, b) =>
+      ls === 'amount' ? amt(b) - amt(a) :
+      ls === 'person' ? a.person.localeCompare(b.person) :
+      ls === 'rule' ? a.rule.localeCompare(b.rule) : 0);
+    const sel = S.ledgerSel || {};
+    const selCount = Object.keys(sel).filter(k => sel[k]).length;
+    ledgerRows = ledgerRows.map((r, i) => ({ ...r, key:String(i),
+      picked: !!sel[r.person + r.rule + r.cutoff],
+      pick: () => this.setState(s => { const cur = { ...(s.ledgerSel || {}) }; const k = r.person + r.rule + r.cutoff; cur[k] = !cur[k]; return { ledgerSel:cur }; }),
+      rowAction: () => this.setState({ form:'ledgerState', toast:'' }) }));
+
+    // ---- reports ----
+    const reportsByDept = {
+      Operations:[
+        { name:'Escalation register', what:'Every escalation with category, desk, owner, TAT and outcome.', scope:'Your branches and reportees', print:true },
+        { name:'Matrix completeness', what:'Which branches are dispatchable and which are blocked, with days incomplete.', scope:'Your branches', print:false },
+        { name:'Daily count compliance', what:'Who submitted, who did not, and the penalty that followed.', scope:'Your reportees, direct and indirect', print:false },
+        { name:'TAT and delivery', what:'Verifications completed against target, TAT breaches by branch.', scope:'Your branches', print:false },
+        { name:'Monthly summary', what:'One page: delivery, escalations, blocked branches, penalties.', scope:'Your scope', print:true }
+      ],
+      'Human Resources':[
+        { name:'Penalty recovery statement', what:'Per person, per rule, ready for payroll, with waivers shown separately.', scope:'All 55 people', print:true },
+        { name:'Appraisal status', what:'Which appraisals are open, closed or late, by manager.', scope:'Company', print:false },
+        { name:'Warning and notice letters', what:'Issued, acknowledged and outstanding letters.', scope:'Company', print:true },
+        { name:'Escalations reaching HR', what:'Strike-3 escalations, disputes and conduct referrals.', scope:'Company', print:false },
+        { name:'Headcount and movement', what:'Joiners, leavers, chair changes and approvals pending.', scope:'Company', print:false }
+      ],
+      'Finance & Accounts':[
+        { name:'Collections against plan', what:'Region and branch collections versus target.', scope:'Company', print:false },
+        { name:'Billing queries and disputes', what:'Billing escalations, ageing and resolution.', scope:'Company', print:false },
+        { name:'Recoverable penalties', what:'Matrix penalties Finance bills, separate from payroll recoveries.', scope:'Finance-recovered rules only', print:true },
+        { name:'Partner claims', what:'Franchise claims by region, awaiting sign-off or paid.', scope:'Company', print:true },
+        { name:'Client branch directory', what:'Branch details and contacts for billing — no escalation matrix.', scope:'All clients', print:false }
+      ],
+      MIS:[
+        { name:'National roll-up', what:'Every region, branch and chair against plan, with data completeness flagged.', scope:'Company', print:true },
+        { name:'Data completeness', what:'Who has not submitted, making a roll-up provisional.', scope:'Company', print:false },
+        { name:'Monthly summary pack', what:'The pack MD, Finance and Operations consume on the 10th.', scope:'Company', print:true },
+        { name:'Process ownership', what:'Every process in the structure with its owner, doer, adviser and informed chairs.', scope:'Company', print:true }
+      ],
+      Technology:[
+        { name:'Automation health', what:'Every job, last run, result, next run and failures.', scope:'System', print:false },
+        { name:'Audit trail', what:'Human and configuration changes, searchable by person or entity.', scope:'System', print:false },
+        { name:'Delivery ledger', what:'Per-recipient send history — did the client actually receive it.', scope:'System', print:false },
+        { name:'Penalty engine log', what:'Every rule firing, waiver and adjustment with the actor.', scope:'System', print:true }
+      ]
+    };
+
+    // ---- config ----
+    const cfgSets = {
+      geography:[
+        { label:'ROMG', value:'Nitish Bhope', plain:'Every location in Maharashtra except Mumbai and Pune, plus Goa. Zonal chair Nitish Bhope.', flag:'' },
+        { label:'Indore-MPCG', value:'unassigned chair', plain:'Every location in Madhya Pradesh. The name says Chhattisgarh too — see the conflict below.', flag:'' },
+        { label:'Chhattisgarh', value:'HELD — in both zones', plain:'You have given Chhattisgarh to ROMG and to Indore-MPCG. Coverage cannot overlap, so the tool refuses to load it either way rather than guess. Raipur branches stay unassigned and visible until you pick: CG under Indore-MPCG, CG under ROMG (rename the zone Indore-MP), or split it city by city.', flag:'Blocked' },
+        { label:'Mumbai', value:'own leaf', plain:'Carved out of ROMG as its own leaf under Maharashtra, attached to its own zone.', flag:'' },
+        { label:'Pune', value:'own leaf', plain:'Carved out of ROMG the same way.', flag:'' },
+        { label:'Goa duplicate', value:'"Goa" + "GOA"', plain:'Two spellings of one place in the old data. They collapse to one leaf on load; the second becomes an alias so old references still resolve.', flag:'Fix on load' },
+        { label:'Branches without a code', value:'217 of 1,413', plain:'A branch with no code cannot be a foreign-key target. These are listed for correction before geography is locked.', flag:'Gap' },
+        { label:'Zone spellings', value:'36 values → 4 levels', plain:'The old list mixed states, cities and compass points in one column. This rebuilds it as Zone → State → City → Branch so every branch resolves to exactly one leaf.', flag:'' }
+      ],
+      bulkupload:[
+        { label:'People', value:'55 rows loaded', plain:'Names, employee numbers, chairs, managers and contact details. Runs the de-duplication check on upload — the typo-domain identity holding 583 coverage rows is caught here, not after.', flag:'' },
+        { label:'Geography', value:'held', plain:'Zones, states, cities and branches. Must load before coverage; a coverage file against unloaded geography is refused with the missing rows named.', flag:'Blocked' },
+        { label:'Clients and branches', value:'28 · 1,413', plain:'Client master, branch master, and the client×location activation list.', flag:'' },
+        { label:'Coverage and scope', value:'1,729 rows', plain:'Who covers what. Overlapping coverage is refused at upload, so two people cannot own one branch.', flag:'' },
+        { label:'Escalation matrix', value:'3,783 rows', plain:'Client contact ladders and the internal Crux ladder, loaded separately. A row that puts someone in their own escalation path is rejected.', flag:'' },
+        { label:'Penalty rules and amounts', value:'7 rules · 4 amounts pending', plain:'The four outstanding amounts load here when you finalise them. No code change, no engineer.', flag:'Pending' },
+        { label:'SLA rules', value:'illustrative', plain:'TAT bands per client, verification type, geography and quantity. Live assignments keep the TAT they were created with — a rule upload never moves a running clock.', flag:'' },
+        { label:'KPI targets', value:'102 rows', plain:'Monthly targets per person and category. Upload by month; a re-upload of the same month asks before it replaces.', flag:'' },
+        { label:'Holidays', value:'0 — required', plain:'The old tool had an empty holiday table, so the weekend and holiday exclusion never once fired. No TAT can be enforced until this is loaded for this year and next.', flag:'Blocker' },
+        { label:'OGL backlog', value:'not started', plain:'Live assignments at cutover, with their real creation dates and cycle numbers, so no clock starts retroactively.', flag:'' },
+        { label:'Validation', value:'four levels', plain:'A bulk row passes exactly the same checks as a typed one. Nothing is relaxed for a file — that is how the old datastore filled with 198,890 empty rows.', flag:'' },
+        { label:'Preview and rollback', value:'mandatory · 7 days', plain:'You see valid, warning and error counts with the first fifty errors and their row numbers before anything is written. A file with any error applies zero rows. Scope-replacing uploads can be reversed for seven days.', flag:'' }
+      ],
+      // Everything the current tool hard-codes or hides in a SETTINGS row.
+      email:[
+        { label:'Sender address', value:'operations.alert@', plain:'The address every automatic e-mail comes from. Must be a verified send-as alias; the tool checks it and tells you if it is not.', flag:'' },
+        { label:'Verified aliases', value:'3 available', plain:'Pick from the aliases the sending account actually owns instead of typing an address that silently fails.', flag:'' },
+        { label:'Reply-to', value:'operations.alert@', plain:'Where replies land. Leave blank to use the sender.', flag:'' },
+        { label:'Signature', value:'Builder', plain:'Build it from name, title, phone, e-mail, website, logo and tagline — or paste raw HTML. No more editing a settings row by hand.', flag:'' },
+        { label:'Signature logo', value:'not set', plain:'Upload an image. A Drive share link will not render in e-mail, so the tool refuses one and says why.', flag:'Gap' },
+        { label:'Default CC / BCC', value:'by role', plain:'Resolved from the people table by role, not seven copies of the same six addresses.', flag:'' },
+        { label:'Templates', value:'5 · versioned', plain:'Subject and body per e-mail type, with the previous version kept so a bad edit can be rolled back.', flag:'' },
+        { label:'Test mode', value:'Off', plain:'When on, every recipient is replaced by one test address. Shown as a banner so it can never be left on unnoticed.', flag:'' },
+        { label:'Reminder days and times', value:'25th · last working day', plain:'When matrix reminders go out, and the daily HR chase time.', flag:'' },
+        { label:'Dispatch granularity', value:'Per branch', plain:'One e-mail per branch, or one per client. Per branch needs the branch matrices populated first.', flag:'' }
+      ],
+      ai:[
+        { label:'Key chain', value:'4 slots · 3 keys set', plain:'Add a key, test it, and set its position in the chain. If the first is spent or erroring the next takes over, so a feature never simply stops. Managed on the Assistant keys tab.', flag:'' },
+        { label:'Assistant enabled', value:'Yes', plain:'Turns every assistant feature on or off in one place.', flag:'' },
+        { label:'Provider and model', value:'Gemini · flash', plain:'Which model is called. Changing it does not need a deployment.', flag:'' },
+        { label:'API key', value:'····4f2a', plain:'Stored encrypted, shown masked, replaceable here. Never in a spreadsheet cell.', flag:'' },
+        { label:'Monthly call cap', value:'500 · 42 used', plain:'When the cap is reached, assistant buttons grey out with the reset date rather than failing silently.', flag:'' },
+        { label:'Classify an escalation', value:'On click', plain:'Suggests the category, which sets the desk. Never routes on its own.', flag:'' },
+        { label:'Draft an escalation or note', value:'On click', plain:'Writes a first draft the person edits. Nothing is sent by the assistant.', flag:'' },
+        { label:'Open-note classification', value:'Nightly', plain:'Reads each day\u2019s open notes and files them as an Attribute or as FYI, with the heading it chose, for the review summary.', flag:'' },
+        { label:'Ask-the-data chat', value:'On click', plain:'Answers within the asker\u2019s own scope only — a Branch Manager can never be answered about another region.', flag:'' },
+        { label:'Weekly anomalies', value:'Monday 07:00', plain:'The only assistant feature that runs on a schedule.', flag:'' }
+      ],
+      clocks:[
+        { label:'Escalation response time', value:'48 working hours', plain:'How long the person concerned has to answer before a penalty applies.', flag:'' },
+        { label:'Immediate-action response time', value:'24 hours', plain:'The shorter clock used when a raiser marks an escalation as needing immediate action.', flag:'' },
+        { label:'Escalate-a-level unlock', value:'7 working days', plain:'How long a raiser must wait, with no response, before they may escalate.', flag:'' },
+        { label:'Working hours', value:'10:00 – 17:00', plain:'Only these hours count towards any working-hour clock, and no e-mail is sent outside them.', flag:'' },
+        { label:'Daily count window', value:'closes 23:59', plain:'After this the day locks. Only an administrator can reopen it, with a reason.', flag:'' },
+        { label:'Auto-close window', value:'7 days', plain:'How long after a resolution an escalation waits for objections before closing itself.', flag:'' },
+        { label:'Holiday calendar', value:'0 dates', plain:'Holidays are excluded from every working-hour clock and penalty cutoff. Empty means only weekends are excluded.', flag:'Gap' },
+        { label:'Dispatch day and time', value:'1st, 09:00', plain:'When the monthly matrix goes to branches.', flag:'' },
+        { label:'Daily mail budget', value:'1,800 · 200 reserved', plain:'How many recipients a day the system may send to, and how many it holds back for urgent mail.', flag:'' }
+      ],
+      coverage:[
+        { label:'Who may change coverage', value:'Administrator only', plain:'Which branches a person covers is set here and nowhere else. Managers can no longer create or edit coverage — they only see the result.', flag:'Locked' },
+        { label:'Coverage rules in force', value:'41 rules', plain:'One rule can cover a whole client, a client zone, a client plus a state, or a named list of branches. 41 rules replace the 1,729 person-by-branch rows the old system kept.', flag:'' },
+        { label:'Overlapping ownership', value:'Refused', plain:'If a new rule would give two people the same branch in the same role, the save is refused and the clashing branches are named. This is what stops an escalation having two owners, or none.', flag:'' },
+        { label:'Dropdown lists', value:'18 lists', plain:'Every dropdown in the tool — categories, desks, chairs, departments, visit types, claim categories, employment types, zones, states, KPI units, letter categories, request types. Add, rename, deactivate or reorder any option. Deactivating hides it from new records and leaves history intact.', flag:'' },
+        { label:'Coverage source of truth', value:'coverage_rule', plain:'The old system also kept scope columns on each user record. Those are gone: one place decides who covers what.', flag:'' },
+        { label:'What a manager sees', value:'Their own scope', plain:'Read-only. A manager sees the branches and people their rules resolve to, and can act on them, but cannot widen their own scope.', flag:'' },
+        { label:'Chair vacancy fallback', value:'Administrator group', plain:'If the person holding a chair leaves, their coverage does not vanish — it surfaces here as unowned until you reassign it.', flag:'' },
+        { label:'Geography · Maharashtra', value:'3 cities', plain:'West → Maharashtra → Mumbai, Pune, and Rest of Maharashtra. Mumbai and Pune are their own cities; everything else in the state sits under Rest of Maharashtra.', flag:'' },
+        { label:'Geography · Indore-MPCG', value:'Split into 2', plain:'The old single region becomes Central → Madhya Pradesh and Central → Chhattisgarh. Branches are reassigned to whichever state they are actually in.', flag:'Migration' }
+      ],
+      mailbox:Component.MAILBOX.map(m => ({ label:m.k, value:m.v, plain:m.note, flag:m.state === 'Gap' ? 'Gap' : '' })),
+      jobs:[
+        { label:'Outbox worker · re-run', value:'every 5 min', plain:'Sends what is queued. Re-running is safe: a duplicate key cannot send twice.', flag:'' },
+        { label:'Monthly dispatch · re-run or dry-run', value:'1st, 09:00', plain:'Dry-run reports who would receive it and who is blocked, without sending.', flag:'' },
+        { label:'Escalation chase · re-run', value:'hourly', plain:'Chases only cases actually due, one per window.', flag:'' },
+        { label:'Matrix chase · re-run', value:'Mondays 11:00', plain:'E-mails owners of incomplete branches and escalates at 14 days.', flag:'' },
+        { label:'Penalty sweep · re-run', value:'nightly 00:05', plain:'Applies every rule whose cutoff has passed. Re-running cannot double-charge.', flag:'' },
+        { label:'Daily-count lock · re-run', value:'nightly 23:59', plain:'Locks the day. Re-running locks anything missed without touching submitted rows.', flag:'' },
+        { label:'Auto-close sweep · re-run', value:'nightly 00:10', plain:'Closes resolved escalations past their 7-day objection window.', flag:'' },
+        { label:'Monthly summary · re-run', value:'10th, 09:00', plain:'Rebuilds and re-sends the management summary.', flag:'' },
+        { label:'Appreciation nudge · re-run', value:'Mondays 11:00', plain:'Nudges managers who have recognised nobody this month.', flag:'' },
+        { label:'Open-note classification · re-run', value:'nightly', plain:'Re-reads unclassified notes and files them for the review summary.', flag:'' },
+        { label:'Roll-up rebuild · re-run', value:'nightly', plain:'Rebuilds region and national roll-ups, marking them provisional where counts are missing.', flag:'' },
+        { label:'Claim reminder · re-run', value:'daily 10:00', plain:'Reminds whoever a claim is sitting with — Operations, HR or Accounts.', flag:'' }
+      ],
+      desks:[
+        { label:'Operations desk', value:'Operations Head', plain:'Receives 14 categories including service delivery, TAT, client mapping and Audit/Quality.', flag:'' },
+        { label:'Finance desk', value:'Finance Head', plain:'Receives billing and payment.', flag:'' },
+        { label:'HR desk', value:'HR Head', plain:'Receives staff behaviour and performance, and every strike-3 escalation.', flag:'' },
+        { label:'IT desk', value:'IT Head', plain:'Receives technology and access requests.', flag:'' },
+        { label:'Compliance desk', value:'Compliance Head', plain:'Receives compliance, fraud and data privacy. Fraud and data privacy cannot be moved off this desk.', flag:'Locked' },
+        { label:'MIS desk', value:'not set', plain:'Two people hold the designation. Until you pick one, MIS escalations are held and shown here.', flag:'Gap' },
+        { label:'MD office', value:'Managing Director', plain:'Never the first recipient. Copied at the top level only.', flag:'Escalation only' },
+        { label:'Vacant desk fallback', value:'Administrator group', plain:'Where an escalation goes if a desk has nobody active, so it is never silently swallowed.', flag:'' },
+        { label:'Pinned categories', value:'Fraud/Integrity · Data Privacy', plain:'Locked to Compliance. Not reassignable, including by you.', flag:'Locked' }
+      ]
+    };
+
+    const ledgerTotals = { 'Human Resources':'₹3,400', 'Finance & Accounts':'₹1,500' };
+    // HR and Finance own the penalty rules alongside the administrator, with no
+    // approval step; clocks, desks and coverage stay administrator-only.
+    const penaltyOnly = me.dept === 'Human Resources' || me.dept === 'Finance & Accounts';
+
+    return {
+      isClients:S.route === 'clients', isPeople:S.route === 'people', isPenalties:S.route === 'penalties',
+      isReports:S.route === 'reports', isConfig:S.route === 'config',
+      clientScopeNote: view === 'matrix'
+        ? (scope ? 'Only the clients and locations your coverage resolves to — ' + clientTree.length + ' client, ' + clientTree.reduce((n,c)=>n+c.locations.length,0) + ' location. Everything else is invisible to you.' : 'Client → location → branch → escalation matrix. Your department owns the matrix.')
+        : 'Branch details and contacts only. The escalation matrix belongs to Operations, so it is not shown here.',
+      canAddLocation: view === 'matrix' && me.level !== 'function',
+      addLocation: () => this.setState({ form:'location', toast:'' }),
+      addingBranch:S.addingBranch, toggleAddBranch: () => this.setState(s => ({ addingBranch: !s.addingBranch })),
+      saveBranch: t('Branch saved under ' + client.name + ' · ' + loc + '. It inherits the client default matrix, so it is dispatchable from day one, and is flagged for its own matrix when you have the contacts.'),
+      clientTree, locLabel: client.name + ' · ' + loc,
+      showDefaultMatrix: view === 'matrix', defaultMatrix,
+      editDefaultMatrix: () => this.setState({ form:'matrixDefault', toast:'' }),
+      inheritCount: inherited + ' of ' + branches.length + ' branches in ' + loc + ' currently inherit it.',
+      branchHeaderNote: view === 'matrix' ? branches.length + ' branches · ' + branches.filter(b=>b.complete===5).length + ' dispatchable' : 'Contacts for billing and relationship use',
+      branchCol3: view === 'matrix' ? 'Matrix' : 'Branch manager',
+      branchCol4: view === 'matrix' ? '' : 'Crux point of contact',
+      branchRows,
+      teamNote: directs.length
+        ? directs.length + ' directly reporting · ' + teamRoster.filter(p=>!p.direct).length + ' indirect, collapsed under their own manager · ' + me.dept
+        : 'No direct reports on this chair. If that is wrong, HR or the administrator sets the reporting line on the People record — the tool never guesses at a team.',
+      noTeam: directs.length === 0,
+      addingPerson:S.addingPerson, toggleAddPerson: () => this.setState(s => ({ addingPerson: !s.addingPerson })),
+      ...this.newPersonVals(),
+      approvalQueue, directs,
+      ledgerNote: me.key === 'PARTNER'
+        ? 'You are a franchise partner, so penalties are billed to you rather than deducted from payroll. Same rules, same evidence, different recovery.'
+        : me.dept === 'Human Resources' ? 'HR recovers rules P-01 to P-05 and P-07 through payroll. Finance recovers P-06.'
+        : me.dept === 'Finance & Accounts' ? 'Finance recovers matrix penalties (P-06) by billing them. Payroll recoveries belong to HR.'
+        : 'Every applied penalty with its rule, the cutoff missed and the evidence behind it.',
+      ledgerTotal: ledgerTotals[me.dept] || '₹4,900', ledgerTotalLabel:'September to date',
+      ledgerRows,
+      ledgerFilters:[
+        { label:'All', on:lf === 'all', pick:()=>this.setState({ledgerFilter:'all'}) },
+        { label:'Applied', on:lf === 'applied', pick:()=>this.setState({ledgerFilter:'applied'}) },
+        { label:'Disputed', on:lf === 'disputed', pick:()=>this.setState({ledgerFilter:'disputed'}) },
+        { label:'Pending cutoff', on:lf === 'pending', pick:()=>this.setState({ledgerFilter:'pending'}) }
+      ],
+      ledgerSorts:[
+        { label:'Amount, highest first', on:ls === 'amount', pick:()=>this.setState({ledgerSort:'amount'}) },
+        { label:'Person', on:ls === 'person', pick:()=>this.setState({ledgerSort:'person'}) },
+        { label:'Rule', on:ls === 'rule', pick:()=>this.setState({ledgerSort:'rule'}) }
+      ],
+      ledgerSelCount: selCount ? selCount + ' selected' : 'none selected',
+      ledgerBulk: () => this.setState({ form:'ledgerState', toast:'' }),
+      ledgerSelectAll: () => this.setState(s => {
+        const all = {}; (ledgerRows || []).forEach(r => { all[r.person + r.rule + r.cutoff] = true; });
+        const already = Object.keys(s.ledgerSel || {}).filter(k => (s.ledgerSel || {})[k]).length;
+        return { ledgerSel: already ? {} : all };
+      }),
+      ledgerActions: me.dept === 'Human Resources' ? [
+        { label:'Update status of selection', run:() => this.setState({ form:'ledgerState', toast:'' }) },
+        { label:'Export payroll statement', run:t('Payroll statement exported: 6 people, ₹3,400, disputed lines excluded until decided.') },
+        

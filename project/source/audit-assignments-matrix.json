@@ -1,0 +1,74 @@
+{
+ "BRANCH_ASSIGNMENTS": {
+  "totalRows": 100702,
+  "realRows": 1729,
+  "blankPhantomRows": 98973,
+  "distinctPeople": 17,
+  "topPeople": [
+   [
+    "aniket.chalke@cruxindia.co.in",
+    604
+   ],
+   [
+    "aniket.chalke@cruxinida.co.in",
+    583
+   ],
+   [
+    "vrunda.potdar@cruxindia.co.in",
+    183
+   ],
+   [
+    "avinash.chaskar@cruxindia.co.in",
+    160
+   ],
+   [
+    "anish.bazmee@cruxindia.co.in",
+    50
+   ],
+   [
+    "shivakumar.v@cruxindia.co.in",
+    48
+   ],
+   [
+    "am.patna@cruxindia.co.in",
+    30
+   ],
+   [
+    "am.vadodara@cruxindia.co.in",
+    22
+   ]
+  ],
+  "duplicateExactGroups": 7,
+  "rowsInDuplicateGroups": 700,
+  "roles": {
+   "LOCATION_HEAD": 905,
+   "BRANCH_MANAGER": 824
+  },
+  "activeValues": {
+   "YES": 1729
+  },
+  "dublicateColumn": {
+   "1": 634,
+   "2": 390,
+   "(blank)": 705
+  },
+  "missingBranchID": 704,
+  "missingClientID": 0
+ },
+ "ESCALATION_MATRIX": {
+  "totalRows": 3783,
+  "realRows": 3783,
+  "blankPhantomRows": 0,
+  "branchesWithAnyMatrix": 704,
+  "branchesWithComplete5": 0,
+  "branchesIncomplete": 704,
+  "clientLevelRowsNoBranch": 70,
+  "levelDistribution": {
+   "1.0": 749,
+   "2.0": 755,
+   "3.0": 756,
+   "4.0": 760,
+   "5.0": 763
+  }
+ }
+}

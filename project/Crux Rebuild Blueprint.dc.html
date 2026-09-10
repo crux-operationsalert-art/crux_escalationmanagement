@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Crux Escalation Matrix — Audit &amp; Rebuild Blueprint</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:#faf9f6;color:#14161a;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:#3a5a80;text-decoration:none}
+  a:hover{color:#243b55;text-decoration:underline}
+  @media print{ .noprint{display:none!important} }
+</style>
+</helmet>
+
+<div style="max-width:100%;overflow-x:hidden">
+
+<header style="border-bottom:1px solid #e2e0da;background:#fffffe;position:sticky;top:0;z-index:20" class="noprint">
+  <div style="max-width:1180px;margin:0 auto;padding:14px clamp(16px,4vw,32px);display:flex;flex-wrap:wrap;gap:12px 24px;align-items:baseline;justify-content:space-between">
+    <div>
+      <div style="font-family:Georgia,'Times New Roman',serif;font-size:19px;letter-spacing:-0.01em">Crux Escalation Matrix</div>
+      <div style="font-size:12px;color:#5c6470;margin-top:2px">System audit &amp; rebuild blueprint · 3 Sep 2026</div>
+    </div>
+    <nav style="display:flex;flex-wrap:wrap;gap:2px 4px;font-size:12.5px">
+      <a href="#findings" style="padding:5px 9px;border:1px solid #e2e0da;border-radius:2px;color:#14161a">Findings</a>
+      <a href="#rootcause" style="padding:5px 9px;border:1px solid #e2e0da;border-radius:2px;color:#14161a">Root cause</a>
+      <a href="#data" style="padding:5px 9px;border:1px solid #e2e0da;border-radius:2px;color:#14161a">Data audit</a>
+      <a href="#verdict" style="padding:5px 9px;border:1px solid #e2e0da;border-radius:2px;color:#14161a">Keep / kill</a>
+      <a href="#ia" style="padding:5px 9px;border:1px solid #e2e0da;border-radius:2px;color:#14161a">New IA</a>
+      <a href="#model" style="padding:5px 9px;border:1px solid #e2e0da;border-radius:2px;color:#14161a">Data model</a>
+      <a href="#rules" style="padding:5px 9px;border:1px solid #e2e0da;border-radius:2px;color:#14161a">Rules</a>
+      <a href="#screens" style="padding:5px 9px;border:1px solid #3a5a80;border-radius:2px;background:#3a5a80;color:#fff">Screens</a>
+      <a href="#roadmap" style="padding:5px 9px;border:1px solid #e2e0da;border-radius:2px;color:#14161a">Roadmap</a>
+    </nav>
+  </div>
+</header>
+
+<section style="border-bottom:1px solid #e2e0da;background:#fffffe">
+  <div style="max-width:1180px;margin:0 auto;padding:clamp(32px,6vw,64px) clamp(16px,4vw,32px)">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:clamp(24px,4vw,56px);align-items:start">
+      <div>
+        <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#3a5a80;font-weight:600">Executive summary</div>
+        <h1 style="font-family:Georgia,'Times New Roman',serif;font-weight:400;font-size:clamp(28px,4.4vw,44px);line-height:1.12;letter-spacing:-0.02em;margin:14px 0 0">The application is not slow because of its size. It is slow, and unreliable, because of four specific defects.</h1>
+        <p style="font-size:16px;line-height:1.62;color:#3d434d;margin:20px 0 0;text-wrap:pretty">Read from the live datastore and the deployed script: <b>1,413 real branches, 28 clients, 55 users, 3 escalation cases</b>. The system is tiny. Every symptom you described traces to a structural defect rather than to data volume — and one of them is actively destroying your automation right now.</p>
+      </div>
+      <div style="display:grid;gap:10px">
+        <div style="border:1px solid #e2e0da;background:#faf9f6;padding:16px 18px">
+          <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#b4562f;font-weight:600">Defect 1 · live incident</div>
+          <div style="font-family:Georgia,serif;font-size:26px;margin-top:6px">1,889</div>
+          <div style="font-size:13.5px;line-height:1.5;color:#3d434d;margin-top:4px">strike e-mails sent to <b>one person</b> about <b>one open case</b> over nine days. 86% of all mail ever sent by the app failed; 1,849 failures read <i>"Service invoked too many times for one day"</i>.</div>
+        </div>
+        <div style="border:1px solid #e2e0da;background:#faf9f6;padding:16px 18px">
+          <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#b4562f;font-weight:600">Defect 2 · performance</div>
+          <div style="font-family:Georgia,serif;font-size:26px;margin-top:6px">198,890</div>
+          <div style="font-size:13.5px;line-height:1.5;color:#3d434d;margin-top:4px">completely empty rows in BRANCHES and BRANCH_ASSIGNMENTS. Every full-tab read parses <b>40 MB of XML to reach 1,413 records</b>.</div>
+        </div>
+        <div style="border:1px solid #e2e0da;background:#faf9f6;padding:16px 18px">
+          <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#b4562f;font-weight:600">Defect 3 · identity</div>
+          <div style="font-family:Georgia,serif;font-size:26px;margin-top:6px">583</div>
+          <div style="font-size:13.5px;line-height:1.5;color:#3d434d;margin-top:4px">coverage rows assigned to <span style="font-family:ui-monospace,monospace;font-size:12px">aniket.chalke@crux<b style="color:#b4562f">inida</b>.co.in</span> — a misspelt domain that exists in no user record. Invisible, unactionable, silently owned by nobody.</div>
+        </div>
+        <div style="border:1px solid #e2e0da;background:#faf9f6;padding:16px 18px">
+          <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#b4562f;font-weight:600">Defect 4 · history</div>
+          <div style="font-family:Georgia,serif;font-size:26px;margin-top:6px">449</div>
+          <div style="font-size:13.5px;line-height:1.5;color:#3d434d;margin-top:4px">case notes that exist <b>only</b> in a tab called "Copy of PEOPLE_EVENTS". The live tab holds 26 rows. Your history is in a backup nobody reads.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="findings" style="border-bottom:1px solid #e2e0da">
+  <div style="max-width:1180px;margin:0 auto;padding:clamp(32px,5vw,56px) clamp(16px,4vw,32px)">
+    <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#3a5a80;font-weight:600">A · Executive findings</div>
+    <h2 style="font-family:Georgia,serif;font-weight:400;font-size:clamp(22px,3vw,30px);margin:10px 0 6px;letter-spacing:-0.01em">Eighteen findings, each with its evidence</h2>
+    <p style="font-size:14px;color:#5c6470;margin:0 0 26px">Every row was read out of the exported datastore or the deployed script. <span style="border:1px solid #cfd6de;border-radius:2px;padding:1px 5px;font-size:11px;color:#3a5a80">V</span> verified · <span style="border:1px solid #cfd6de;border-radius:2px;padding:1px 5px;font-size:11px;color:#5c6470">I</span> inferred</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px">
+      <sc-for list="{{ findings }}" as="f" hint-placeholder-count="18">
+        <article style="border:1px solid #e2e0da;background:#fffffe;padding:16px 18px">
+          <div style="display:flex;gap:8px;align-items:baseline;justify-content:space-between">
+            <div style="font-family:ui-monospace,monospace;font-size:11px;color:#5c6470">F{{ f.n }}</div>
+            <div style="font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470;border:1px solid #e2e0da;padding:1px 6px">{{ f.area }}</div>
+          </div>
+          <h3 style="font-size:15px;line-height:1.35;margin:8px 0 8px;font-weight:600">{{ f.title }}</h3>
+          <div style="font-size:13px;line-height:1.55;color:#3d434d">{{ f.body }}</div>
+          <sc-if value="{{ evidenceOn }}" hint-placeholder-val="{{ true }}">
+            <div style="margin-top:10px;padding-top:10px;border-top:1px dotted #e2e0da;font-family:ui-monospace,monospace;font-size:11.5px;color:#3a5a80;line-height:1.5">{{ f.evidence }}</div>
+          </sc-if>
+        </article>
+      </sc-for>
+    </div>
+  </div>
+</section>
+
+<section id="rootcause" style="border-bottom:1px solid #e2e0da;background:#fffffe">
+  <div style="max-width:1180px;margin:0 auto;padding:clamp(32px,5vw,56px) clamp(16px,4vw,32px)">
+    <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#b4562f;font-weight:600">G · Performance &amp; reliability root cause</div>
+    <h2 style="font-family:Georgia,serif;font-weight:400;font-size:clamp(22px,3vw,30px);margin:10px 0 6px;letter-spacing:-0.01em">The e-mail storm: symptom to root cause</h2>
+    <p style="font-size:15px;line-height:1.6;color:#3d434d;max-width:70ch;margin:0 0 26px;text-wrap:pretty">You said the priority was automation that never silently stops. It stopped on 26 August, and the datastore records exactly why. This is one chain, not four separate problems.</p>
+
+    <div style="display:grid;gap:0;border:1px solid #e2e0da">
+      <sc-for list="{{ chain }}" as="c" hint-placeholder-count="7">
+        <div style="display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr);gap:0;border-bottom:1px solid #e2e0da">
+          <div style="padding:14px 16px;background:#faf9f6;border-right:1px solid #e2e0da">
+            <div style="font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;color:#5c6470;font-weight:600">{{ c.stage }}</div>
+          </div>
+          <div style="padding:14px 18px">
+            <div style="font-size:14.5px;line-height:1.5;color:#14161a">{{ c.text }}</div>
+            <div style="font-family:ui-monospace,monospace;font-size:11.5px;color:#3a5a80;margin-top:6px">{{ c.proof }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:22px">
+      <div style="border:1px solid #b4562f;background:#fdf6f3;padding:16px 18px">
+        <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#b4562f;font-weight:600">Corrective architecture</div>
+        <div style="font-size:13.5px;line-height:1.6;color:#3d434d;margin-top:8px">One outbox table with a unique constraint on the idempotency key, a single sender worker with a daily budget, exponential back-off with a terminal <b>ABANDONED</b> state, and quota failures classified as <i>retry tomorrow</i> — never <i>retry now</i>. A chase e-mail is scheduled by the case's next-due timestamp, not swept for every tick.</div>
+      </div>
+      <div style="border:1px solid #e2e0da;background:#faf9f6;padding:16px 18px">
+        <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#5c6470;font-weight:600">Volume correction</div>
+        <div style="font-size:13.5px;line-height:1.6;color:#3d434d;margin-top:8px">You expected thousands of branch e-mails a month, so you chose to spread the send over several days. In fact <b>693 branches</b> hold a complete five-level matrix, and 722 branches are active at all. At the agreed completeness gate the monthly dispatch is <b>≈693 e-mails</b> — comfortably inside one day's quota. <b>Recommendation:</b> send in one window, keep the multi-day spread as an automatic fallback only when the eligible count exceeds 1,200.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="data" style="border-bottom:1px solid #e2e0da">
+  <div style="max-width:1180px;margin:0 auto;padding:clamp(32px,5vw,56px) clamp(16px,4vw,32px)">
+    <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#3a5a80;font-weight:600">E · Data architecture audit</div>
+    <h2 style="font-family:Georgia,serif;font-weight:400;font-size:clamp(22px,3vw,30px);margin:10px 0 6px;letter-spacing:-0.01em">26 tabs, measured</h2>
+    <p style="font-size:14px;color:#5c6470;margin:0 0 22px">Rows are as exported. "Real" excludes wholly empty rows.</p>
+
+    <div style="overflow-x:auto;border:1px solid #e2e0da;background:#fffffe">
+      <table style="border-collapse:collapse;width:100%;min-width:720px;font-size:13px">
+        <thead>
+          <tr style="background:#faf9f6">
+            <th style="text-align:left;padding:9px 12px;border-bottom:1px solid #e2e0da;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470">Tab</th>
+            <th style="text-align:right;padding:9px 12px;border-bottom:1px solid #e2e0da;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470">Rows</th>
+            <th style="text-align:right;padding:9px 12px;border-bottom:1px solid #e2e0da;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470">Real</th>
+            <th style="text-align:left;padding:9px 12px;border-bottom:1px solid #e2e0da;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470">Verdict</th>
+            <th style="text-align:left;padding:9px 12px;border-bottom:1px solid #e2e0da;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470">Becomes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="26">
+            <tr>
+              <td style="padding:9px 12px;border-bottom:1px solid #f0eee9;font-family:ui-monospace,monospace;font-size:12px">{{ t.name }}</td>
+              <td style="padding:9px 12px;border-bottom:1px solid #f0eee9;text-align:right;font-family:ui-monospace,monospace;font-size:12px;color:#5c6470">{{ t.rows }}</td>
+              <td style="padding:9px 12px;border-bottom:1px solid #f0eee9;text-align:right;font-family:ui-monospace,monospace;font-size:12px">{{ t.real }}</td>
+              <td style="padding:9px 12px;border-bottom:1px solid #f0eee9;font-size:12.5px">{{ t.verdict }}</td>
+              <td style="padding:9px 12px;border-bottom:1px solid #f0eee9;font-size:12.5px;color:#3a5a80">{{ t.becomes }}</td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:20px">
+      <sc-for list="{{ dupes }}" as="d" hint-placeholder-count="6">
+        <div style="border:1px solid #e2e0da;background:#fffffe;padding:15px 17px">
+          <div style="font-family:Georgia,serif;font-size:22px">{{ d.stat }}</div>
+          <div style="font-size:13px;line-height:1.55;color:#3d434d;margin-top:6px">{{ d.text }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</section>
+
+
+<section id="verdict" style="border-bottom:1px solid #e2e0da;background:#fffffe">
+  <div style="max-width:1180px;margin:0 auto;padding:clamp(32px,5vw,56px) clamp(16px,4vw,32px)">
+    <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#3a5a80;font-weight:600">I–L · Keep · remove · merge · automate</div>
+    <h2 style="font-family:Georgia,serif;font-weight:400;font-size:clamp(22px,3vw,30px);margin:10px 0 6px;letter-spacing:-0.01em">What survives, and what does not</h2>
+    <p style="font-size:15px;line-height:1.6;color:#3d434d;max-width:70ch;margin:0 0 24px;text-wrap:pretty">You said nothing can be deleted outright. I have honoured that for every <i>capability</i> — but a capability is not a screen. Below, four features become zero screens because the system does the work instead, and three become one screen because they were always one job.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px">
+      <sc-for list="{{ verdicts }}" as="v" hint-placeholder-count="4">
+        <div style="border:1px solid #e2e0da;background:#faf9f6;padding:0">
+          <div style="padding:12px 16px;border-bottom:1px solid #e2e0da;background:#fffffe">
+            <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;font-weight:600;color:#3a5a80">{{ v.kind }}</div>
+            <div style="font-size:12.5px;color:#5c6470;margin-top:3px">{{ v.rule }}</div>
+          </div>
+          <div style="padding:6px 0">
+            <sc-for list="{{ v.items }}" as="i" hint-placeholder-count="5">
+              <div style="padding:9px 16px;border-bottom:1px dotted #e6e4de">
+                <div style="font-size:13.5px;font-weight:600;line-height:1.35">{{ i.what }}</div>
+                <div style="font-size:12.5px;line-height:1.5;color:#3d434d;margin-top:3px">{{ i.why }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</section>
+
+<section id="ia" style="border-bottom:1px solid #e2e0da">
+  <div style="max-width:1180px;margin:0 auto;padding:clamp(32px,5vw,56px) clamp(16px,4vw,32px)">
+    <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#3a5a80;font-weight:600">M–N · Proposed information architecture</div>
+    <h2 style="font-family:Georgia,serif;font-weight:400;font-size:clamp(22px,3vw,30px);margin:10px 0 6px;letter-spacing:-0.01em">Six destinations, not nineteen</h2>
+    <p style="font-size:15px;line-height:1.6;color:#3d434d;max-width:70ch;margin:0 0 24px;text-wrap:pretty">The current app is organised around how the script is written. The replacement is organised around the five questions you asked it to answer: where am I, what needs me, what is blocked, what happens next, and what is the record. Performance lives behind one door rather than being interleaved with client work.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="6">
+        <div style="border:1px solid #e2e0da;background:#fffffe;padding:15px 17px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+            <div style="font-family:Georgia,serif;font-size:17px">{{ n.name }}</div>
+            <div style="font-size:10.5px;color:#5c6470;font-family:ui-monospace,monospace">{{ n.roles }}</div>
+          </div>
+          <div style="font-size:12.5px;line-height:1.55;color:#3d434d;margin-top:8px">{{ n.purpose }}</div>
+          <div style="font-size:11.5px;line-height:1.5;color:#5c6470;margin-top:8px;padding-top:8px;border-top:1px dotted #e2e0da">Replaces: {{ n.replaces }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <h3 style="font-family:Georgia,serif;font-weight:400;font-size:22px;margin:34px 0 4px">Future journeys, and what was removed</h3>
+    <p style="font-size:14px;color:#5c6470;margin:0 0 18px">Each journey is stated as the user experiences it, with the eliminated steps named.</p>
+    <div style="display:grid;gap:12px">
+      <sc-for list="{{ journeys }}" as="j" hint-placeholder-count="5">
+        <div style="border:1px solid #e2e0da;background:#fffffe;padding:16px 18px">
+          <div style="display:flex;flex-wrap:wrap;gap:8px 14px;align-items:baseline;justify-content:space-between">
+            <div style="font-size:14px;font-weight:600">{{ j.role }}</div>
+            <div style="font-size:12px;color:#5c6470">{{ j.objective }}</div>
+          </div>
+          <div style="font-family:ui-monospace,monospace;font-size:12px;line-height:1.9;color:#3a5a80;margin-top:10px;word-break:break-word">{{ j.flow }}</div>
+          <div style="font-size:12.5px;line-height:1.55;color:#3d434d;margin-top:10px;padding-top:10px;border-top:1px dotted #e2e0da"><b style="color:#b4562f">Removed:</b> {{ j.removed }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</section>
+
+<section id="model" style="border-bottom:1px solid #e2e0da;background:#fffffe">
+  <div style="max-width:1180px;margin:0 auto;padding:clamp(32px,5vw,56px) clamp(16px,4vw,32px)">
+    <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#3a5a80;font-weight:600">O · Proposed data architecture</div>
+    <h2 style="font-family:Georgia,serif;font-weight:400;font-size:clamp(22px,3vw,30px);margin:10px 0 6px;letter-spacing:-0.01em">26 tabs become 19 tables — and 1,729 coverage rows become about 40</h2>
+    <p style="font-size:15px;line-height:1.6;color:#3d434d;max-width:72ch;margin:0 0 8px;text-wrap:pretty">Three rules govern this model. Every reference is an id, never a name or an e-mail. Nothing derivable is stored. Every row carries where it came from, so a migrated record can always be traced back to its original sheet row.</p>
+    <p style="font-size:13.5px;line-height:1.6;color:#5c6470;max-width:72ch;margin:0 0 24px">Recommended stack, given free-tier-only and an existing Google Cloud project: <b>Postgres (Supabase free tier)</b> + a small server-rendered app + one scheduled worker. Postgres gives you the unique constraints that make the duplication structurally impossible, which is the whole point.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px">
+      <sc-for list="{{ entities }}" as="e" hint-placeholder-count="19">
+        <div style="border:1px solid #e2e0da;background:#faf9f6;padding:0">
+          <div style="padding:11px 15px;border-bottom:1px solid #e2e0da;background:#fffffe;display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+            <div style="font-family:ui-monospace,monospace;font-size:13px;font-weight:600">{{ e.name }}</div>
+            <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470">{{ e.kind }}</div>
+          </div>
+          <div style="padding:12px 15px">
+            <div style="font-size:12.5px;line-height:1.55;color:#3d434d">{{ e.purpose }}</div>
+            <div style="font-family:ui-monospace,monospace;font-size:11.5px;line-height:1.7;color:#3a5a80;margin-top:9px">{{ e.fields }}</div>
+            <div style="font-size:11.5px;line-height:1.5;color:#b4562f;margin-top:9px;padding-top:8px;border-top:1px dotted #e2e0da">{{ e.constraint }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <h3 style="font-family:Georgia,serif;font-weight:400;font-size:22px;margin:34px 0 4px">Migration map</h3>
+    <p style="font-size:14px;color:#5c6470;margin:0 0 16px">Auto-merge by rule with every merge logged, as you chose. Nothing is dropped: superseded rows are retained with a <span style="font-family:ui-monospace,monospace;font-size:12px">superseded_by</span> reference.</p>
+    <div style="overflow-x:auto;border:1px solid #e2e0da;background:#faf9f6">
+      <table style="border-collapse:collapse;width:100%;min-width:680px;font-size:13px">
+        <thead><tr style="background:#fffffe">
+          <th style="text-align:left;padding:9px 12px;border-bottom:1px solid #e2e0da;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470">From</th>
+          <th style="text-align:left;padding:9px 12px;border-bottom:1px solid #e2e0da;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470">To</th>
+          <th style="text-align:left;padding:9px 12px;border-bottom:1px solid #e2e0da;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470">Transformation</th>
+        </tr></thead>
+        <tbody>
+          <sc-for list="{{ migration }}" as="m" hint-placeholder-count="10">
+            <tr>
+              <td style="padding:9px 12px;border-bottom:1px solid #eae8e2;font-family:ui-monospace,monospace;font-size:11.5px">{{ m.from }}</td>
+              <td style="padding:9px 12px;border-bottom:1px solid #eae8e2;font-family:ui-monospace,monospace;font-size:11.5px;color:#3a5a80">{{ m.to }}</td>
+              <td style="padding:9px 12px;border-bottom:1px solid #eae8e2;font-size:12.5px;line-height:1.5">{{ m.how }}</td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="rules" style="border-bottom:1px solid #e2e0da">
+  <div style="max-width:1180px;margin:0 auto;padding:clamp(32px,5vw,56px) clamp(16px,4vw,32px)">
+    <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#3a5a80;font-weight:600">F / P · Business logic architecture</div>
+    <h2 style="font-family:Georgia,serif;font-weight:400;font-size:clamp(22px,3vw,30px);margin:10px 0 6px;letter-spacing:-0.01em">Every rule in one place, and every rule editable without code</h2>
+    <p style="font-size:15px;line-height:1.6;color:#3d434d;max-width:72ch;margin:0 0 24px;text-wrap:pretty">Today rules are scattered across job functions, route guards and settings strings. In the replacement there is one rules module, and each rule below is a configuration row an admin can change — nothing here requires a deployment.</p>
+
+    <div style="display:grid;gap:12px">
+      <sc-for list="{{ rules }}" as="r" hint-placeholder-count="9">
+        <div style="border:1px solid #e2e0da;background:#fffffe;padding:0">
+          <div style="padding:12px 16px;border-bottom:1px dotted #e2e0da;display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;justify-content:space-between">
+            <div style="font-size:14.5px;font-weight:600">{{ r.name }}</div>
+            <div style="font-size:11px;font-family:ui-monospace,monospace;color:#5c6470">{{ r.id }}</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:0">
+            <div style="padding:11px 16px;border-right:1px solid #f0eee9">
+              <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#5c6470">Trigger</div>
+              <div style="font-size:12.5px;line-height:1.5;margin-top:4px">{{ r.trigger }}</div>
+            </div>
+            <div style="padding:11px 16px;border-right:1px solid #f0eee9">
+              <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#5c6470">Logic</div>
+              <div style="font-size:12.5px;line-height:1.5;margin-top:4px">{{ r.logic }}</div>
+            </div>
+            <div style="padding:11px 16px;border-right:1px solid #f0eee9">
+              <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#5c6470">Outcome</div>
+              <div style="font-size:12.5px;line-height:1.5;margin-top:4px">{{ r.outcome }}</div>
+            </div>
+            <div style="padding:11px 16px;background:#faf9f6">
+              <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#3a5a80">Change vs today</div>
+              <div style="font-size:12.5px;line-height:1.5;margin-top:4px;color:#3d434d">{{ r.change }}</div>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <h3 style="font-family:Georgia,serif;font-weight:400;font-size:22px;margin:34px 0 4px">Category → desk routing</h3>
+    <p style="font-size:14px;color:#5c6470;margin:0 0 16px">Your 22 categories, six desks, MD office escalation-only. Fraud/Integrity and Data Privacy are pinned to Compliance and cannot be reassigned to Operations, per your instruction.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+      <sc-for list="{{ desks }}" as="d" hint-placeholder-count="6">
+        <div style="border:1px solid #e2e0da;background:#fffffe;padding:14px 16px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+            <div style="font-size:14px;font-weight:600">{{ d.desk }}</div>
+            <div style="font-size:11px;color:#5c6470">{{ d.count }}</div>
+          </div>
+          <div style="font-size:11.5px;color:#3a5a80;font-family:ui-monospace,monospace;margin-top:5px">{{ d.head }}</div>
+          <div style="font-size:12.5px;line-height:1.6;color:#3d434d;margin-top:9px">{{ d.cats }}</div>
+          <div style="font-size:11.5px;line-height:1.45;color:#b4562f;margin-top:8px">{{ d.note }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</section>
+
+<section id="screens" style="border-bottom:1px solid #e2e0da;background:#f4f2ee">
+  <div style="max-width:1180px;margin:0 auto;padding:clamp(32px,5vw,56px) clamp(16px,4vw,32px)">
+    <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#3a5a80;font-weight:600">Q / S · Proposed UI — live screens</div>
+    <h2 style="font-family:Georgia,serif;font-weight:400;font-size:clamp(22px,3vw,30px);margin:10px 0 6px;letter-spacing:-0.01em">Nine working screens, real data, clickable</h2>
+    <p style="font-size:15px;line-height:1.6;color:#3d434d;max-width:72ch;margin:0 0 30px;text-wrap:pretty">Sample data below is your data: CLI-00024, BR-00747, ESC-00193, the Pune matrix, the real job history. Every control that looks interactive is interactive — switch roles, open a level, walk the case, re-run a job.</p>
+
+    <!-- SCREEN 1 · TODAY -->
+    <div style="margin-bottom:34px">
+      <div style="display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between;margin-bottom:10px">
+        <div><span style="font-family:ui-monospace,monospace;font-size:11px;color:#5c6470">S-01</span> <span style="font-family:Georgia,serif;font-size:19px;margin-left:6px">Today</span></div>
+        <div style="font-size:12.5px;color:#5c6470">Primary action: clear what is waiting · every role, first screen after sign-in</div>
+      </div>
+      <div style="border:1px solid #d8d5cd;background:#fff;box-shadow:0 1px 0 #e8e5dd">
+        <div style="display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid #e2e0da;background:#faf9f6">
+          <div style="display:flex;gap:5px"><span style="width:9px;height:9px;border-radius:50%;background:#d8d5cd;display:block"></span><span style="width:9px;height:9px;border-radius:50%;background:#d8d5cd;display:block"></span><span style="width:9px;height:9px;border-radius:50%;background:#d8d5cd;display:block"></span></div>
+          <div style="font-family:ui-monospace,monospace;font-size:11px;color:#5c6470;margin-left:8px">crux.app / today</div>
+        </div>
+        <div style="padding:0">
+          <div style="display:flex;flex-wrap:wrap;gap:0;border-bottom:1px solid #e2e0da">
+            <sc-for list="{{ roleTabs }}" as="r" hint-placeholder-count="3">
+              <button type="button" onClick="{{ r.pick }}" style="appearance:none;background:none;border:none;border-right:1px solid #e2e0da;padding:11px 18px 9px;font:inherit;font-size:13px;cursor:pointer;text-align:left" style-hover="background:#faf9f6">
+                <div style="font-weight:600">{{ r.label }}</div>
+                <div style="font-size:11px;color:#5c6470;margin-top:2px">{{ r.who }}</div>
+                <sc-if value="{{ r.selected }}" hint-placeholder-val="{{ true }}">
+                  <div style="height:2px;background:#3a5a80;margin-top:8px"></div>
+                </sc-if>
+              </button>
+            </sc-for>
+          </div>
+          <div style="padding:clamp(16px,3vw,26px)">
+            <div style="display:flex;flex-wrap:wrap;gap:10px 24px;align-items:baseline;justify-content:space-between">
+              <div>
+                <div style="font-family:Georgia,serif;font-size:clamp(20px,3vw,26px)">{{ home.greeting }}</div>
+                <div style="font-size:13px;color:#5c6470;margin-top:3px">{{ home.sub }}</div>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <sc-for list="{{ home.counters }}" as="c" hint-placeholder-count="3">
+                  <div style="border:1px solid #e2e0da;padding:8px 14px;min-width:96px">
+                    <div style="font-family:Georgia,serif;font-size:20px">{{ c.n }}</div>
+                    <div style="font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470;margin-top:2px">{{ c.label }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="margin-top:22px;border:1px solid #e2e0da">
+              <div style="padding:9px 14px;background:#faf9f6;border-bottom:1px solid #e2e0da;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470;font-weight:600">Needs you</div>
+              <sc-for list="{{ home.tasks }}" as="t" hint-placeholder-count="4">
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:4px 16px;padding:13px 14px;border-bottom:1px solid #f0eee9;align-items:center">
+                  <div>
+                    <div style="font-size:14px;font-weight:600;line-height:1.35">{{ t.title }}</div>
+                    <div style="font-size:12.5px;color:#5c6470;margin-top:3px">{{ t.meta }}</div>
+                  </div>
+                  <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end">
+                    <div style="font-size:11.5px;color:#b4562f">{{ t.why }}</div>
+                    <span style="border:1px solid #3a5a80;color:#3a5a80;font-size:12px;padding:5px 12px;cursor:pointer;white-space:nowrap" style-hover="background:#3a5a80;color:#fff">{{ t.action }}</span>
+                  </div>
+                </div>
+              </sc-for>
+              <div style="padding:11px 14px;font-size:12.5px;color:#5c6470">{{ home.footer }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:12.5px;color:#5c6470;margin-top:8px;line-height:1.55"><b>Answers:</b> where am I · what needs me · why is it blocked · what happens next. <b>Empty state:</b> "Nothing waiting. Next dispatch 1 Oct, 693 branches eligible." <b>Mobile:</b> counters wrap to a row of three, tasks become full-width cards, action button stays 44px tall.</div>
+    </div>
+
+    <!-- SCREEN 2 · MATRIX -->
+    <div style="margin-bottom:34px">
+      <div style="display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between;margin-bottom:10px">
+        <div><span style="font-family:ui-monospace,monospace;font-size:11px;color:#5c6470">S-02</span> <span style="font-family:Georgia,serif;font-size:19px;margin-left:6px">Client → branch → matrix</span></div>
+        <div style="font-size:12.5px;color:#5c6470">Primary action: make the branch dispatchable · click a level to open it</div>
+      </div>
+      <div style="border:1px solid #d8d5cd;background:#fff">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:0">
+          <div style="border-right:1px solid #e2e0da;background:#faf9f6">
+            <div style="padding:11px 14px;border-bottom:1px solid #e2e0da;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470;font-weight:600">SBI · CLI-00024 · Pune</div>
+            <sc-for list="{{ branches }}" as="b" hint-placeholder-count="5">
+              <div style="padding:11px 14px;border-bottom:1px solid #eae8e2;display:flex;justify-content:space-between;gap:10px;align-items:baseline">
+                <div>
+                  <div style="font-size:13px;font-weight:600">{{ b.name }}</div>
+                  <div style="font-family:ui-monospace,monospace;font-size:11px;color:#5c6470;margin-top:2px">{{ b.id }}</div>
+                </div>
+                <div style="font-size:11px;white-space:nowrap">{{ b.state }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="grid-column:span 2;min-width:0">
+            <div style="padding:14px;border-bottom:1px solid #e2e0da;display:flex;flex-wrap:wrap;gap:10px 18px;justify-content:space-between;align-items:baseline">
+              <div>
+                <div style="font-family:Georgia,serif;font-size:19px">Kothrud Branch</div>
+                <div style="font-size:12px;color:#5c6470;margin-top:3px;font-family:ui-monospace,monospace">BR-00747 · SBIN0030421 · Pune, Maharashtra · West</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#2f7355;font-weight:600">Complete · dispatchable</div>
+                <div style="font-size:11.5px;color:#5c6470;margin-top:2px">5 of 5 levels · next send 1 Oct</div>
+              </div>
+            </div>
+            <sc-for list="{{ levels }}" as="l" hint-placeholder-count="5">
+              <div onClick="{{ l.pick }}" style="padding:12px 14px;border-bottom:1px solid #f0eee9;cursor:pointer;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:4px 14px;align-items:center" style-hover="background:#faf9f6">
+                <div style="display:flex;gap:10px;align-items:baseline">
+                  <span style="font-family:Georgia,serif;font-size:17px;color:#b4562f">{{ l.n }}</span>
+                  <div>
+                    <div style="font-size:13.5px;font-weight:600">{{ l.role }}</div>
+                    <div style="font-size:12.5px;color:#3d434d;margin-top:2px">{{ l.name }}</div>
+                  </div>
+                </div>
+                <div style="font-size:12px;color:#5c6470;font-family:ui-monospace,monospace;word-break:break-all">{{ l.contact }}</div>
+                <sc-if value="{{ l.open }}" hint-placeholder-val="{{ true }}">
+                  <div style="grid-column:1/-1;border-top:1px dotted #e2e0da;margin-top:10px;padding-top:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px">
+                    <label style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470">Contact name
+                      <input value="{{ l.name }}" style="display:block;width:100%;margin-top:5px;padding:9px 10px;border:1px solid #cfcbc1;font:inherit;font-size:13.5px;min-height:40px" />
+                    </label>
+                    <label style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470">Mobile
+                      <input value="{{ l.mobile }}" style="display:block;width:100%;margin-top:5px;padding:9px 10px;border:1px solid #cfcbc1;font:inherit;font-size:13.5px;min-height:40px" />
+                    </label>
+                    <label style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470">E-mail
+                      <input value="{{ l.email }}" style="display:block;width:100%;margin-top:5px;padding:9px 10px;border:1px solid #cfcbc1;font:inherit;font-size:13.5px;min-height:40px" />
+                    </label>
+                    <div style="display:flex;align-items:flex-end;gap:8px">
+                      <span style="background:#3a5a80;color:#fff;font-size:13px;padding:10px 16px;cursor:pointer;min-height:40px;display:flex;align-items:center" style-hover="background:#2c4665">Save level</span>
+                      <span style="font-size:11.5px;color:#5c6470;line-height:1.4">Writes one row. Client, zone and region are inherited from the branch — never asked.</span>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:12.5px;color:#5c6470;margin-top:8px;line-height:1.55"><b>Permissions:</b> Location Head and Manager may edit their covered branches; changes go live immediately and are logged, per your choice. <b>Error state:</b> saving a level with neither mobile nor e-mail is refused inline — that is the completeness rule, enforced at the field.</div>
+    </div>
+
+    <!-- SCREEN 3 · CASE -->
+    <div style="margin-bottom:34px">
+      <div style="display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between;margin-bottom:10px">
+        <div><span style="font-family:ui-monospace,monospace;font-size:11px;color:#5c6470">S-03</span> <span style="font-family:Georgia,serif;font-size:19px;margin-left:6px">Escalation case</span></div>
+        <div style="font-size:12.5px;color:#5c6470">Click a stage to see that state · ESC-00193, your real open case</div>
+      </div>
+      <div style="border:1px solid #d8d5cd;background:#fff">
+        <div style="display:flex;flex-wrap:wrap;gap:0;border-bottom:1px solid #e2e0da">
+          <sc-for list="{{ steps }}" as="s" hint-placeholder-count="5">
+            <button type="button" onClick="{{ s.pick }}" style="appearance:none;background:none;border:none;border-right:1px solid #e2e0da;padding:10px 16px 8px;font:inherit;font-size:12.5px;cursor:pointer;text-align:left;flex:1 1 120px" style-hover="background:#faf9f6">
+              <div style="font-family:ui-monospace,monospace;font-size:10.5px;color:#5c6470">{{ s.n }}</div>
+              <div style="font-weight:600;margin-top:2px">{{ s.label }}</div>
+              <sc-if value="{{ s.selected }}" hint-placeholder-val="{{ true }}">
+                <div style="height:2px;background:#b4562f;margin-top:7px"></div>
+              </sc-if>
+            </button>
+          </sc-for>
+        </div>
+        <div style="padding:clamp(16px,3vw,24px)">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:clamp(16px,3vw,30px)">
+            <div style="min-width:0">
+              <div style="font-family:ui-monospace,monospace;font-size:11.5px;color:#5c6470">ESC-00193 · raised 27 Aug 15:26 by shantanu.suravase@</div>
+              <div style="font-family:Georgia,serif;font-size:clamp(19px,2.6vw,24px);margin-top:6px;line-height:1.25">{{ caseView.headline }}</div>
+              <div style="font-size:14px;line-height:1.6;color:#3d434d;margin-top:10px">{{ caseView.body }}</div>
+              <div style="margin-top:16px;border:1px solid #e2e0da;background:#faf9f6;padding:13px 15px">
+                <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470;font-weight:600">What the system does next</div>
+                <div style="font-size:13.5px;line-height:1.6;color:#14161a;margin-top:6px">{{ caseView.next }}</div>
+              </div>
+              <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:8px">
+                <sc-for list="{{ caseView.actions }}" as="a" hint-placeholder-count="2">
+                  <span style="border:1px solid #3a5a80;color:#3a5a80;font-size:13px;padding:9px 15px;cursor:pointer;min-height:40px;display:flex;align-items:center" style-hover="background:#3a5a80;color:#fff">{{ a }}</span>
+                </sc-for>
+              </div>
+            </div>
+            <div style="min-width:0">
+              <div style="border:1px solid #e2e0da">
+                <div style="padding:9px 13px;background:#faf9f6;border-bottom:1px solid #e2e0da;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470;font-weight:600">Routing &amp; ownership</div>
+                <sc-for list="{{ caseView.facts }}" as="f" hint-placeholder-count="6">
+                  <div style="display:flex;gap:12px;justify-content:space-between;padding:9px 13px;border-bottom:1px solid #f0eee9;font-size:12.5px">
+                    <div style="color:#5c6470;white-space:nowrap">{{ f.k }}</div>
+                    <div style="text-align:right;word-break:break-word">{{ f.v }}</div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="border:1px solid #e2e0da;margin-top:12px">
+                <div style="padding:9px 13px;background:#faf9f6;border-bottom:1px solid #e2e0da;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470;font-weight:600">Notifications sent</div>
+                <sc-for list="{{ caseView.mails }}" as="m" hint-placeholder-count="3">
+                  <div style="padding:9px 13px;border-bottom:1px solid #f0eee9;font-size:12.5px;line-height:1.5">{{ m }}</div>
+                </sc-for>
+                <div style="padding:9px 13px;font-size:11.5px;color:#b4562f;line-height:1.5">{{ caseView.contrast }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 4 · AUTOMATION HEALTH -->
+    <div style="margin-bottom:34px">
+      <div style="display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between;margin-bottom:10px">
+        <div><span style="font-family:ui-monospace,monospace;font-size:11px;color:#5c6470">S-04</span> <span style="font-family:Georgia,serif;font-size:19px;margin-left:6px">Automation health</span></div>
+        <div style="font-size:12.5px;color:#5c6470">Your top priority · press Re-run on any job</div>
+      </div>
+      <div style="border:1px solid #d8d5cd;background:#fff">
+        <div style="padding:14px;border-bottom:1px solid #e2e0da;display:flex;flex-wrap:wrap;gap:12px 20px;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-family:Georgia,serif;font-size:19px">All jobs healthy</div>
+            <div style="font-size:12.5px;color:#5c6470;margin-top:3px">Mail budget today: 341 of 1,800 used · 0 deferred · 0 abandoned</div>
+          </div>
+          <div style="font-size:12px;color:#2f7355;border:1px solid #2f7355;padding:6px 12px">No job may be silently paused — disabling one requires a reason and shows a banner</div>
+        </div>
+        <div style="overflow-x:auto">
+          <table style="border-collapse:collapse;width:100%;min-width:660px;font-size:13px">
+            <thead><tr style="background:#faf9f6">
+              <th style="text-align:left;padding:9px 13px;border-bottom:1px solid #e2e0da;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470">Job</th>
+              <th style="text-align:left;padding:9px 13px;border-bottom:1px solid #e2e0da;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470">Last run</th>
+              <th style="text-align:left;padding:9px 13px;border-bottom:1px solid #e2e0da;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470">Result</th>
+              <th style="text-align:left;padding:9px 13px;border-bottom:1px solid #e2e0da;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470">Next</th>
+              <th style="padding:9px 13px;border-bottom:1px solid #e2e0da"></th>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ jobs }}" as="j" hint-placeholder-count="6">
+                <tr>
+                  <td style="padding:10px 13px;border-bottom:1px solid #f0eee9;font-family:ui-monospace,monospace;font-size:11.5px">{{ j.key }}</td>
+                  <td style="padding:10px 13px;border-bottom:1px solid #f0eee9;color:#5c6470;font-size:12.5px">{{ j.last }}</td>
+                  <td style="padding:10px 13px;border-bottom:1px solid #f0eee9;font-size:12.5px">{{ j.result }}</td>
+                  <td style="padding:10px 13px;border-bottom:1px solid #f0eee9;color:#5c6470;font-size:12.5px">{{ j.next }}</td>
+                  <td style="padding:10px 13px;border-bottom:1px solid #f0eee9;text-align:right">
+                    <button type="button" onClick="{{ j.run }}" style="appearance:none;border:1px solid #3a5a80;background:#fff;color:#3a5a80;font:inherit;font-size:12px;padding:6px 12px;cursor:pointer;min-height:36px" style-hover="background:#3a5a80;color:#fff">Re-run</button>
+                  </td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+        <sc-if value="{{ jobResult }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:12px 14px;border-top:1px solid #e2e0da;background:#faf9f6;font-family:ui-monospace,monospace;font-size:12px;color:#2f7355;line-height:1.6">{{ jobResult }}</div>
+        </sc-if>
+      </div>
+      <div style="font-size:12.5px;color:#5c6470;margin-top:8px;line-height:1.55"><b>All four things you asked for:</b> last run, result and next run per job · an alert to you the moment a job fails or skips · one-click safe re-run (idempotency keys make it safe) · no hidden pause. The 1,535 NOOP sweep runs collapse into one daily counter instead of 1,535 log rows.</div>
+    </div>
+  </div>
+</section>
+
+<section style="border-bottom:1px solid #e2e0da;background:#f4f2ee">
+  <div style="max-width:1180px;margin:0 auto;padding:0 clamp(16px,4vw,32px) clamp(32px,5vw,56px)">
+
+    <!-- SCREEN 5 · MASTERS -->
+    <div style="margin-bottom:34px">
+      <div style="display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between;margin-bottom:10px">
+        <div><span style="font-family:ui-monospace,monospace;font-size:11px;color:#5c6470">S-05</span> <span style="font-family:Georgia,serif;font-size:19px;margin-left:6px">Masters &amp; coverage</span></div>
+        <div style="font-size:12.5px;color:#5c6470">Switch tabs · the coverage tab is where overlaps are refused</div>
+      </div>
+      <div style="border:1px solid #d8d5cd;background:#fff">
+        <div style="display:flex;flex-wrap:wrap;border-bottom:1px solid #e2e0da">
+          <sc-for list="{{ masterTabs }}" as="t" hint-placeholder-count="4">
+            <button type="button" onClick="{{ t.pick }}" style="appearance:none;background:none;border:none;border-right:1px solid #e2e0da;padding:11px 18px 9px;font:inherit;font-size:13px;cursor:pointer;text-align:left" style-hover="background:#faf9f6">
+              <div style="font-weight:600">{{ t.label }}</div>
+              <div style="font-size:11px;color:#5c6470;margin-top:2px">{{ t.count }}</div>
+              <sc-if value="{{ t.selected }}" hint-placeholder-val="{{ true }}">
+                <div style="height:2px;background:#3a5a80;margin-top:8px"></div>
+              </sc-if>
+            </button>
+          </sc-for>
+        </div>
+        <div style="padding:clamp(14px,3vw,22px)">
+          <div style="font-family:Georgia,serif;font-size:19px">{{ master.title }}</div>
+          <div style="font-size:13.5px;line-height:1.6;color:#3d434d;margin-top:6px;max-width:74ch">{{ master.blurb }}</div>
+          <div style="overflow-x:auto;margin-top:14px;border:1px solid #e2e0da">
+            <table style="border-collapse:collapse;width:100%;min-width:600px;font-size:13px">
+              <thead><tr style="background:#faf9f6">
+                <sc-for list="{{ master.cols }}" as="c" hint-placeholder-count="4">
+                  <th style="text-align:left;padding:9px 12px;border-bottom:1px solid #e2e0da;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470">{{ c }}</th>
+                </sc-for>
+              </tr></thead>
+              <tbody>
+                <sc-for list="{{ master.rows }}" as="r" hint-placeholder-count="5">
+                  <tr>
+                    <sc-for list="{{ r }}" as="cell" hint-placeholder-count="4">
+                      <td style="padding:9px 12px;border-bottom:1px solid #f0eee9;font-size:12.5px;vertical-align:top">{{ cell }}</td>
+                    </sc-for>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top:12px;border:1px solid #b4562f;background:#fdf6f3;padding:12px 15px;font-size:13px;line-height:1.6;color:#3d434d">{{ master.note }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 6+7 · CONFIG AND PORTAL -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px;margin-bottom:34px">
+      <div>
+        <div style="margin-bottom:10px"><span style="font-family:ui-monospace,monospace;font-size:11px;color:#5c6470">S-06</span> <span style="font-family:Georgia,serif;font-size:19px;margin-left:6px">Routing configuration</span></div>
+        <div style="border:1px solid #d8d5cd;background:#fff">
+          <div style="padding:12px 14px;border-bottom:1px solid #e2e0da;font-size:12.5px;color:#5c6470">Admin only · every change written to audit_entry · no deployment needed</div>
+          <sc-for list="{{ configRows }}" as="c" hint-placeholder-count="6">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px 12px;padding:11px 14px;border-bottom:1px solid #f0eee9;align-items:center">
+              <div style="font-size:13px">{{ c.cat }}</div>
+              <div style="display:flex;gap:8px;align-items:center;justify-content:flex-end">
+                <select style="font:inherit;font-size:12.5px;padding:7px 9px;border:1px solid #cfcbc1;background:#fff;min-height:38px">
+                  <option>{{ c.desk }}</option>
+                </select>
+                <sc-if value="{{ c.pinned }}" hint-placeholder-val="{{ true }}">
+                  <span style="font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:#b4562f;border:1px solid #b4562f;padding:2px 6px;white-space:nowrap">Pinned</span>
+                </sc-if>
+              </div>
+            </div>
+          </sc-for>
+          <div style="padding:12px 14px;font-size:12px;color:#5c6470;line-height:1.55">Clocks, completeness gate, auto-close window, dispatch day, mail budget and holidays are configured on the same screen. Pinned rows cannot be moved off Compliance.</div>
+        </div>
+      </div>
+      <div>
+        <div style="margin-bottom:10px"><span style="font-family:ui-monospace,monospace;font-size:11px;color:#5c6470">S-07</span> <span style="font-family:Georgia,serif;font-size:19px;margin-left:6px">Client portal · phone</span></div>
+        <div style="display:flex;justify-content:center">
+          <div style="width:100%;max-width:330px;border:1px solid #d8d5cd;background:#fff;padding:0">
+            <div style="height:26px;background:#faf9f6;border-bottom:1px solid #e2e0da;display:flex;align-items:center;justify-content:center;font-size:10px;color:#5c6470;font-family:ui-monospace,monospace">crux.app/m/9f4c…</div>
+            <div style="padding:18px 16px">
+              <div style="font-size:10.5px;letter-spacing:0.12em;text-transform:uppercase;color:#5c6470">Crux Risk Management</div>
+              <div style="font-family:Georgia,serif;font-size:21px;margin-top:6px;line-height:1.2">State Bank of India</div>
+              <div style="font-size:12px;color:#5c6470;margin-top:3px">Kothrud Branch · BR-00747</div>
+              <div style="margin-top:16px;display:grid;gap:1px;background:#e2e0da;border:1px solid #e2e0da">
+                <sc-for list="{{ portal }}" as="p" hint-placeholder-count="5">
+                  <div style="background:#fff;padding:11px 12px">
+                    <div style="display:flex;gap:8px;align-items:baseline;justify-content:space-between">
+                      <div style="font-size:12.5px;font-weight:600">{{ p.role }}</div>
+                      <div style="font-family:Georgia,serif;font-size:15px;color:#b4562f">{{ p.n }}</div>
+                    </div>
+                    <div style="font-size:13px;margin-top:3px">{{ p.name }}</div>
+                    <div style="font-size:12px;color:#3a5a80;margin-top:3px;word-break:break-all">{{ p.contact }}</div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="font-size:11px;color:#5c6470;margin-top:12px;line-height:1.5">Live, read-only, no account needed. Last updated 26 Aug 2026. Bookmark this page to always see the current matrix.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREEN 8+9 -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:22px">
+      <div>
+        <div style="margin-bottom:10px"><span style="font-family:ui-monospace,monospace;font-size:11px;color:#5c6470">S-08</span> <span style="font-family:Georgia,serif;font-size:19px;margin-left:6px">Case register · print-exact</span></div>
+        <div style="border:1px solid #d8d5cd;background:#fff;padding:18px 18px 20px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #14161a;padding-bottom:8px">
+            <div>
+              <div style="font-family:Georgia,serif;font-size:17px">Escalation Register</div>
+              <div style="font-size:11px;color:#5c6470;margin-top:2px">August 2026 · all clients · Crux Risk Management Pvt Ltd</div>
+            </div>
+            <div style="font-family:ui-monospace,monospace;font-size:10px;color:#5c6470;text-align:right">Generated 3 Sep 2026<br />Page 1 of 1</div>
+          </div>
+          <div style="overflow-x:auto">
+            <table style="border-collapse:collapse;width:100%;font-size:11.5px;margin-top:10px">
+              <thead><tr>
+                <th style="text-align:left;padding:6px 6px;border-bottom:1px solid #14161a;font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase">Ref</th>
+                <th style="text-align:left;padding:6px 6px;border-bottom:1px solid #14161a;font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase">Client / branch</th>
+                <th style="text-align:left;padding:6px 6px;border-bottom:1px solid #14161a;font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase">Category</th>
+                <th style="text-align:left;padding:6px 6px;border-bottom:1px solid #14161a;font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase">Desk</th>
+                <th style="text-align:left;padding:6px 6px;border-bottom:1px solid #14161a;font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase">Status</th>
+                <th style="text-align:right;padding:6px 6px;border-bottom:1px solid #14161a;font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase">Days</th>
+              </tr></thead>
+              <tbody>
+                <sc-for list="{{ register }}" as="r" hint-placeholder-count="3">
+                  <tr>
+                    <td style="padding:7px 6px;border-bottom:1px solid #eae8e2;font-family:ui-monospace,monospace;font-size:10.5px">{{ r.ref }}</td>
+                    <td style="padding:7px 6px;border-bottom:1px solid #eae8e2">{{ r.where }}</td>
+                    <td style="padding:7px 6px;border-bottom:1px solid #eae8e2">{{ r.cat }}</td>
+                    <td style="padding:7px 6px;border-bottom:1px solid #eae8e2">{{ r.desk }}</td>
+                    <td style="padding:7px 6px;border-bottom:1px solid #eae8e2">{{ r.status }}</td>
+                    <td style="padding:7px 6px;border-bottom:1px solid #eae8e2;text-align:right;font-family:ui-monospace,monospace">{{ r.days }}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+          <div style="font-size:10.5px;color:#5c6470;margin-top:10px;line-height:1.5">3 cases · 1 open, 1 in progress, 1 resolved · mean age 5.3 days. Fixed A4/Letter layout, repeating header, no screen chrome. One of the four print-exact documents you named.</div>
+        </div>
+      </div>
+      <div>
+        <div style="margin-bottom:10px"><span style="font-family:ui-monospace,monospace;font-size:11px;color:#5c6470">S-09</span> <span style="font-family:Georgia,serif;font-size:19px;margin-left:6px">Scorecard · behind one door</span></div>
+        <div style="border:1px solid #d8d5cd;background:#fff;padding:18px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
+            <div>
+              <div style="font-family:Georgia,serif;font-size:18px">Nitish Bhope</div>
+              <div style="font-size:12px;color:#5c6470;margin-top:2px">Zonal Manager · Operations · August 2026</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-family:Georgia,serif;font-size:26px">8.1</div>
+              <div style="font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470">Final score</div>
+            </div>
+          </div>
+          <div style="margin-top:14px;display:grid;gap:1px;background:#e2e0da;border:1px solid #e2e0da">
+            <sc-for list="{{ score }}" as="s" hint-placeholder-count="4">
+              <div style="background:#fff;padding:10px 12px;display:flex;justify-content:space-between;gap:12px;align-items:baseline">
+                <div>
+                  <div style="font-size:13px;font-weight:600">{{ s.k }}</div>
+                  <div style="font-size:11.5px;color:#5c6470;margin-top:2px">{{ s.note }}</div>
+                </div>
+                <div style="font-family:Georgia,serif;font-size:17px;white-space:nowrap">{{ s.v }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-size:12px;color:#5c6470;margin-top:12px;line-height:1.55">Window state, self-submission, manager decision and HR close are one timeline on this page — not four screens and a settings key. Reopening a window is a record, not a WINOVR string.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="roadmap" style="border-bottom:1px solid #e2e0da;background:#fffffe">
+  <div style="max-width:1180px;margin:0 auto;padding:clamp(32px,5vw,56px) clamp(16px,4vw,32px)">
+    <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#3a5a80;font-weight:600">T · Prioritised roadmap</div>
+    <h2 style="font-family:Georgia,serif;font-weight:400;font-size:clamp(22px,3vw,30px);margin:10px 0 6px;letter-spacing:-0.01em">Escalation first, hard cut-over on a month boundary</h2>
+    <p style="font-size:15px;line-height:1.6;color:#3d434d;max-width:72ch;margin:0 0 8px;text-wrap:pretty">Your choices: escalation matrix, dispatch and portal first; hard cut-over with the old app switched off; no date fixed yet. One correction I would press on — <b>P0 must include the outbox</b>, because the current mail behaviour is actively damaging your sending reputation and quota today.</p>
+    <p style="font-size:13.5px;line-height:1.6;color:#b4562f;max-width:72ch;margin:0 0 24px"><b>Do this week, before any rebuild:</b> stop the strike sweep for ESC-00193 or close the case. It has sent 1,889 e-mails to one colleague and is still running — the last one is timestamped 3 Sep 11:51.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px">
+      <sc-for list="{{ phases }}" as="p" hint-placeholder-count="4">
+        <div style="border:1px solid #e2e0da;background:#faf9f6">
+          <div style="padding:12px 15px;border-bottom:1px solid #e2e0da;background:#fffffe">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+              <div style="font-family:Georgia,serif;font-size:18px">{{ p.tag }}</div>
+              <div style="font-size:11px;color:#5c6470">{{ p.weeks }}</div>
+            </div>
+            <div style="font-size:12.5px;color:#3d434d;margin-top:4px">{{ p.goal }}</div>
+          </div>
+          <div style="padding:8px 0">
+            <sc-for list="{{ p.items }}" as="i" hint-placeholder-count="5">
+              <div style="padding:8px 15px;font-size:12.5px;line-height:1.5;border-bottom:1px dotted #e6e4de">{{ i }}</div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</section>
+
+<section id="build" style="border-bottom:1px solid #e2e0da">
+  <div style="max-width:1180px;margin:0 auto;padding:clamp(32px,5vw,56px) clamp(16px,4vw,32px)">
+    <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:#3a5a80;font-weight:600">R / U · Technical &amp; build specification</div>
+    <h2 style="font-family:Georgia,serif;font-weight:400;font-size:clamp(22px,3vw,30px);margin:10px 0 6px;letter-spacing:-0.01em">What the next session builds, and what it must not do</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:20px">
+      <sc-for list="{{ spec }}" as="s" hint-placeholder-count="8">
+        <div style="border:1px solid #e2e0da;background:#fffffe;padding:15px 17px">
+          <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#3a5a80;font-weight:600">{{ s.area }}</div>
+          <div style="font-size:13.5px;line-height:1.6;color:#3d434d;margin-top:8px">{{ s.text }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="border:1px solid #b4562f;background:#fdf6f3;padding:16px 18px;margin-top:20px">
+      <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#b4562f;font-weight:600">Not verified — access limitation</div>
+      <div style="font-size:13.5px;line-height:1.6;color:#3d434d;margin-top:8px">The datastore was audited completely from your export: 26 tabs, every row counted. The <b>script sources were not</b>. The .docx you uploaded arrived as a 0-byte file, so I worked from the project manifest and <span style="font-family:ui-monospace,monospace;font-size:12px">Code.gs</span> as read directly from Drive — that gave me the ~90-route RPC registry, the role gates, the auth model and the job names, and it is the basis of every code claim above. <b>Not read:</b> Sheets.gs, Auth.gs, Clients.gs, Escalation.gs, Email.gs, Scheduler.gs, Import.gs, Utils.gs, Gemini.gs and the HTML files. Re-upload those (or paste them in) and I will complete the function-level inventory and the read/write map per sheet. Nothing in the blueprint depends on them, but the migration scripts will want them.</div>
+    </div>
+  </div>
+</section>
+
+<footer style="background:#14161a;color:#e8e5dd">
+  <div style="max-width:1180px;margin:0 auto;padding:26px clamp(16px,4vw,32px);display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-between;align-items:baseline">
+    <div style="font-size:12.5px;line-height:1.6">Crux Escalation Matrix · audit and rebuild blueprint · 3 September 2026<br /><span style="color:#9a978f">1,413 branches · 28 clients · 55 users · 3 cases · 26 tabs · 198,890 empty rows</span></div>
+    <div style="font-size:12px;color:#9a978f">Evidence: datastore export (9.5 MB, 26 tabs) · deployed script manifest and Code.gs</div>
+  </div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1180},&quot;showEvidence&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Document&quot;},&quot;startingRole&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;LOCATION_HEAD&quot;,&quot;MANAGER&quot;,&quot;ADMIN&quot;],&quot;default&quot;:&quot;LOCATION_HEAD&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Screens&quot;},&quot;openCaseStage&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:2,&quot;min&quot;:1,&quot;max&quot;:5,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Screens&quot;}}">
+class Component extends DCLogic {
+  state = { role: '', level: 1, caseStep: 0, masterTab: 'Coverage', ranJob: '' };
+
+  renderVals() {
+    const findings = [
+      { n:'01', area:'Reliability', title:'A single open case generated 1,889 e-mails to one person', body:'The three-strike sweep re-sent the same chase for nine days. Idempotency keys exist but did not stop it: 77 distinct keys produced 1,892 sends, because a quota failure was treated as a retryable error and re-queued every tick.', evidence:'EMAIL_LOG · 1,892 STRIKE_1 rows · 3 distinct recipients · 1,889 to yash.desai@ · 25 Aug → 3 Sep' },
+      { n:'02', area:'Reliability', title:'86% of all e-mail the system ever sent failed', body:'1,925 of 2,229 logged sends failed. 1,849 of those are the Gmail daily-recipient cap, exhausted by the strike storm — which then took down everything else that needed to send.', evidence:'EMAIL_LOG · SENT 304 · FAILED 1,925 · "Service invoked too many times for one day: premium email" ×1,849' },
+      { n:'03', area:'Reliability', title:'The monthly dispatch has never completed once', body:'One MONTHLY_DISPATCH e-mail exists in the log, while 1,794 queue rows sit PENDING. The client-facing purpose of the product has effectively never run.', evidence:'EMAIL_LOG type=MONTHLY_DISPATCH ×1 · DISPATCH_QUEUE PENDING 1,794 · CANCELLED 286' },
+      { n:'04', area:'Reliability', title:'The retry loop is the largest writer in the system', body:'EMAIL_RETRY by system:retry is the single most common audited action. The retry mechanism generated more activity than every human action combined, all of it re-attempting mail that could not succeed that day.', evidence:'AUDIT_LOG · EMAIL_RETRY 1,740 of 5,913 actions · actor "system:retry"' },
+      { n:'05', area:'Reliability', title:'A scheduled sweep runs constantly and does nothing 90% of the time', body:'1,690 of 1,707 job executions are STRIKE_SWEEP and 1,535 recorded NOOP. This is the job that held the script lock during the 26 August incident, and the response was a manual kill switch rather than a fix.', evidence:'REMINDER_LOG · STRIKE_SWEEP 1,690 · NOOP 1,535 · SETTINGS.AUTOMATION_PAUSED "INCIDENT 26-Aug"' },
+      { n:'06', area:'Performance', title:'198,890 empty rows are parsed on every full read', body:'BRANCHES holds 1,413 real records inside 101,330 rows; BRANCH_ASSIGNMENTS holds 1,729 inside 100,702. The branch tab alone is 40 MB of XML. No caching layer will fix a table that is 99% air.', evidence:'BRANCHES 101,330 rows / 1,413 real · BRANCH_ASSIGNMENTS 100,702 / 1,729 · sheet XML 40,720,938 chars' },
+      { n:'07', area:'Data integrity', title:'583 coverage rows belong to a person who does not exist', body:'A misspelt domain created a second identity holding a third of all coverage. Because people are referenced by e-mail string rather than by id, nothing detected it and nobody owns those branches.', evidence:'BRANCH_ASSIGNMENTS · aniket.chalke@cruxinida.co.in ×583 · absent from USERS · aniket.chalke@cruxindia.co.in ×604' },
+      { n:'08', area:'Data integrity', title:'Coverage is defined twice, in two different shapes', body:'USERS carries ScopeZones, ScopeLocations, ScopeBranchIDs and ScopeClientIDs for 50 of 55 people, while BRANCH_ASSIGNMENTS carries 1,729 explicit person×branch rows. Two mechanisms, no stated precedence — this is where escalations become ownerless.', evidence:'USERS · 50/55 rows carry a Scope* value · BRANCH_ASSIGNMENTS 1,729 rows · no reconciliation logic found' },
+      { n:'09', area:'Data integrity', title:'449 case notes survive only in a copied tab', body:'"Copy of PEOPLE_EVENTS" holds 451 rows, 449 of them NOTE records whose ids appear nowhere in the live tab, which has 26. A manual duplication became the only home of nine months of narrative history.', evidence:'PEOPLE_EVENTS 26 rows · Copy of PEOPLE_EVENTS 451 · 449 ids exist only in the copy' },
+      { n:'10', area:'Data integrity', title:'A half-finished manual de-duplication is frozen in the schema', body:'BRANCH_ASSIGNMENTS has a column literally named "Dublicate" holding 634 ones and 390 twos, with 705 blanks, plus 7 exactly duplicated person-client-branch-role groups covering 700 rows.', evidence:'BRANCH_ASSIGNMENTS.Dublicate · 1→634, 2→390, blank→705 · 7 exact duplicate groups / 700 rows' },
+      { n:'11', area:'Architecture', title:'The configuration tab is used as a transaction store', body:'A live workflow record is encoded as a settings key: WINOVR:ACHIEVEMENT:<person>:2026-08 = OPEN:<admin>:<timestamp>:<reason>. Window overrides cannot be listed, filtered, expired or audited.', evidence:'SETTINGS · key WINOVR:ACHIEVEMENT:nitish.bhope@…:2026-08' },
+      { n:'12', area:'Architecture', title:'A production tab is somebody\u2019s debugging scratchpad', body:'The tab exported as "Sheet4" contains ad-hoc query results — "manix rows: 670", "NO MATCH on ContactName", "level5 rows: 763" — plus a pasted dump of matrix rows. Diagnosis is being done by hand, inside the datastore.', evidence:'Sheet4 · 11 free-text rows including pasted MTX-* records' },
+      { n:'13', area:'Architecture', title:'Recipient lists are copied across seven settings keys', body:'DEFAULT_CC, ESCALATION_CC, REMINDER_CC, STRIKE2_CC, STRIKE3_TO, HR_ESCALATION_CC and SUMMARY_EXTRA_RECIPIENTS repeat the same six addresses. One joiner or leaver requires seven manual edits, and one of them already points at a personal gmail account.', evidence:'SETTINGS · 7 keys · overlapping address sets · arunbodupali10@gmail.com in HR_ESCALATION_CC' },
+      { n:'14', area:'Security', title:'39 of 55 user rows still store a standing access token', body:'The invite-code flaw was fixed in code — a code is now exchanged once for a session — but the tokens themselves remain in the spreadsheet, and the web app is deliberately deployed as ANYONE_ANONYMOUS.', evidence:'USERS.AccessToken populated on 39 rows · manifest access ANYONE_ANONYMOUS, executeAs USER_DEPLOYING' },
+      { n:'15', area:'Scope', title:'Two unrelated products share one codebase and one datastore', body:'Client escalation (clients, branches, matrix, dispatch, portal) and people performance (KPIs, scores, targets, warnings, PIP, appreciation) share only the user table. Half the navigation is irrelevant to any given user, which is the clutter you feel.', evidence:'~90 RPC routes split across the two domains · SETTINGS keys split likewise' },
+      { n:'16', area:'Scope', title:'The performance module is almost entirely unused', body:'SCORES holds 2 rows, SCORE_LEDGER 0, WARNINGS 0, HOLIDAYS 0, ATTRIBUTE_POINTS 6, KPI_DEFS 19. A large amount of the code and screen surface supports a workflow that has barely been exercised.', evidence:'SCORES 2 · SCORE_LEDGER 0 · WARNINGS 0 · HOLIDAYS 0 · ATTRIBUTE_POINTS 6' },
+      { n:'17', area:'Master data', title:'Geography is not a defined concept', body:'36 distinct Zone values mix states, cities and compass points — Goa and GOA both present — against 34 CRUX_REGIONS that mix states with cities and "Rest of Maharashtra". Branch.Zone, Branch.Location, Branch.RegionID and CRUX_REGIONS are four overlapping ideas.', evidence:'BRANCHES · 36 Zone values, 422 Location values, 31 RegionIDs · CRUX_REGIONS 34 rows' },
+      { n:'18', area:'Master data', title:'Only half your branches can legally be dispatched', body:'704 of 1,413 branches have any matrix; 693 are complete at all five levels; 722 are marked ACTIVE. Under the completeness gate you chose, roughly 700 branches are eligible and the rest are silently invisible to clients.', evidence:'ESCALATION_MATRIX · 704 branches present · 693 complete L1–L5 · BRANCHES ACTIVE 722 / INACTIVE 691' }
+    ];
+
+    const chain = [
+      { stage:'Symptom', text:'Reminders and the monthly dispatch stopped arriving; the app felt slow and unreliable.', proof:'reported' },
+      { stage:'Immediate cause', text:'The sending account exhausted its daily recipient quota, so every subsequent send failed for the rest of the day — dispatch, reminders and escalation mail alike.', proof:'1,849 × "Service invoked too many times for one day: premium email"' },
+      { stage:'What consumed it', text:'The three-strike chase for one open case, ESC-00193, sent 1,889 e-mails to one person over nine days.', proof:'ESCALATIONS · 3 rows total · ESC-00193 status OPEN' },
+      { stage:'Why it repeated', text:'A quota failure was queued for retry rather than deferred to the next day, so the same message was re-attempted every tick, indefinitely, up to RETRY_LIMIT 10 per row and then re-queued.', proof:'AUDIT_LOG · EMAIL_RETRY ×1,740 by system:retry' },
+      { stage:'Why nothing caught it', text:'The sweep re-derives who is overdue on every run instead of acting on a scheduled due time, so it had no memory that this recipient had already been chased 1,800 times. 90% of its runs were NOOP.', proof:'REMINDER_LOG · STRIKE_SWEEP 1,690 · NOOP 1,535' },
+      { stage:'Structural cause', text:'There is no outbox with a delivery contract. Sending, retrying, scheduling and business logic are interleaved inside jobs that each re-read whole tabs while holding the single script lock.', proof:'26 Aug incident · SETTINGS.AUTOMATION_PAUSED added as a manual brake' },
+      { stage:'Root cause', text:'The platform gives one execution context, one lock and a hard daily mail cap; the design responds by retrying harder instead of scheduling. Volume was never the problem — 1,413 branches and 3 cases are trivial.', proof:'1,413 branches · 28 clients · 55 users · 3 cases' }
+    ];
+
+    const tabs = [
+      { name:'SETTINGS', rows:'64', real:'53', verdict:'Config + one live workflow row', becomes:'settings (typed) + submission_window' },
+      { name:'CRUX_REGIONS', rows:'34', real:'34', verdict:'Mixed levels, inconsistent casing', becomes:'geo_node (zone/state/city)' },
+      { name:'BRANCH_ASSIGNMENTS', rows:'100,702', real:'1,729', verdict:'Cross-product + duplicate flag column', becomes:'coverage_rule (scoped, ~40 rows)' },
+      { name:'BRANCHES', rows:'101,330', real:'1,413', verdict:'99% empty; contacts embedded', becomes:'branch + branch_contact' },
+      { name:'Sheet4', rows:'11', real:'11', verdict:'Debug scratchpad in production', becomes:'delete' },
+      { name:'ATTRIBUTE_POINTS', rows:'6', real:'6', verdict:'Barely used', becomes:'review_attribute (P2)' },
+      { name:'CLIENT_ACTIVATION', rows:'635', real:'635', verdict:'10 duplicate client+location pairs', becomes:'client_location (unique)' },
+      { name:'SESSIONS', rows:'7', real:'7', verdict:'Keep, move out of the sheet', becomes:'session (auth store)' },
+      { name:'KPI_DEFS', rows:'19', real:'19', verdict:'Per-person KPI rows', becomes:'kpi_definition (P2)' },
+      { name:'SCORES', rows:'2', real:'2', verdict:'Effectively unused, 24 columns', becomes:'review_cycle + review (P2)' },
+      { name:'SCORE_LEDGER', rows:'0', real:'0', verdict:'Never written', becomes:'drop; derive from events' },
+      { name:'PEOPLE_EVENTS', rows:'26', real:'26', verdict:'Live tab, thin', becomes:'person_event' },
+      { name:'Copy of PEOPLE_EVENTS', rows:'451', real:'451', verdict:'Holds 449 unique notes — must migrate', becomes:'person_event (merge, keep source ref)' },
+      { name:'TARGETS', rows:'102', real:'102', verdict:'ClientID and Client name both stored', becomes:'target (FK only)' },
+      { name:'WARNINGS', rows:'0', real:'0', verdict:'Never written despite 137 raise actions', becomes:'investigate then person_event' },
+      { name:'DISPATCH_QUEUE', rows:'12,080', real:'2,080', verdict:'1,794 stuck PENDING; float month keys', becomes:'outbox (unique idempotency key)' },
+      { name:'USERS', rows:'55', real:'55', verdict:'26 columns: identity + scope + auth + HR', becomes:'person + coverage_rule + session' },
+      { name:'CLIENTS', rows:'28', real:'28', verdict:'Sound; e-mail lists as CSV strings', becomes:'client + client_contact' },
+      { name:'ESCALATION_MATRIX', rows:'3,783', real:'3,783', verdict:'Level as 1.0 float; client and branch rows mixed', becomes:'matrix_contact (branch or client scope)' },
+      { name:'HOLIDAYS', rows:'0', real:'0', verdict:'Empty — yet the strike clock claims to honour it', becomes:'holiday (must be populated)' },
+      { name:'EMAIL_TEMPLATES', rows:'5', real:'5', verdict:'Keep', becomes:'template (versioned)' },
+      { name:'EMAIL_LOG', rows:'2,229', real:'2,229', verdict:'86% failed; retry body stored inline', becomes:'delivery (ledger, immutable)' },
+      { name:'REMINDER_LOG', rows:'1,707', real:'1,707', verdict:'90% NOOP sweep noise', becomes:'job_run (health page source)' },
+      { name:'ESCALATIONS', rows:'3', real:'3', verdict:'The core object, almost unused', becomes:'case (+ category routing)' },
+      { name:'ESCALATION_HISTORY', rows:'378', real:'378', verdict:'Field-level history: keep the pattern', becomes:'case_event' },
+      { name:'AUDIT_LOG', rows:'103,275', real:'5,913', verdict:'34% of it is retry noise and RPC errors', becomes:'audit_entry (human actions only)' }
+    ];
+
+    const dupes = [
+      { stat:'1,196 / 1,413', text:'branches have a branch code. 217 have none, so the client-facing directory identifies them by name and address alone.' },
+      { stat:'10 POC e-mails', text:'cover all 1,413 branches, while 510 distinct branch-manager addresses are typed directly into branch rows rather than referenced.' },
+      { stat:'0 rows', text:'in HOLIDAYS, although the strike clock is documented as excluding holidays. The rule cannot be doing what it claims.' },
+      { stat:'2 identities', text:'for one person — one misspelt-domain work address with 583 coverage rows, one personal gmail as a VIEWER.' },
+      { stat:'46266.0', text:'is how a month key is stored in DISPATCH_QUEUE — a date serial, not a month. Dates arrive as ISO strings, d/m/yyyy and floats in the same columns.' },
+      { stat:'259 RPC_ERROR', text:'rows in the audit log, several written on ordinary page loads by a missing script file. The audit trail records the platform, not the business.' }
+    ];
+
+    const verdicts = [
+      { kind:'Keep', rule:'Real capability, worth rebuilding as-is', items:[
+        { what:'Client → branch → 5-level matrix', why:'The core asset. 3,783 contact rows and 693 complete branches are genuine value; only its storage shape changes.' },
+        { what:'Monthly matrix dispatch to branches', why:'The product\u2019s reason to exist. Rebuilt on a real outbox with a completeness gate.' },
+        { what:'Account-free read-only client portal', why:'Non-negotiable per your constraint. Becomes a signed, rotatable link with no data in the URL.' },
+        { what:'Escalation case with field-level history', why:'ESCALATION_HISTORY\u2019s old/new value pattern is the right instinct — it becomes the audit spine for every entity.' },
+        { what:'Three-strike chase, 24 working hours, 10:00–17:00, weekends and holidays excluded', why:'Kept verbatim as you asked. One correction: HOLIDAYS is empty, so the holiday clause has never actually applied.' }
+      ]},
+      { kind:'Merge', rule:'Several features that were always one job', items:[
+        { what:'Branch create + matrix entry + alignment + client activation → one Branch record', why:'Today a new branch is four screens and four writes across BRANCHES, ESCALATION_MATRIX, BRANCH_ASSIGNMENTS and CLIENT_ACTIVATION. One form, one save, one audit entry.' },
+        { what:'USERS.Scope* + BRANCH_ASSIGNMENTS → one coverage rule', why:'Two coverage mechanisms with no precedence is the direct cause of ownerless escalations. One table, overlaps refused at write time.' },
+        { what:'Log escalation + raise escalation → one case with a routing decision', why:'Both create the same record; \u201craise\u201d only differs by notifying. It becomes a checkbox on one form, not a second workflow.' },
+        { what:'EMAIL_LOG + REMINDER_LOG + DISPATCH_QUEUE → outbox + delivery + job_run', why:'Three overlapping logs, none of which answers \u201cdid the client get it\u201d. Three purpose-built tables answer it exactly.' },
+        { what:'Zone + Location + RegionID + CRUX_REGIONS → one geography tree', why:'Four overlapping ideas collapse to Zone → State → City → Branch, with each client\u2019s own zone names held as an alias layer.' }
+      ]},
+      { kind:'Automate', rule:'Manual today, system-driven tomorrow', items:[
+        { what:'Matrix completeness chasing', why:'Weekly mail to the owning manager, a blocking task on their home, escalation to the location head after two weeks, and a line in the monthly summary — all four, as you asked, from one rule.' },
+        { what:'Case closure', why:'Auto-closes 7 days after resolution is recorded with no objection. Removes a manual step that today keeps the strike clock running.' },
+        { what:'Ownership resolution', why:'Category → desk → desk head by designation, resolved live from the people table. No names in configuration; a vacant desk raises a visible block rather than swallowing a case.' },
+        { what:'Duplicate prevention', why:'Unique constraints on branch code per client, on client+location, and on idempotency key. The \u201cDublicate\u201d column becomes impossible rather than maintained.' },
+        { what:'Quota-aware sending', why:'The outbox knows the day\u2019s budget, defers rather than retries on quota errors, and abandons after a terminal count with an alert to you.' }
+      ]},
+      { kind:'Retire the screen, keep the capability', rule:'Nothing you use is lost — but these stop being places to visit', items:[
+        { what:'Demo/seed data tooling and preview-as-role', why:'Kept as an admin utility behind Setup; they are not navigation. Preview stays UI-only, as it already is.' },
+        { what:'Manual CSV export screens', why:'Becomes one Export action available on every list, plus the full-workbook export you asked for. Not six separate screens.' },
+        { what:'The AUTOMATION_PAUSED kill switch', why:'You asked for nothing hidden. Automation cannot be silently paused; jobs can be disabled only per-job, with a visible banner and a reason, shown on the health page.' },
+        { what:'Debug scratchpad tab and the orphaned PEOPLE_EVENTS copy', why:'The 449 notes migrate with a source reference. The scratchpad is replaced by the health page and the audit search.' }
+      ]}
+    ];
+
+    const nav = [
+      { name:'Today', roles:'all', purpose:'One list: what needs you, what is blocked and why, what is overdue. Nothing decorative, no widget that does not lead to an action.', replaces:'Dashboard, plus hunting through five tabs' },
+      { name:'Clients', roles:'all', purpose:'Client → locations → branches → matrix, in one tree with completeness visible at every level. Editing the matrix happens where you are looking at it.', replaces:'Clients, Branches, Matrix, Alignment, Client activation' },
+      { name:'Cases', roles:'all', purpose:'Raise, work, chase, resolve and close an escalation. Category decides who is notified first; the chase clock and every notification are visible on the case itself.', replaces:'Log escalation, Raise escalation, Escalation list, MIS, Exceptions' },
+      { name:'People', roles:'MGR ADM', purpose:'The org: person, designation, reporting line, coverage rules, and their performance record behind one tab. Coverage overlaps are refused here.', replaces:'Team, Users, Invite, Profile, Targets, KPIs, Scores, Warnings, PIP, Appreciation' },
+      { name:'Reports', roles:'all', purpose:'The case register, the monthly summary, and the four print-exact documents you named. One filter model, one export.', replaces:'MIS export, CSV export, Summary, Logs' },
+      { name:'Operations', roles:'ADM', purpose:'Automation health first: every job\u2019s last run, result, next run, failures and a safe re-run. Then configuration — categories, desks, clocks, gates, templates, holidays.', replaces:'Admin settings, Templates, Holidays, Email log, Audit log, Sessions, Setup, AI config' }
+    ];
+
+    const journeys = [
+      { role:'Branch manager / Location head', objective:'Keep my branches dispatchable',
+        flow:'Sign in → TODAY shows \u201c3 branches missing level 4 contact\u201d → click → matrix opens on the gap → fill one field → save → completeness turns green → branch enters this month\u2019s dispatch automatically',
+        removed:'Choosing a client, then a branch, then a tab, then a level, then saving four separate rows. Region, zone and client are never asked for — the branch already knows them.' },
+      { role:'Manager working a case', objective:'Resolve an escalation without being chased',
+        flow:'E-mail link → case opens → category already routed to the desk → record action → clock pauses on activity → record resolution → 7-day objection window → auto-close',
+        removed:'A second \u201craise\u201d form, manual owner selection, manual closure, and the strike mail that used to keep arriving after the work was done.' },
+      { role:'Admin (you)', objective:'Know the automation is alive',
+        flow:'TODAY → \u201cDispatch ran 09:02, 693 sent, 0 failed, next 1 Oct\u201d → any failure is a red line with a reason and a re-run button → alert already in your inbox',
+        removed:'Reading EMAIL_LOG by hand, guessing why a job did nothing, and the pause switch that hid the problem for eight days.' },
+      { role:'Client contact', objective:'Know who to call',
+        flow:'Monthly e-mail with the matrix in the body → optional portal link → always current, no account, no attachment',
+        removed:'Nothing — this is the one journey that already works. It simply starts arriving.' },
+      { role:'HR', objective:'Close the loop on people matters',
+        flow:'Notified only when a case reaches strike 3 or a person event needs sign-off → single decision screen → recorded against the person\u2019s history',
+        removed:'Being CC\u2019d on everything via three separate settings keys. HR becomes a role resolved from the people table, not a list of addresses.' }
+    ];
+
+    const entities = [
+      { name:'person', kind:'master', purpose:'One row per human. The only identity in the system; e-mail becomes an attribute, not a key.', fields:'id · employee_no · full_name · work_email · personal_email · mobile · designation_id · department · manager_id · employment_status · joined_on · left_on', constraint:'unique(lower(work_email)) where active · unique(employee_no) — would have blocked the cruxinida.co.in twin' },
+      { name:'designation', kind:'master', purpose:'Job titles as data, so routing can resolve "Operations Head" without naming a person.', fields:'id · title · desk_id · is_desk_head · seniority', constraint:'unique(title)' },
+      { name:'desk', kind:'config', purpose:'Operations, Finance, HR, IT, Compliance, MIS. MD office exists but is flagged escalation-only.', fields:'id · name · primary_person_id · escalation_only · fallback_desk_id', constraint:'exactly one primary_person_id per desk — resolves your "who, if two hold the title" rule' },
+      { name:'client', kind:'master', purpose:'The client company and its head-office contacts.', fields:'id · code · name · status · head_office_contact_id · effective_from · effective_to', constraint:'unique(code)' },
+      { name:'client_zone', kind:'master', purpose:'Each client\u2019s own zone naming, as you specified — mapped to Crux geography rather than replacing it.', fields:'id · client_id · name · geo_node_id', constraint:'unique(client_id, name)' },
+      { name:'geo_node', kind:'master', purpose:'Crux internal geography as a tree: Zone → State → City. Six zones: N, S, E, W, Central, North-East.', fields:'id · parent_id · level · name', constraint:'unique(parent_id, lower(name)) — collapses Goa/GOA and the 36 mixed Zone values' },
+      { name:'branch', kind:'master', purpose:'One row per client branch, positioned in geography, with status and dates. Contacts move out.', fields:'id · client_id · code · name · address · geo_node_id · client_zone_id · status · effective_from · effective_to · source_ref', constraint:'unique(client_id, code) · code required — 217 branches currently have none' },
+      { name:'branch_contact', kind:'master', purpose:'Branch manager and Crux POC as references to person where internal, or plain contact rows where external.', fields:'id · branch_id · role · person_id · name · mobile · email', constraint:'one active contact per (branch_id, role)' },
+      { name:'matrix_contact', kind:'master', purpose:'The five escalation levels, at branch scope or client scope. Level is an integer, not 1.0.', fields:'id · client_id · branch_id · level(1-5) · level_name · person_id · name · mobile · email · updated_by · updated_at', constraint:'unique(coalesce(branch_id, client_id), level) · level in 1..5' },
+      { name:'coverage_rule', kind:'master', purpose:'Who covers what, expressed by scope instead of by row. Mixed shapes allowed, as you asked; overlaps refused.', fields:'id · person_id · role · scope_type(client|client_zone|state|branch) · scope_id · effective_from · effective_to · source_ref', constraint:'no two active rules may resolve to the same (person-role, branch) — enforced by an exclusion check on write' },
+      { name:'case', kind:'transaction', purpose:'One escalation. Category drives first notification; level order is untouched.', fields:'id · ref · client_id · branch_id · category_id · raised_by · against_person_id · description · owner_person_id · desk_id · status · resolution_note · resolved_at · auto_close_at · next_chase_at · strike_count', constraint:'owner_person_id or desk_id must be non-null — a case can never be ownerless' },
+      { name:'case_event', kind:'audit', purpose:'Field-level history, keeping the ESCALATION_HISTORY pattern that already works.', fields:'id · case_id · at · actor_person_id · field · old_value · new_value · note', constraint:'append-only' },
+      { name:'category', kind:'config', purpose:'Your 22 categories, each pointing at a desk and optionally its own clock.', fields:'id · name · desk_id · pinned(bool) · chase_hours · active', constraint:'Fraud/Integrity and Data Privacy carry pinned=true → desk cannot be changed from Compliance' },
+      { name:'outbox', kind:'transaction', purpose:'The one place mail is created. Replaces DISPATCH_QUEUE and fixes the storm.', fields:'id · idempotency_key · kind · to · cc · subject · body · state(QUEUED|SENT|DEFERRED|ABANDONED) · attempts · not_before · sent_at · last_error', constraint:'unique(idempotency_key) — 77 keys produced 1,892 sends because this constraint did not exist' },
+      { name:'delivery', kind:'audit', purpose:'Immutable per-recipient ledger: what was sent, to whom, when, for which entity.', fields:'id · outbox_id · to · state · at · provider_ref · entity_type · entity_id', constraint:'append-only' },
+      { name:'job_run', kind:'audit', purpose:'Feeds the health page: every execution, its result, its next due time.', fields:'id · job_key · started_at · finished_at · result(OK|NOOP|FAILED) · counts_json · error · next_due_at', constraint:'one row per execution; NOOP runs collapsed to a daily counter' },
+      { name:'submission_window', kind:'transaction', purpose:'Replaces the WINOVR settings keys with a real, queryable record.', fields:'id · kind · person_id · period · state · opened_by · opened_at · reason · closes_at', constraint:'unique(kind, person_id, period)' },
+      { name:'audit_entry', kind:'audit', purpose:'Human and configuration actions only. Machine retries live in outbox/job_run.', fields:'id · at · actor_person_id · action · entity_type · entity_id · old_value · new_value', constraint:'append-only · excludes retry and platform noise (34% of today\u2019s log)' },
+      { name:'person_event', kind:'transaction', purpose:'Notes, appreciation, warnings, PIP and activation against a person — including the 449 rescued notes.', fields:'id · person_id · type · at · start_on · end_on · note · issued_by · status · outcome · source_ref', constraint:'source_ref retains the original tab and row for traceability' }
+    ];
+
+    const migration = [
+      { from:'BRANCHES (101,330 rows)', to:'branch + branch_contact', how:'Drop 99,917 empty rows. 1,413 records migrate. Contacts split out; 510 branch-manager e-mails matched to person where possible, kept as plain contacts where not. 217 missing codes generated as CLIENT-SEQ and flagged for review.' },
+      { from:'BRANCH_ASSIGNMENTS (100,702)', to:'coverage_rule (~40)', how:'Drop 98,973 empty rows. Collapse 1,729 explicit rows to the most specific rule per person and scope; log every collapse. The 583 cruxinida.co.in rows merge into the correct person with a merge record.' },
+      { from:'USERS.Scope* columns', to:'coverage_rule', how:'Merged with the above. Where the two disagree, the explicit branch row wins and the discrepancy is written to the merge log for your review.' },
+      { from:'ESCALATION_MATRIX (3,783)', to:'matrix_contact', how:'Level cast from 1.0 to integer. 70 client-scope rows keep branch_id null. 11 incomplete branches flagged as chase tasks on day one rather than silently gated.' },
+      { from:'Copy of PEOPLE_EVENTS (451)', to:'person_event', how:'449 notes migrate with source_ref = "Copy of PEOPLE_EVENTS!row". Nothing is dropped — this is the tab that currently holds your only copy.' },
+      { from:'CRUX_REGIONS + Zone + Location', to:'geo_node + client_zone', how:'34 regions and 36 zone values classified into Zone/State/City. Casing duplicates merged. "Rest of Maharashtra" and "Indore-MPCG" queued for a human decision, as they are not a single level.' },
+      { from:'DISPATCH_QUEUE (2,080 real)', to:'outbox', how:'1,794 PENDING rows for a month that has passed are marked ABANDONED with a reason, not resent. Float month keys converted to a period.' },
+      { from:'EMAIL_LOG (2,229)', to:'delivery', how:'Migrated as history. RetryBody column dropped — bodies are not kept in the ledger.' },
+      { from:'SETTINGS WINOVR keys', to:'submission_window', how:'Parsed into structured rows; the key format is retired.' },
+      { from:'Sheet4, SCORE_LEDGER, HOLIDAYS, WARNINGS', to:'not migrated', how:'Empty or scratch. HOLIDAYS and WARNINGS are created empty in the new schema — HOLIDAYS must then be populated, because the strike clock claims to use it.' }
+    ];
+
+    const rules = [
+      { id:'R-01', name:'Dispatch eligibility gate', trigger:'Monthly dispatch planning run', logic:'Branch is ACTIVE and all five matrix levels hold a name plus at least one of mobile or e-mail', outcome:'≈693 of 1,413 branches queued; ineligible branches raise a chase task instead of being skipped silently', change:'Today nothing gates the send and nothing reports the gap; incomplete branches simply never reach the client.' },
+      { id:'R-02', name:'Sender budget', trigger:'Outbox worker tick', logic:'Daily recipient budget minus a reserve for interactive mail; quota errors set state DEFERRED with not_before = tomorrow', outcome:'A quota failure never re-queues the same day; the run reports how much of the budget it used', change:'Replaces DISPATCH_BATCH_SIZE, DISPATCH_QUOTA_RESERVE and the self-tuning 6-minute budget — all artefacts of the platform.' },
+      { id:'R-03', name:'Chase clock (three strikes)', trigger:'Case has no activity since next_chase_at', logic:'24 working hours between strikes, 10:00–17:00 Asia/Kolkata, weekends and holidays excluded. Strike 2 adds the desk; strike 3 addresses HR and copies the MD', outcome:'At most one chase per case per window, scheduled — not swept', change:'Kept exactly as configured, with two fixes: the clock is stored per case, and HOLIDAYS must actually contain dates.' },
+      { id:'R-04', name:'One chase, once', trigger:'Any outbound mail', logic:'idempotency_key = kind + entity id + window sequence, with a unique constraint', outcome:'A duplicate send is rejected by the database, not by convention', change:'This single constraint is what would have prevented all 1,889 duplicate strike e-mails.' },
+      { id:'R-05', name:'Auto-close', trigger:'Resolution recorded on a case', logic:'auto_close_at = resolved_at + 7 days; any objection or new activity clears it', outcome:'Case closes itself, strike clock stops, nothing further is sent', change:'New. Today a resolved case can keep generating chase mail because closure is manual.' },
+      { id:'R-06', name:'Ownership resolution', trigger:'Case created', logic:'category → desk → desk primary person. Branch coverage rule determines the working owner. If the desk has no active primary, the case is blocked and shown on the admin home', outcome:'Every case has a named owner or a visible block — never silence', change:'Replaces AssignedOwner typed by hand and seven CC settings keys.' },
+      { id:'R-07', name:'Coverage overlap refusal', trigger:'Saving a coverage rule', logic:'Resolve the candidate rule to its branch set; reject if any branch already has an active rule for the same person-role', outcome:'Overlaps cannot be created; migration reports the ones that exist today', change:'You chose refusal over precedence. This is the rule that ends the "Dublicate" column.' },
+      { id:'R-08', name:'Incomplete-matrix chase', trigger:'Weekly, and on dispatch planning', logic:'For each ineligible branch: e-mail the owning manager, place a blocking task on their home, escalate to the location head after 14 days, and list it in the monthly summary', outcome:'All four channels, as you specified', change:'New. There is currently no consequence to an incomplete matrix.' },
+      { id:'R-09', name:'AI budget', trigger:'Any AI call', logic:'Monthly call cap per feature; when exhausted the control greys out with the reset date. Weekly anomaly detection is the only scheduled consumer', outcome:'All six features retained, none able to overrun a free quota', change:'Today ai.status is called on every page load and failures were written to the audit log as errors.' }
+    ];
+
+    const desks = [
+      { desk:'Operations', count:'13 categories', head:'Operations Head / AVP Operations', cats:'Service Delivery · Delay/TAT · Report Quality · Data Accuracy · Customer Handling · Communication · Assignment/Allocation · Client/Branch Mapping · Client Requirements · Escalation Handling · Vendor/Partner · Audit/Quality*', note:'*Audit/Quality sits here only if Compliance declines it — flagged for your call.' },
+      { desk:'Compliance', count:'4 categories', head:'Compliance Head', cats:'Compliance · Fraud/Integrity · Data Privacy · Audit/Quality', note:'Fraud/Integrity and Data Privacy are pinned — not reassignable, per your warning.' },
+      { desk:'Finance', count:'2 categories', head:'Finance Head / CFO', cats:'Billing · Payment', note:'' },
+      { desk:'HR', count:'2 categories', head:'HR Head', cats:'Staff Behaviour · Performance/KPI', note:'Also the strike-3 addressee.' },
+      { desk:'IT', count:'2 categories', head:'IT Head', cats:'Technology · Access/Permissions', note:'' },
+      { desk:'MIS', count:'1 category', head:'AVP Operations / MIS Executive', cats:'MIS/Reporting', note:'Shares a designation with Operations — desk primary must be set explicitly.' }
+    ];
+
+    const set = o => this.setState(o);
+    const roleDefs = [
+      { key:'LOCATION_HEAD', label:'Location Head', who:'vrunda.potdar@ · 183 branches' },
+      { key:'MANAGER', label:'Manager', who:'nitish.bhope@ · Pune zone' },
+      { key:'ADMIN', label:'Admin', who:'shantanu.suravase@' }
+    ];
+    const role = this.state.role || this.props.startingRole || 'LOCATION_HEAD';
+    const roleTabs = roleDefs.map(r => ({ ...r, selected: role === r.key, pick: () => set({ role: r.key }) }));
+
+    const homes = {
+      LOCATION_HEAD: {
+        greeting:'Three branches will not be sent this month',
+        sub:'Location Head · 183 branches across Assam, Goa and Andaman',
+        counters:[{n:'3',label:'Blocked'},{n:'1',label:'Open case'},{n:'180',label:'Ready'}],
+        tasks:[
+          { title:'BR-00196 · North Lakhimpur — level 4 contact missing', meta:'SBI · CLI-00024 · incomplete for 6 days', why:'Blocks dispatch', action:'Fill level 4' },
+          { title:'BR-00201 · Tinsukia — level 2 has a name but no mobile or e-mail', meta:'SBI · CLI-00024 · incomplete for 11 days', why:'Blocks dispatch', action:'Fill level 2' },
+          { title:'BR-00185 · Guwahati — branch code missing', meta:'One of 217 branches with no code', why:'Client cannot identify it', action:'Add code' },
+          { title:'ESC-00191 · Billing dispute at Raj branch', meta:'Owner: you · no activity for 19 working hours', why:'Strike 1 due in 5h', action:'Record action' }
+        ],
+        footer:'Nothing else waiting. Your next dispatch: 1 Oct, 180 of 183 branches eligible.'
+      },
+      MANAGER: {
+        greeting:'One case needs your action today',
+        sub:'Manager · Pune zone · 4 location heads reporting',
+        counters:[{n:'1',label:'My cases'},{n:'2',label:'Team blocked'},{n:'0',label:'Overdue'}],
+        tasks:[
+          { title:'ESC-00193 · Service complaint against yash.desai', meta:'Open since 27 Aug · desk: Operations · strike 2 sent', why:'Awaiting your resolution', action:'Open case' },
+          { title:'Avinash Chaskar has 2 branches with incomplete matrices', meta:'Escalated to you after 14 days incomplete', why:'Chase rule R-08', action:'Nudge' },
+          { title:'Girish Kate — appreciation not recorded this month', meta:'Weekly nudge · optional', why:'', action:'Recognise' }
+        ],
+        footer:'Coverage for your zone: 46 branches, all owned, no overlaps.'
+      },
+      ADMIN: {
+        greeting:'Automation is healthy. Two configuration gaps.',
+        sub:'Admin · 55 people · 28 clients · 1,413 branches',
+        counters:[{n:'0',label:'Failed jobs'},{n:'2',label:'Config gaps'},{n:'693',label:'Dispatchable'}],
+        tasks:[
+          { title:'HOLIDAYS is empty — the strike clock cannot exclude holidays', meta:'Rule R-03 depends on it', why:'Rule is not doing what it claims', action:'Add 2026 holidays' },
+          { title:'MIS desk has no primary person', meta:'AVP Operations / MIS Executive matches 2 people', why:'MIS cases would block', action:'Set primary' },
+          { title:'11 branches incomplete after 14 days', meta:'Escalated from location heads', why:'Clients receiving nothing', action:'Review list' },
+          { title:'2 duplicate identities pending merge review', meta:'aniket.chalke@cruxinida.co.in · 583 coverage rows', why:'Auto-merged 3 Sep, awaiting your confirmation', action:'Review merge' }
+        ],
+        footer:'Last dispatch: 1 Sep, 693 sent, 0 failed. Mail budget used today: 341 of 1,800.'
+      }
+    };
+    const home = homes[role] || homes.LOCATION_HEAD;
+
+    const branches = [
+      { name:'Kothrud Branch', id:'BR-00747', state:'✓ 5/5' },
+      { name:'Deccan Gymkhana', id:'BR-00748', state:'✓ 5/5' },
+      { name:'Shivajinagar', id:'BR-00751', state:'✓ 5/5' },
+      { name:'Hadapsar', id:'BR-00762', state:'4/5' },
+      { name:'Baner Road', id:'BR-00769', state:'✓ 5/5' }
+    ];
+    const levelData = [
+      { n:'1', role:'SPOC', name:'Vaibhavi Kanavaje', mobile:'7350874077', email:'bo.pune@cruxindia.co.in' },
+      { n:'2', role:'Team Leader', name:'Girish Kate', mobile:'8552906535', email:'bo.pune@cruxindia.co.in' },
+      { n:'3', role:'Branch Manager', name:'Avinash Chaskar', mobile:'9021469966', email:'avinash.chaskar@cruxindia.co.in' },
+      { n:'4', role:'Zonal Manager', name:'Nitish Bhope', mobile:'9762348486', email:'nitish.bhope@cruxindia.co.in' },
+      { n:'5', role:'Head Office', name:'Manish Shukla', mobile:'9870066855', email:'manish.s@cruxindia.co.in' }
+    ];
+    const levels = levelData.map(l => ({ ...l, contact: l.mobile + ' · ' + l.email, open: String(this.state.level) === l.n, pick: () => set({ level: +l.n }) }));
+
+    const stepDefs = [
+      { n:'01', label:'Raise' }, { n:'02', label:'Route' }, { n:'03', label:'Chase' }, { n:'04', label:'Resolve' }, { n:'05', label:'Close' }
+    ];
+    const caseStep = this.state.caseStep || this.props.openCaseStage || 2;
+    const steps = stepDefs.map((s, i) => ({ ...s, selected: caseStep === i + 1, pick: () => set({ caseStep: i + 1 }) }));
+    const caseViews = {
+      1: { headline:'Raise: one form, nothing the system already knows',
+           body:'Branch is picked once; client, zone, region, Crux POC and branch manager are inherited. Category is chosen from your 22. "Notify now" is a checkbox — not a second workflow called Raise.',
+           next:'On save the case is given a reference, an owner and a desk, and the first notification is queued in the outbox.',
+           actions:['Save as logged','Save and notify'],
+           facts:[{k:'Branch',v:'BR-00747 Kothrud'},{k:'Client',v:'SBI · CLI-00024'},{k:'Category',v:'Service Delivery'},{k:'Inherited',v:'Zone West · Pune · POC am.pune@'},{k:'Fields asked',v:'4'},{k:'Fields today',v:'11'}],
+           mails:['Nothing sent yet — the outbox is written, the worker sends.'],
+           contrast:'Today: log and raise are two separate forms writing the same row.' },
+      2: { headline:'Route: category decides who hears first, level order is untouched',
+           body:'Service Delivery maps to the Operations desk; the desk head is resolved live from the people table by designation. The working owner comes from the branch coverage rule. Level 1 of the matrix is notified first, exactly as today.',
+           next:'Owner and desk are stamped on the case. If the desk had no active primary, the case would be blocked and shown on the admin home rather than sent nowhere.',
+           actions:['Reassign owner','View coverage rule'],
+           facts:[{k:'Category',v:'Service Delivery'},{k:'Desk',v:'Operations'},{k:'Desk head',v:'Operations Head (by designation)'},{k:'Working owner',v:'nitish.bhope@'},{k:'First notified',v:'L1 SPOC + Operations desk'},{k:'MD office',v:'Escalation-only — not copied'}],
+           mails:['Queued: case raised → L1 SPOC, cc Operations desk'],
+           contrast:'Today: owner is typed by hand and seven settings keys decide the CC list.' },
+      3: { headline:'Chase: scheduled, once per window',
+           body:'The case carries next_chase_at. 24 working hours of no activity, inside 10:00–17:00, weekends and holidays excluded. Strike 2 adds the desk; strike 3 addresses HR and copies the MD.',
+           next:'Strike 2 is due 4 Sep at 11:00. Any recorded activity clears the timer. A duplicate send is impossible: the outbox key is unique.',
+           actions:['Record action','Request exception'],
+           facts:[{k:'Strike count',v:'1'},{k:'Next chase',v:'4 Sep 11:00 IST'},{k:'Clock',v:'24 working hours'},{k:'Strike 2 adds',v:'Operations desk'},{k:'Strike 3',v:'HR, cc MD'},{k:'Sends this case',v:'1'}],
+           mails:['3 Sep 11:00 — Strike 1 → yash.desai@, cc Operations','Scheduled 4 Sep 11:00 — Strike 2'],
+           contrast:'Today this case sent 1,889 e-mails to this one recipient in nine days.' },
+      4: { headline:'Resolve: record what was done',
+           body:'Resolution note and date are recorded by the owner. The chase clock stops immediately. A seven-day objection window opens, per your choice.',
+           next:'auto_close_at is set to 10 Sep. Any objection or new activity clears it and reopens the clock.',
+           actions:['Record resolution','Add note'],
+           facts:[{k:'Resolved by',v:'nitish.bhope@'},{k:'Resolved at',v:'3 Sep 16:40'},{k:'Chase clock',v:'Stopped'},{k:'Auto-close',v:'10 Sep (7 days)'},{k:'Objections',v:'None'},{k:'Client informed',v:'Yes — L1 SPOC'}],
+           mails:['3 Sep 16:41 — Resolution recorded → L1 SPOC, raiser, Operations desk'],
+           contrast:'Today closure is manual, so a resolved case keeps generating strike mail.' },
+      5: { headline:'Close: the system closes it, nobody has to remember',
+           body:'Seven days passed with no objection, so the case closed itself and entered the register. The full field-level history is retained as case_event rows.',
+           next:'Nothing. No further mail is possible: the case is terminal and the chase schedule is cleared.',
+           actions:['Open in register','Export case history'],
+           facts:[{k:'Status',v:'CLOSED (auto)'},{k:'Closed at',v:'10 Sep 00:05'},{k:'Total e-mails',v:'3'},{k:'History rows',v:'14 case_event'},{k:'In register',v:'Yes'},{k:'Reopenable',v:'By admin, with reason'}],
+           mails:['10 Sep 00:05 — Closure summary → raiser, owner, Operations desk'],
+           contrast:'Three e-mails for a whole case, against 1,889 for its predecessor.' }
+    };
+    const caseView = caseViews[caseStep] || caseViews[2];
+
+    const jobDefs = [
+      { key:'OUTBOX_WORKER', last:'3 Sep 11:52', result:'OK · 12 sent, 0 deferred', next:'in 5 min', out:'OUTBOX_WORKER re-run → 0 queued, nothing to send. Safe: idempotency keys prevent duplicates.' },
+      { key:'MONTHLY_DISPATCH', last:'1 Sep 09:02', result:'OK · 693 sent, 0 failed', next:'1 Oct 09:00', out:'MONTHLY_DISPATCH dry-run → 693 branches eligible, 11 blocked (incomplete), 709 skipped (inactive). No mail sent: this is a plan.' },
+      { key:'CASE_CHASE', last:'3 Sep 11:00', result:'OK · 1 strike sent', next:'4 Sep 11:00', out:'CASE_CHASE re-run → 1 case due, already chased in this window. 0 sent. This is the check that did not exist before.' },
+      { key:'MATRIX_CHASE', last:'1 Sep 11:00', result:'OK · 11 managers notified', next:'8 Sep 11:00', out:'MATRIX_CHASE re-run → 11 incomplete branches, 9 managers, 2 escalated to location head (over 14 days).' },
+      { key:'MONTHLY_SUMMARY', last:'10 Aug 09:00', result:'OK · 8 recipients', next:'10 Sep 09:00', out:'MONTHLY_SUMMARY preview → generated for August: 3 cases, 693 dispatched, 11 blocked, 2 merges. Not sent.' },
+      { key:'AI_ANOMALIES', last:'1 Sep 07:00', result:'OK · 2 flags · 41/500 calls used', next:'8 Sep 07:00', out:'AI_ANOMALIES re-run → 2 flags: strike volume outlier (resolved), 217 branches without codes. 42 of 500 monthly calls used.' }
+    ];
+    const jobs = jobDefs.map(j => ({ ...j, run: () => set({ ranJob: j.out }) }));
+
+    const masterDefs = [
+      { key:'People', label:'People', count:'55 persons',
+        title:'People — one identity, e-mail as an attribute',
+        blurb:'Employee number and person id are the keys. Work e-mail is an attribute with a uniqueness constraint, so a misspelt domain becomes a validation error instead of a second human being.',
+        cols:['Person','Designation → desk','Reporting to','Coverage','Status'],
+        rows:[
+          ['Nitish Bhope · EMP-0114','Zonal Manager → Operations','Manish Shukla','Client zone: SBI Pune (46 branches)','Active'],
+          ['Avinash Chaskar · EMP-0207','Branch Manager → Operations','Nitish Bhope','Branch list (12)','Active'],
+          ['Vrunda Potdar · EMP-0088','Location Head → Operations','Manish Shukla','Client: SBI · states Assam, Goa (183)','Active'],
+          ['Aniket Chalke · EMP-0311','Branch Manager → Operations','Nitish Bhope','Client zone: SBI West (604)','Active · 1 merge applied'],
+          ['— merged 3 Sep —','aniket.chalke@cruxinida.co.in','583 coverage rows re-pointed','audit_entry MERGE_PERSON','superseded, retained']
+        ],
+        note:'The merge is reversible and logged, per your instruction that nothing be silently overwritten. The superseded identity is retained with a superseded_by reference rather than deleted.' },
+      { key:'Clients', label:'Clients', count:'28 clients',
+        title:'Clients — with each client\u2019s own zone names',
+        blurb:'Client zones are the client\u2019s vocabulary, mapped onto Crux geography so national roll-ups still work. This is the dual-geography model you chose.',
+        cols:['Client','Code','Client zones','Branches','Dispatchable'],
+        rows:[
+          ['State Bank of India','CLI-00024','SBI West, SBI East, SBI North-East','784','412'],
+          ['Client 00007','CLI-00007','Region A, Region B','209','168'],
+          ['Client 00012','CLI-00012','—','208','88'],
+          ['Client 00011','CLI-00011','Pune, Nashik','105','25'],
+          ['Client 00015','CLI-00015','—','46','0']
+        ],
+        note:'CLI-00015 has 46 branches and no matrix at all — 46 clients-facing gaps that the current app reports nowhere. On day one they appear as chase tasks.' },
+      { key:'Branches', label:'Branches', count:'1,413 real',
+        title:'Branches — 1,413 records, not 101,330 rows',
+        blurb:'Contacts move to their own table, geography becomes a reference, and a branch code is mandatory per client. The 217 branches with no code are flagged, not silently accepted.',
+        cols:['Branch','Code','Client','Geography','Matrix'],
+        rows:[
+          ['BR-00747 Kothrud','SBIN0030421','SBI','West → Maharashtra → Pune','5/5 ✓'],
+          ['BR-00762 Hadapsar','SBIN0030455','SBI','West → Maharashtra → Pune','4/5'],
+          ['BR-00185 Guwahati','— missing —','SBI','North-East → Assam → Guwahati','5/5 ✓'],
+          ['BR-00196 North Lakhimpur','SBIN0011902','SBI','North-East → Assam → N. Lakhimpur','3/5'],
+          ['BR-00096 Port Blair','SBIN0002211','SBI','East → A&N Islands → Port Blair','5/5 ✓']
+        ],
+        note:'Zone, Location and RegionID collapse into one geography reference. "Goa" and "GOA" become one node; "Rest of Maharashtra" is queued for your decision because it is not a single level.' },
+      { key:'Coverage', label:'Coverage', count:'≈40 rules',
+        title:'Coverage — rules, not 1,729 rows',
+        blurb:'A person may hold several rules of different shapes, as you chose. Saving a rule that would overlap an existing one is refused with the conflicting branches named.',
+        cols:['Person','Role','Scope','Resolves to','State'],
+        rows:[
+          ['Vrunda Potdar','Location Head','Client SBI + state Assam','31 branches','Active'],
+          ['Vrunda Potdar','Location Head','Client SBI + state Goa','14 branches','Active'],
+          ['Nitish Bhope','Zonal Manager','Client zone SBI Pune','46 branches','Active'],
+          ['Avinash Chaskar','Branch Manager','Branch list (12)','12 branches','Active'],
+          ['Nitish Bhope','Zonal Manager','Client SBI + state Maharashtra','— refused —','Conflict: 46 branches already covered by rule #3']
+        ],
+        note:'That last row is the refusal in action. Today both rules would have been saved, and an escalation on those 46 branches could resolve to either owner — or neither.' }
+    ];
+    const masterTabs = masterDefs.map(m => ({ key:m.key, label:m.label, count:m.count, selected:this.state.masterTab===m.key, pick:()=>set({masterTab:m.key}) }));
+    const master = masterDefs.find(m => m.key === this.state.masterTab) || masterDefs[0];
+
+    const configRows = [
+      { cat:'Service Delivery', desk:'Operations', pinned:false },
+      { cat:'Billing', desk:'Finance', pinned:false },
+      { cat:'Staff Behaviour', desk:'HR', pinned:false },
+      { cat:'Fraud / Integrity', desk:'Compliance', pinned:true },
+      { cat:'Data Privacy', desk:'Compliance', pinned:true },
+      { cat:'Access / Permissions', desk:'IT', pinned:false },
+      { cat:'MIS / Reporting', desk:'MIS', pinned:false }
+    ];
+
+    const portal = [
+      { n:'1', role:'SPOC', name:'Vaibhavi Kanavaje', contact:'7350874077 · bo.pune@cruxindia.co.in' },
+      { n:'2', role:'Team Leader', name:'Girish Kate', contact:'8552906535 · bo.pune@cruxindia.co.in' },
+      { n:'3', role:'Branch Manager', name:'Avinash Chaskar', contact:'9021469966 · avinash.chaskar@cruxindia.co.in' },
+      { n:'4', role:'Zonal Manager', name:'Nitish Bhope', contact:'9762348486 · nitish.bhope@cruxindia.co.in' },
+      { n:'5', role:'Head Office', name:'Manish Shukla', contact:'9870066855 · manish.s@cruxindia.co.in' }
+    ];
+
+    const register = [
+      { ref:'ESC-00191', where:'SBI · Raj branch', cat:'Billing', desk:'Finance', status:'In progress', days:'8' },
+      { ref:'ESC-00192', where:'CLI-00007 · Pawar', cat:'Service Delivery', desk:'Operations', status:'Resolved', days:'7' },
+      { ref:'ESC-00193', where:'CLI-00007 · Desai', cat:'Service Delivery', desk:'Operations', status:'Open', days:'7' }
+    ];
+
+    const score = [
+      { k:'Targets achieved', v:'8.4', note:'12 of 14 monthly targets · from target table, not typed' },
+      { k:'Attribute rating', v:'7.6', note:'Manager rating across 6 attributes' },
+      { k:'Escalations owned', v:'2', note:'Both within clock · 0 strike-3' },
+      { k:'Window', v:'Closed', note:'Self-submitted 2 Sep · manager decided 3 Sep · HR closed' }
+    ];
+
+    const phases = [
+      { tag:'P0', weeks:'Weeks 1–4', goal:'Stop the bleeding and move the core',
+        items:['Outbox with unique idempotency key, daily budget, DEFERRED/ABANDONED states','Postgres schema: person, client, branch, matrix_contact, coverage_rule, case, outbox, delivery, job_run, audit_entry','Migration with merge log and source_ref on every row — including the 449 orphaned notes','Monthly dispatch with the completeness gate (≈693 branches)','Automation health page and failure alerts to you','Account-free client portal on signed rotatable links'] },
+      { tag:'P1', weeks:'Weeks 5–8', goal:'First production version complete',
+        items:['Cases: raise, category routing to six desks, scheduled chase, resolve, 7-day auto-close','Today screen per role with the four-channel incomplete-matrix chase','Masters UI with overlap refusal and geography tree','Case register and monthly summary as print-exact documents','Full-workbook export for the CPV, Branch Visit and billing tools','Audit search over configuration and human actions'] },
+      { tag:'P2', weeks:'Weeks 9–12', goal:'Performance module, properly this time',
+        items:['Windows as records, self-submission, manager decision, HR close','Targets, KPIs, attributes, person events (warnings, PIP, appreciation)','Warning and notice letters as print-exact documents','Appraisal scorecard behind one door','AI features restored behind a monthly call cap with graceful grey-out'] },
+      { tag:'P3', weeks:'Later',
+        goal:'Only once the above is trusted',
+        items:['Read-only API for the sibling tools (you chose manual export for now)','Archive of pre-previous-financial-year data, hidden from normal screens','WhatsApp or SMS channels — deliberately excluded today','Client-facing PDF of the matrix (you chose e-mail body only)'] }
+    ];
+
+    const spec = [
+      { area:'Frontend', text:'Server-rendered pages with light client interactivity. Everything must work equally on a phone, as you chose: single-column below 640px, 44px minimum targets, tables become stacked cards. No SPA shell, no bootstrap payload — the current app ships its whole state on first load.' },
+      { area:'Backend', text:'One small application with a rules module, a repository layer and exactly one scheduler. No business rule may live in a route handler or a job. Every write goes through a service that emits audit_entry.' },
+      { area:'Database', text:'Postgres on the Supabase free tier. The unique constraints listed in the data model are the deliverable — they are what make today\u2019s duplication impossible rather than merely discouraged. Current-plus-previous financial year live; older rows kept but hidden.' },
+      { area:'Authentication', text:'Google Workspace sign-in for staff who have accounts; e-mail plus password accounts created by admin for field staff without them, as you chose. Client portal stays account-free on a signed, rotatable link. No standing tokens in the data.' },
+      { area:'Mail', text:'Sending stays as operations.alert@ per your constraint. Outbox worker with a daily budget; quota errors defer to tomorrow rather than retry. At ≈693 monthly recipients a single send window is sufficient — the multi-day spread becomes an automatic fallback above 1,200.' },
+      { area:'Jobs', text:'Five jobs, all idempotent, all recorded in job_run with next_due_at: outbox worker, monthly dispatch, case chase, matrix chase, monthly summary. Plus weekly AI anomalies. No job may be paused silently; disabling one requires a reason and raises a banner.' },
+      { area:'Permissions', text:'One policy table, not ~90 per-route opinions: role × entity × action, with row scope from coverage_rule. Every rule expressible as a sentence — "a Manager may edit a matrix for branches their coverage rules resolve to".' },
+      { area:'Deployment', text:'GitHub repository you already have, deployed by you from documented steps. Existing Google Cloud project used for Workspace sign-in only. Hard cut-over on a month boundary with the old app switched off, after one parallel dispatch is verified.' },
+      { area:'Non-negotiables carried from your warnings', text:'No hard-coded people anywhere — ownership resolves through master data. Nothing silently dropped or overwritten in migration. Audit trail on every routing and configuration change. No complaint may become ownerless; configuration gaps surface loudly. Duplicate ownership refused at write time. MD office escalation-only. Fraud/Integrity and Data Privacy pinned to Compliance. Backward traceability via source_ref. Categories, desks, primaries, clocks and gates all admin-editable without code.' }
+    ];
+
+    return { findings, chain, tabs, dupes, verdicts, nav, journeys, entities, migration, rules, desks,
+             roleTabs, home, branches, levels, steps, caseView, jobs, jobResult: this.state.ranJob,
+             masterTabs, master, configRows, portal, register, score, phases, spec,
+             evidenceOn: this.props.showEvidence !== false };
+  }
+}
+</script>
+</body>
+</html>

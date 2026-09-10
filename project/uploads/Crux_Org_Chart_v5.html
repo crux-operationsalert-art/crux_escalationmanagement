@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crux India — Organisation Chart, Responsibility Matrix &amp; Level Framework</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400..700&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#14203A;--slate:#43536E;--mute:#7B879B;--paper:#FBFAF7;--panel:#fff;
+--rule:#B9C2D2;--hair:#E3E7EF;--stamp:#A6321E;--seal:#1F6F5C;--amber:#9C6606;
+--t1:#B9C2D4;--t2:#8C99B4;--t3:#5F7095;--t4:#34497A;--t5:#14203A;
+--d:"Newsreader",Georgia,serif;--b:"Archivo","Segoe UI",system-ui,sans-serif;--m:"IBM Plex Mono",ui-monospace,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--b);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin:0 auto;padding:20px 14px 60px}
+header.mh{border-top:3px solid var(--ink);border-bottom:1px solid var(--rule);padding:15px 0 12px}
+.mh h1{font-family:var(--d);font-size:clamp(21px,3.4vw,31px);font-weight:600;margin:0;line-height:1.08;letter-spacing:-.015em}
+.mh h1 span{display:block;font-family:var(--b);font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--mute);margin-bottom:6px}
+.mh p{margin:9px 0 0;color:var(--slate);font-size:13px;max-width:76ch}
+.tabs{display:flex;flex-wrap:wrap;margin:16px 0 0;border-bottom:1px solid var(--rule)}
+.tab{font-family:var(--m);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;background:none;border:0;
+ border-bottom:2px solid transparent;color:var(--mute);padding:10px 14px;cursor:pointer;margin-bottom:-1px}
+.tab[aria-selected=true]{color:var(--ink);border-bottom-color:var(--stamp);font-weight:600}
+.bar{display:flex;flex-wrap:wrap;gap:7px;align-items:center;padding:11px 0}
+button.ctl{font-family:var(--m);font-size:10px;letter-spacing:.06em;text-transform:uppercase;background:var(--panel);
+ border:1px solid var(--rule);color:var(--ink);padding:6px 10px;cursor:pointer}
+button.ctl:hover{border-color:var(--ink)}
+button.ctl[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+button.ctl:focus-visible,.card:focus-visible,.knob:focus-visible,.tab:focus-visible{outline:2px solid var(--stamp);outline-offset:2px}
+input[type=search]{font-family:var(--b);font-size:12.5px;padding:6px 9px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);flex:1 1 150px;max-width:250px}
+.zoom{display:flex;align-items:center;gap:5px;margin-left:auto;font-family:var(--m);font-size:10px;color:var(--mute)}
+.zoom button{width:26px;height:26px;font-size:14px;line-height:1;padding:0}
+/* ---- chart: scroll-correct ---- */
+.ocwrap{overflow:auto;border:1px solid var(--hair);background:var(--panel);padding:22px 12px;cursor:grab;-webkit-overflow-scrolling:touch}
+.ocwrap.drag{cursor:grabbing;user-select:none}
+.ocsizer{position:relative}
+.ocscale{position:absolute;top:0;left:0;transform-origin:0 0;width:max-content}
+.oc{width:max-content}
+.oc ul{position:relative;display:flex;justify-content:center;padding:26px 0 0;margin:0;list-style:none}
+.oc>ul{padding-top:0}
+.oc ul ul::before{content:'';position:absolute;top:0;left:50%;border-left:1px solid var(--rule);height:26px;width:0}
+.oc li{position:relative;padding:26px 7px 0;list-style:none;display:flex;flex-direction:column;align-items:center}
+.oc li::before,.oc li::after{content:'';position:absolute;top:0;right:50%;border-top:1px solid var(--rule);width:50%;height:26px}
+.oc li::after{right:auto;left:50%;border-left:1px solid var(--rule)}
+.oc li:only-child::before,.oc li:only-child::after{display:none}
+.oc li:only-child{padding-top:0}
+.oc li:first-child::before,.oc li:last-child::after{border-top:0 none}
+.oc li:last-child::before{border-right:1px solid var(--rule)}
+.cw{position:relative;padding-bottom:2px}
+.card{width:198px;background:var(--panel);border:1px solid var(--rule);border-top:4px solid var(--t3);
+ padding:9px 10px 10px;cursor:pointer;font-family:var(--b);color:var(--ink);text-align:left;display:block}
+.card:hover{border-color:var(--ink)}
+.card.sel{border-color:var(--ink);box-shadow:0 0 0 2px rgba(20,32,58,.13)}
+.card.d1{border-top-color:var(--t1)}.card.d2{border-top-color:var(--t2)}.card.d3{border-top-color:var(--t3)}
+.card.d4{border-top-color:var(--t4)}.card.d5{border-top-color:var(--t5)}
+.card.dot{border-style:dashed;border-top-style:solid}
+.cid{display:flex;justify-content:space-between;gap:6px;font-family:var(--m);font-size:8.5px;letter-spacing:.05em;color:var(--mute)}
+.cid em{font-style:normal;text-align:right}
+.ctitle{display:block;font-weight:600;font-size:12.5px;line-height:1.26;margin-top:3px;letter-spacing:-.005em}
+.cname{display:none;font-size:11px;color:var(--slate);margin-top:3px}
+body.names .cname{display:block}
+.cname.vac{color:var(--stamp);font-style:italic}
+.cacc{display:none;font-size:10px;color:var(--slate);margin-top:5px;padding-top:5px;border-top:1px dotted var(--hair);line-height:1.35}
+body.acc .cacc{display:block}
+.cacc b{color:var(--stamp);font-family:var(--m);font-size:9px}
+.craci{display:flex;gap:3px;margin-top:6px}
+.craci i{font-family:var(--m);font-size:8.5px;font-style:normal;padding:1px 4px;border:1px solid;letter-spacing:.03em}
+.craci i.a{color:var(--stamp);border-color:var(--stamp);font-weight:600}
+.craci i.r{color:var(--ink);border-color:var(--rule)}
+.craci i.c{color:var(--amber);border-color:var(--hair)}
+.craci i.i{color:var(--mute);border-color:var(--hair)}
+.tags{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px}
+.tg{font-family:var(--m);font-size:8px;letter-spacing:.05em;text-transform:uppercase;padding:0 3px;border:1px solid}
+.tg.v{color:var(--stamp);border-color:var(--stamp)}.tg.n{color:var(--seal);border-color:var(--seal)}
+.tg.d{color:var(--amber);border-color:var(--amber)}
+.knob{position:absolute;left:50%;bottom:-11px;transform:translateX(-50%);width:21px;height:21px;background:var(--panel);
+ border:1px solid var(--rule);color:var(--ink);font-family:var(--m);font-size:13px;line-height:1;cursor:pointer;padding:0;
+ display:flex;align-items:center;justify-content:center;font-weight:600;z-index:3}
+.knob:hover{border-color:var(--ink);background:var(--ink);color:#fff}
+.knob .n{font-size:8.5px;position:absolute;top:-9px;right:-13px;color:var(--mute);border:1px solid var(--hair);background:var(--panel);padding:0 2px}
+.card.hit{background:#FFF7D6}
+/* ---- matrix ---- */
+.mxg{padding:14px 16px 4px;border-bottom:1px solid var(--hair);background:var(--panel)}
+.mxg h3{font-family:var(--m);font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--stamp);margin:0}
+.mx{background:var(--panel);border:1px solid var(--hair)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{text-align:left;vertical-align:top;padding:9px 10px;border-bottom:1px solid var(--hair)}
+th{font-family:var(--m);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--mute);border-bottom:1px solid var(--rule)}
+td.ref{font-family:var(--m);font-size:10px;color:var(--mute);white-space:nowrap}
+td.pr{font-weight:500;min-width:190px}
+.chip{display:inline-block;font-size:11.5px;color:var(--slate);margin:0 4px 3px 0;padding:1px 5px;border:1px solid var(--hair);cursor:pointer;background:none;font-family:var(--b);text-align:left}
+.chip:hover{border-color:var(--ink);color:var(--ink)}
+.chip.A{color:var(--stamp);border-color:var(--stamp);font-weight:600}
+.vbar{display:flex;flex-wrap:wrap;gap:15px;background:var(--panel);border:1px solid var(--hair);padding:12px 16px;
+ margin-bottom:12px;font-family:var(--m);font-size:10.5px;letter-spacing:.04em}
+.vbar b{color:var(--seal)}.vbar b.bad{color:var(--stamp)}
+/* ---- levels tab ---- */
+.fam{background:var(--panel);border:1px solid var(--hair);margin-bottom:14px}
+.famh{padding:14px 17px;border-bottom:1px solid var(--hair)}
+.famh h3{font-family:var(--d);font-size:19px;font-weight:600;margin:0}
+.famh p{margin:5px 0 0;font-size:12.5px;color:var(--slate)}
+.famh .who{font-family:var(--m);font-size:10px;color:var(--mute);margin-top:6px;letter-spacing:.03em}
+.lvrow{display:grid;grid-template-columns:150px 1fr;gap:14px;padding:12px 17px;border-bottom:1px solid var(--hair)}
+.lvrow:last-child{border-bottom:0}
+.lvn{font-family:var(--m);font-size:10.5px;font-weight:600;letter-spacing:.03em;color:var(--ink)}
+.lvrow:last-child .lvn{color:var(--stamp)}
+.lvd{font-size:13px}
+.lvd em{display:block;font-style:normal;font-family:var(--m);font-size:10px;color:var(--mute);margin-top:5px;letter-spacing:.02em}
+/* ---- panel ---- */
+.scrim{position:fixed;inset:0;background:rgba(20,32,58,.42);z-index:50;opacity:0;pointer-events:none;transition:opacity .18s}
+.scrim.on{opacity:1;pointer-events:auto}
+.pn{position:fixed;top:0;right:0;height:100%;width:min(580px,100%);background:var(--panel);z-index:60;
+ transform:translateX(101%);transition:transform .22s ease;overflow-y:auto;box-shadow:-2px 0 22px rgba(20,32,58,.18)}
+.pn.on{transform:none}
+.ph{position:sticky;top:0;background:var(--panel);border-bottom:1px solid var(--rule);padding:15px 20px 12px;z-index:2}
+.ph .id{font-family:var(--m);font-size:9.5px;letter-spacing:.08em;color:var(--mute)}
+.ph h2{font-family:var(--d);font-size:21px;font-weight:600;margin:3px 0 0;line-height:1.16}
+.ph .who{font-size:12.5px;color:var(--slate);margin-top:4px}
+.ph .who.vac{color:var(--stamp);font-style:italic}
+.x{position:absolute;top:12px;right:14px;background:none;border:1px solid var(--rule);width:27px;height:27px;
+ font-size:15px;cursor:pointer;color:var(--slate);font-family:var(--m);line-height:1}
+.x:hover{border-color:var(--ink);color:var(--ink)}
+.pb{padding:4px 20px 60px}
+.sec{margin-top:20px}
+.sec h3{font-family:var(--m);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--stamp);
+ margin:0 0 8px;padding-bottom:5px;border-bottom:1px solid var(--hair)}
+.sec p{margin:0;font-size:13.5px;color:var(--slate)}
+.sec ul{margin:0;padding-left:17px;font-size:13.5px}.sec li{margin-bottom:5px}
+.sec ul ul{margin-top:4px;padding-left:15px;font-size:12.5px;color:var(--slate)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:12.5px}
+.kv dt{font-family:var(--m);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--mute);padding-top:2px}
+.kv dd{margin:0}
+.rrow{display:grid;grid-template-columns:24px 1fr;gap:9px;align-items:start;margin-bottom:10px;font-size:12.5px}
+.rrow b{font-family:var(--m);font-size:11px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border:1px solid;font-weight:600}
+.rrow.A b{color:var(--stamp);border-color:var(--stamp)}.rrow.R b{color:var(--ink);border-color:var(--ink)}
+.rrow.C b{color:var(--amber);border-color:var(--amber)}.rrow.I b{color:var(--mute);border-color:var(--rule)}
+.rlab{font-family:var(--m);font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--mute);display:block;margin-bottom:2px}
+.rt{border-left:3px solid;padding:2px 0 2px 11px;font-size:13px;margin-bottom:9px}
+.rt.can{border-color:var(--seal)}.rt.app{border-color:var(--amber)}.rt.esc{border-color:var(--stamp)}.rt.del{border-color:var(--rule)}
+.rt strong{display:block;font-family:var(--m);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);margin-bottom:3px}
+.risk{font-size:13px;border:1px solid var(--hair);padding:9px 11px;margin-bottom:8px}
+.risk b{display:block;color:var(--stamp);font-size:12.5px;margin-bottom:3px}
+.note{background:#FDF6F4;border:1px solid #E4C6BF;padding:10px 12px;font-size:12.5px;color:var(--slate);margin-top:14px}
+.note b{color:var(--stamp)}
+.lg{background:var(--panel);border:1px solid var(--hair);padding:14px 17px;margin-top:20px;display:grid;
+ grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px}
+.lg h4{font-family:var(--m);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--mute);margin:0 0 8px}
+.lg p{margin:0 0 5px;font-size:12px;color:var(--slate);display:flex;gap:7px;align-items:flex-start}
+.sw{width:18px;height:9px;flex:none;border:1px solid rgba(0,0,0,.12);margin-top:4px}
+footer{margin-top:36px;padding-top:12px;border-top:3px solid var(--ink);font-family:var(--m);font-size:9.5px;
+ letter-spacing:.05em;color:var(--mute);display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between}
+[hidden]{display:none!important}
+@media (max-width:640px){body{font-size:14px}.pb{padding:4px 15px 60px}.lvrow{grid-template-columns:1fr;gap:5px}}
+@media (prefers-reduced-motion:reduce){.pn,.scrim{transition:none}}
+@media print{.bar,.tabs,.scrim,.pn,.knob{display:none}.ocwrap{overflow:visible;border:0}.ocscale{position:static;transform:none!important}}
+</style>
+
+<div class="wrap">
+<header class="mh">
+  <h1><span>Crux Risk Management Private Limited</span>Organisation Chart, Responsibility Matrix &amp; Level Framework</h1>
+  <p>Standard top-down structure. Every chair carries its responsibility position and its own L1&ndash;L5 progression.
+  Click any box for the full definition. Draft 0.5 &middot; 8 August 2026.</p>
+</header>
+
+<div class="tabs" role="tablist">
+  <button class="tab" id="t1" role="tab" aria-selected="true">Organisation chart</button>
+  <button class="tab" id="t2" role="tab" aria-selected="false">Responsibility matrix &mdash; doer and manager</button>
+  <button class="tab" id="t3" role="tab" aria-selected="false">Level framework L1&ndash;L5</button>
+</div>
+
+<section id="v1" role="tabpanel">
+  <div class="bar">
+    <button class="ctl" id="bE">Expand all</button>
+    <button class="ctl" id="bC">Collapse all</button>
+    <button class="ctl" id="bN" aria-pressed="false">Show names</button>
+    <button class="ctl" id="bA" aria-pressed="false">Show accountability</button>
+    <input id="q" type="search" placeholder="Search chair or person&hellip;" aria-label="Search">
+    <span class="zoom"><button class="ctl" id="zO" aria-label="Zoom out">&minus;</button>
+      <span id="zV">75%</span><button class="ctl" id="zI" aria-label="Zoom in">+</button>
+      <button class="ctl" id="zF">Fit</button></span>
+  </div>
+  <div class="ocwrap" id="ocwrap"><div class="ocsizer" id="ocsizer"><div class="ocscale" id="ocscale"><div class="oc" id="oc"></div></div></div></div>
+  <div class="lg">
+    <div><h4>Levels — read this carefully</h4>
+      <p>L1&ndash;L5 belong to the <b>person</b>, not the seat. Every chair &mdash; Executive, Branch Manager, MD alike &mdash; has its own five levels, written in that chair's own terms.</p>
+      <p style="color:var(--stamp)">Promotion eligibility begins only at <b>L5</b> of the current chair.</p>
+      <p>Level is set by three inputs: performance evidence, knowledge test and psychometric assessment.</p></div>
+    <div><h4>Box shading</h4>
+      <p><span class="sw" style="background:var(--t5)"></span>Depth in the chart only &mdash; a visual aid, not a grade</p>
+      <p><span class="sw" style="background:var(--t3)"></span>Darker sits higher in the reporting line</p>
+      <p>Dashed border marks a dotted-line relationship rather than direct reporting.</p></div>
+    <div><h4>Chart markers</h4>
+      <p><span class="craci" style="margin:0"><i class="a">A4</i><i class="r">R2</i><i class="c">C3</i><i class="i">I2</i></span></p>
+      <p>Count of processes this chair is Accountable, Responsible, Consulted or Informed on. No chair sits at zero on any of the four.</p>
+      <p><span class="tg v">TBH</span> Vacant &nbsp; <span class="tg n">New</span> New chair &nbsp; <span class="tg d">Dual</span> Dual hat</p></div>
+  </div>
+</section>
+
+<section id="v2" role="tabpanel" hidden>
+  <div class="bar"><input id="qm" type="search" placeholder="Filter processes or chairs&hellip;" aria-label="Filter"></div>
+  <div class="vbar" id="vbar"></div>
+  <div class="mx" id="mx"></div>
+</section>
+
+<section id="v3" role="tabpanel" hidden>
+  <div class="bar"><input id="qf" type="search" placeholder="Filter by chair or family&hellip;" aria-label="Filter levels"></div>
+  <div id="lvv"></div>
+</section>
+
+<footer><span>Crux Risk Management Pvt Ltd &middot; 301 Surya Sadan, Naupada, Thane (W) 400602</span>
+<span>Draft 0.5 &middot; Confidential — Board &amp; MD</span></footer>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="pn" id="pn" role="dialog" aria-modal="true" aria-labelledby="pT" tabindex="-1">
+  <div class="ph"><button class="x" id="bX" aria-label="Close">&times;</button>
+  <div class="id" id="pI"></div><h2 id="pT"></h2><div class="who" id="pW"></div></div>
+  <div class="pb" id="pB"></div>
+</aside>
+
+<script>
+const D=[
+{id:"C00",t:"Board of Directors",n:"",lvl:5,
+ purpose:"Owns the company. Sets strategy, approves capital, and holds the MD accountable for the 10× plan.",
+ acc:["Strategy and annual plan approval","Capital expenditure above MD limit","Statutory and regulatory standing","Appointment of Head-level and above"],
+ tasks:[{t:"Governance",subs:["Quarterly business review","Approve annual budget and expansion plan","Review audit and compliance findings"]},
+        {t:"Risk oversight",subs:["Receive independent assurance reporting from Risk, Quality & Compliance","Review data breach, fraud and litigation matters"]}],
+ kpis:["Revenue against the ₹140 Cr plan","Zone and branch build against plan","Clean statutory audit","Zero material compliance breach"],
+ raci:{A:["Strategy, capital, statutory standing"],R:[],C:["Senior appointments"],I:["Monthly MIS pack","Independent assurance reporting"]},
+ rights:{can:["All matters"],approve:[],escalate:[],delegate:["Day-to-day management to the MD"]},
+ risk:[{r:"Founder dependence — the plan requires branches to run without MD intervention",m:"Hold the MD to the delegation milestones in this chart; review MD span quarterly"}],
+ ch:["C01"]},
+
+{id:"C01",t:"Managing Director",n:"Viren Pal",lvl:5,
+ purpose:"Enterprise outcome. Runs the company through seven function heads rather than through line operations.",
+ acc:["Company P&L and the 10× growth plan","New client empanelment and all pricing approval","Partner agreements and revenue-share terms","Senior appointments and organisation design"],
+ tasks:[{t:"Lead the executive team",subs:["Weekly function head review","Monthly business review","Quarterly strategic review with Board"]},
+        {t:"Commercial approval",subs:["Approve all new client empanelments","Approve every pricing decision and discount","Sign partner agreements and revenue-share terms"]},
+        {t:"Capital and structure",subs:["Approve budgets within Board limit","Approve zone and branch expansion","Approve Head-level appointments"]}],
+ kpis:["Revenue against plan","EBITDA","Zones and branches operational vs plan","Escalations resolved without Board involvement","% of client issues resolved below MD level"],
+ raci:{A:["New client empanelment and pricing (D12)","Partner agreement approval (C4)","Organisation design"],R:["Board reporting"],C:["Zone expansion","Senior hiring"],I:["All function MIS"]},
+ rights:{can:["Spend to ₹25,00,000 per transaction","Approve all pricing and discounts","Sign partner agreements","Appoint up to Head level"],
+   approve:["Capital expenditure above ₹25,00,000 — Board","Head-level and above appointments — Board"],
+   escalate:["Material litigation, data breach, regulatory action, auditor qualification — Board"],
+   delegate:["Line Business Development to Head — Client & Growth","Zone-level client escalation to AVP and Regional Managers","Branch firefighting to Operations entirely"]},
+ risk:[{r:"MD span is seven functions plus commercial approval on every price — a bottleneck at 2× volume",m:"Delegate pricing within a Board-approved band once Head — Client & Growth is in seat; keep exceptions only"},
+       {r:"MD holds partner agreement signature and is the arbitration point",m:"AVP arbitrates partner-versus-branch client conflict (C11); MD signs only"}],
+ ch:["C02","C10","C20","C30","C40","C50","C60","C70"]},
+
+/* ---------- OPERATIONS ---------- */
+{id:"C02",t:"COO / National Head — Operations",n:"Manish Shukla",lvl:5,
+ purpose:"All service delivery, pan-India. Owns TAT, capacity and the operational quality outcome — but no longer owns the accounts receivable ledger or the audit of his own quality.",
+ acc:["SLA and TAT adherence across every location","Field agency and vendor empanelment and termination (D7)","Operational execution of collection follow-up against Finance-set targets","Partner operational audit (D14)","New branch and zone launch execution"],
+ tasks:[{t:"Run the delivery network",subs:["Weekly regional roll-up","Monthly zone P&L review","Daily exception and ageing review"]},
+        {t:"Capacity and vendor management",subs:["Field agency empanelment, performance review, termination","Capacity planning against case volume","Vendor SLA enforcement"]},
+        {t:"Collection execution",subs:["Drive branch and regional collection follow-up","Escalate disputed invoices to Finance","Support client payment conversations"]},
+        {t:"Expansion",subs:["Execute branch and zone launch against the BE&PMO playbook","Site readiness, staffing, go-live"]}],
+ kpis:["TAT adherence ≥95%","Case allocation — zero backlog beyond 24 hrs","Escalation ratio <2% of volume","Collection follow-up completion against Finance targets","Audit score ≥95%"],
+ raci:{A:["SLA and TAT (D18)","Vendor and field agency empanelment (D7)","Partner operational audit (D14)","Branch and zone launch execution (D20)"],
+   R:["Collection follow-up (D4)","Quality remediation"],C:["Credit limits and service suspension","SOP design","Pricing feasibility"],I:["AR ageing","Quality audit findings"]},
+ rights:{can:["Spend to ₹10,00,000","Empanel and terminate field agencies","Reallocate staff across regions","Set daily and weekly operating priorities"],
+   approve:["Regional Manager appointment — MD","Branch opening or closure — MD","Any expense above ₹10,00,000 — MD"],
+   escalate:["Loss or risk of loss of a top-5 client","Material SLA breach with client impact","Any integrity or fraud incident","Regulatory or client audit finding"],
+   delegate:["Branch-level issues to Regional Managers entirely","Daily allocation to Team Leaders","Client servicing at branch level to Branch Managers"]},
+ risk:[{r:"Previously held the full AR function — invoicing, ledger, receipts, credit limits — alongside delivery",m:"Those transfer to Finance. Operations executes collection conversations only, against targets Finance sets"},
+       {r:"Previously audited his own quality output",m:"Quality score now owned by Risk, Quality & Compliance independently"},
+       {r:"Interim direct control of North Zone alongside the national role",m:"Time-boxed. Appoint a North Zone Regional Manager as the first operations hire"}],
+ ch:["C03","C07","C08"]},
+
+{id:"C03",t:"AVP — Operations & Growth",n:"Shantanu Suravase",lvl:5,dual:"Also heads Business Excellence & PMO (C30)",
+ purpose:"West and South India. Regional Managers report here. Arbitrates partner-versus-branch client conflict.",
+ acc:["West and South regional performance — Mumbai, Gujarat, Rest of Maharashtra, Goa, Chhattisgarh, South","Partner versus company-branch client conflict arbitration (C11)","Regional Manager capability and bench strength"],
+ tasks:[{t:"Regional oversight",subs:["Weekly roll-up from each Regional Manager","Monthly regional P&L walkthrough","Quarterly calibration with COO"]},
+        {t:"Client and conflict",subs:["Arbitrate partner-versus-branch client pursuit — company branch takes precedence","Senior client relationships in West and South"]},
+        {t:"People",subs:["Develop Regional Managers to full autonomy","Succession bench for every region"]}],
+ kpis:["Regional revenue against target","% branches at target","Escalations resolved without COO involvement","Regional Manager autonomy index"],
+ raci:{A:["West and South regional outcome","Partner conflict arbitration (C11)"],R:["Regional Manager development","Termination decisions at AVP level (E4)"],C:["Branch openings","Partner appointment"],I:["Zone MIS","Quality findings in region"]},
+ rights:{can:["Spend to ₹7,50,000","Approve termination of any employee (AVP and above only, per E4)","Cross-region staff reallocation","Arbitrate partner conflicts"],
+   approve:["Branch opening — COO and MD","Pricing — MD only, no discount authority at any level"],
+   escalate:["Top-5 client risk","Partner contractual dispute","Integrity incidents"],
+   delegate:["Branch operations to Regional Managers","Client servicing to Branch Managers"]},
+ risk:[{r:"Dual hat. As AVP he reports to the COO; as Head of BE&PMO he governs process for Operations. The governing function sits, in its other hat, inside the function it governs.",m:"BE&PMO reports to the MD on a separate line, and RQC — not BE&PMO — audits Operations. Review the dual hat at the next structural checkpoint or when either role reaches full load."}],
+ ch:["C04","C05","C06","C061"]},
+
+{id:"C04",t:"Regional Manager — West-I (ROMG & CG)",n:"Nitish Bhope",lvl:4,
+ purpose:"Rest of Maharashtra, Goa and Chhattisgarh. ROMG excludes Mumbai, which is head office. A P&L owner, not a senior Branch Manager.",
+ acc:["Regional revenue against target","Branch performance across the region","Client renewal and recovery in region","New bank empanelment pipeline in region"],
+ tasks:[{t:"Run the region",subs:["Weekly branch roll-up","Monthly regional P&L with AVP","Branch Manager calibration"]},
+        {t:"Client ownership",subs:["Regional-head level bank relationships","Renewal pipeline","Lost mandate recovery"]},
+        {t:"Collections",subs:["Regional DSO against Finance target","Aged receivable escalation","Dispute identification"]},
+        {t:"Expansion",subs:["New branch proposals","New bank empanelment in region"]}],
+ kpis:["Regional revenue %","% branches at target","Mandate renewal rate","Regional DSO against Finance target","Escalations resolved without AVP"],
+ raci:{A:["Regional P&L","Branch performance in region"],R:["Collection target achievement in region (D4)","Partner SLA and quality in region (C5)"],C:["Pricing feasibility","Branch launch"],I:["Quality audit findings","Partner settlement"]},
+ rights:{can:["Spend to ₹5,00,000","Hire Branch Managers within approved band and budget","Cross-branch staff reallocation within region","Performance incentives for Branch Managers and Team Leaders"],
+   approve:["Termination — AVP and above only","Any pricing or discount — MD only","Branch opening or closure — COO"],
+   escalate:["Top-5 regional client at risk","Material compliance issue","Cross-region resource conflict"],
+   delegate:["Branch P&L to Branch Managers","Daily operations to Team Leaders"]},
+ risk:[{r:"Two conflicting KRA documents were in circulation for this chair",m:"Manager–ROMG confirmed as the live document. The Associate Agency Manager KRA is withdrawn"}],
+ ch:["C0401"]},
+
+{id:"C05",t:"Regional Manager — Mumbai",n:"",vac:1,lvl:4,new:1,
+ purpose:"Head office territory. Currently absorbed by the AVP; needs a dedicated owner as Mumbai volume scales.",
+ acc:["Mumbai regional revenue and branch performance","Head-office adjacent client relationships"],
+ tasks:[{t:"Same mandate as Regional Manager — West-I, scoped to Mumbai",subs:["Branch roll-up","Client ownership","Collections","Expansion"]}],
+ kpis:["Regional revenue %","% branches at target","DSO against target"],
+ raci:{A:["Mumbai regional P&L"],R:["Collection execution"],C:["Pricing feasibility"],I:["Quality findings"]},
+ rights:{can:["Spend to ₹5,00,000 once appointed"],approve:["As per Regional Manager grade"],escalate:["As per Regional Manager grade"],delegate:["Branch P&L to Branch Managers"]},
+ risk:[{r:"Unfilled — the AVP is carrying it alongside a dual hat",m:"Priority hire in the operations sequence"}],
+ ch:["C0501"]},
+
+{id:"C06",t:"Regional Manager — Gujarat",n:"",vac:1,lvl:4,new:1,
+ purpose:"Gujarat territory under the AVP.",
+ acc:["Gujarat regional revenue and branch performance"],
+ tasks:[{t:"Same mandate as Regional Manager — West-I, scoped to Gujarat",subs:["Branch roll-up","Client ownership","Collections","Expansion"]}],
+ kpis:["Regional revenue %","% branches at target","DSO against target"],
+ raci:{A:["Gujarat regional P&L"],R:["Collection execution"],C:["Pricing feasibility"],I:["Quality findings"]},
+ rights:{can:["Spend to ₹5,00,000 once appointed"],approve:["As per Regional Manager grade"],escalate:["As per Regional Manager grade"],delegate:["Branch P&L to Branch Managers"]},
+ risk:[{r:"Unfilled",m:"Sequence after Mumbai"}],
+ ch:[]},
+
+{id:"C061",t:"Business Manager — South Zone",n:"Shivkumar",lvl:4,
+ purpose:"South India. Regional Manager grade under a legacy title.",
+ acc:["South zone revenue and collections","Branch performance across the South","Client retention in zone"],
+ tasks:[{t:"Operations",subs:["TAT adherence","Case allocation efficiency","Escalation control"]},
+        {t:"Collections",subs:["Collection target achievement","Resolution rate on delinquent accounts","Recovery documentation quality"]},
+        {t:"Team",subs:["Field executive productivity","Attrition control","8–10 field coaching visits per month"]}],
+ kpis:["Zone revenue against target","TAT ≥95%","Collection target achievement","Audit score ≥95%","Attrition <10% annually"],
+ raci:{A:["South zone P&L"],R:["Collection execution (D4)","Quality remediation in zone"],C:["Pricing feasibility"],I:["Quality audit findings"]},
+ rights:{can:["Spend to ₹5,00,000","Hire Branch Managers within band","Cross-branch reallocation in zone"],
+   approve:["Termination — AVP and above","Pricing — MD only"],escalate:["Top-5 zone client risk","Compliance issue"],
+   delegate:["Branch P&L to Branch Managers"]},
+ risk:[{r:"KRA line-item weightings total 125% against a 100% summary table, and are identical to another chair's",m:"Reissue on the standard architecture — HR and Operations jointly, FY27 deadline"},
+       {r:"Title inconsistent with the Regional Manager grade",m:"Standardise to Regional Manager — South under the job architecture"}],
+ ch:[]},
+
+{id:"C07",t:"Zonal Manager — North East, Bengal & Orissa",n:"Shiladitya",lvl:4,
+ purpose:"Eastern territory. Reports directly to the COO.",
+ acc:["East zone revenue and branch performance","Client relationships in zone"],
+ tasks:[{t:"Same mandate as Regional Manager grade, scoped to the East",subs:["Branch roll-up","Client ownership","Collections","Expansion"]}],
+ kpis:["Zone revenue %","% branches at target","DSO against target","Escalations resolved without COO"],
+ raci:{A:["East zone P&L"],R:["Collection execution"],C:["Pricing feasibility"],I:["Quality findings"]},
+ rights:{can:["Spend to ₹5,00,000","Hire Branch Managers within band"],approve:["Termination — AVP and above","Pricing — MD only"],
+   escalate:["Top-5 zone client risk","Compliance issue"],delegate:["Branch P&L to Branch Managers"]},
+ risk:[{r:"No KRA document exists for this chair",m:"Issue on the standard architecture in the FY27 migration"}],
+ ch:[]},
+
+{id:"C08",t:"North Zone — interim, held by COO",n:"Manish Shukla",lvl:4,
+ purpose:"UP, MP, Bihar, Jharkhand, Delhi, Punjab and any unallocated location. Held directly by the COO until a Regional Manager is appointed.",
+ acc:["North zone revenue and branch performance — on an interim basis"],
+ tasks:[{t:"Interim regional management",subs:["Direct branch oversight","Client relationships","Collections follow-up"]}],
+ kpis:["Zone revenue %","Time to appoint a permanent Regional Manager"],
+ raci:{A:["North zone outcome — interim"],R:["Direct branch management"],C:[],I:[]},
+ rights:{can:["COO authority applies"],approve:[],escalate:[],delegate:["Everything, on appointment of a Regional Manager"]},
+ risk:[{r:"The COO is carrying a regional line role alongside the national role — the same founder-dependence pattern the plan is meant to remove, one layer down",m:"Appoint a North Zone Regional Manager as the first operations hire. Set a date, not an intention"}],
+ ch:[]},
+
+{id:"C0401",t:"Branch Manager — Pune",n:"Avinash Chaskar",lvl:3,
+ purpose:"Total accountability for the branch — business, people, books and brand. The Team Leader runs daily operations; the Branch Manager runs the business.",
+ acc:["Branch P&L and revenue against target","Branch collections and DSO","Branch budget and ledger reconciliation","Branch team stability and engagement","Client relationships at branch level"],
+ tasks:[{t:"Grow the book",subs:["Activate dormant accounts","New business acquisition","Revenue per client (ARPU) growth","Weekly client review with Team Leader"]},
+        {t:"Collections",subs:["Weekly collection status","Work aged receivables above 60 days","Identify and escalate disputes early"]},
+        {t:"Clean books",subs:["Monthly expense reconciliation against budget","Ledger reconciliation before the regional review","Audit readiness at all times"]},
+        {t:"People",subs:["Weekly team pulse","ORS and eSat with HR","Fill vacancies within agreed timelines","Develop the Team Leader to cover for 72 hours"]},
+        {t:"Partner",subs:["Source and onboard partners with HR informed (C9)","Day-to-day partner coordination"]}],
+ kpis:["Branch revenue vs target","New business acquired","Account activation rate","ARPU","Branch DSO","Aged receivables >60 days","Actual vs budget variance","ORS and eSat","Regrettable attrition"],
+ raci:{A:["Branch P&L","Case allocation and daily productivity (D19)"],R:["Collection follow-up (D4)","Report quality at branch (D5)","Partner sourcing and onboarding (C9)"],
+   C:["Partner appointment","Branch launch"],I:["Quality audit findings","Partner settlement"]},
+ rights:{can:["Spend to ₹10,000","Hire field executives within approved band and budget","Operational SLAs with branch-level clients","Verbal and written warnings up to executive level","Daily and weekly branch priorities"],
+   approve:["Team Leader or specialist hiring — Regional Manager","Expenses above ₹10,000 — Regional Manager","Partner appointment — Head, Client & Growth with MD signature"],
+   escalate:["New client mandates and any pricing change — MD, no exceptions","SLA breach with material client impact","Termination of any employee — AVP and above","Cross-region client issues"],
+   delegate:["Daily allocation, productivity and TAT tracking to the Team Leader","Data accuracy and MIS submission to the Team Leader"]},
+ risk:[{r:"Branch Manager holds both revenue and the branch ledger",m:"Monthly reconciliation signed off before the regional review; Finance holds the AR ledger centrally"}],
+ ch:["C040101"]},
+
+{id:"C0501",t:"Branch Manager — Thane",n:"Aniket Chalke",lvl:3,
+ purpose:"Same mandate as Branch Manager — Pune. The 'Assistant Agency Manager' title is retired; this chair is a Branch Manager.",
+ acc:["Branch P&L and revenue","Branch collections","Client servicing for assigned accounts","Branch team supervision"],
+ tasks:[{t:"Client management",subs:["Primary coordination point for assigned clients","Onboarding and requirement execution","Query and escalation handling within 6–24 hours"]},
+        {t:"Quality",subs:["Review verification reports before submission","Random quality audits of back office","Documentation completeness"]},
+        {t:"TAT",subs:["Daily allocation and execution monitoring","Ageing case corrective action","Same-day escalation of critical delays"]},
+        {t:"Collections",subs:["Invoice approval follow-up","Debtor ageing reduction","Billing dispute support"]}],
+ kpis:["Client satisfaction ≥90%","Report accuracy ≥98%","Rejection ratio <2%","TAT ≥95%","Collection efficiency against Finance target","Zero major compliance violations"],
+ raci:{A:["Branch P&L","Client servicing for assigned accounts"],R:["Collection follow-up","Quality at branch"],C:["Partner appointment"],I:["Quality audit findings"]},
+ rights:{can:["Spend to ₹10,000","Hire field executives within band","Branch-level operational SLAs","Warnings up to executive level"],
+   approve:["Team Leader hiring — Regional Manager","Expenses above ₹10,000 — Regional Manager"],
+   escalate:["Pricing — MD only","Termination — AVP and above","Material SLA breach"],
+   delegate:["Daily targets and allocation to the Team Leader"]},
+ risk:[{r:"Two conflicting versions of this KRA are live, with different weightings",m:"HR and Operations reissue a single version on the standard architecture"}],
+ ch:["C050101"]},
+
+{id:"C040101",t:"Team Leader",n:"Varsha Sonawane",lvl:2,
+ purpose:"Runs daily operations. Hits the daily number, keeps TAT clean and keeps the data accurate.",
+ acc:["Daily team target achievement","Team productivity per executive","TAT on every assigned case","Data accuracy and MIS submission"],
+ tasks:[{t:"Daily target",subs:["Allocate daily tasks and portfolios","Monitor real-time performance","Mid-day and end-of-day reviews","Coach low performers"]},
+        {t:"Productivity",subs:["Optimum workload distribution","Track cases and visits per executive","Minimise idle time","Weekly performance review"]},
+        {t:"TAT",subs:["Track case ageing and pending buckets","Prioritise SLA-bound assignments","Proactive delay escalation"]},
+        {t:"Data",subs:["Error-free system and portal updates","Verify reports before submission","Daily and weekly MIS within timelines","Maintain audit trail"]}],
+ kpis:["Daily team target ≥95%","Output per executive vs benchmark","% cases within TAT","Error rate <3%","Timely MIS submission","Client feedback rating"],
+ raci:{A:["Daily target and allocation (D19)"],R:["TAT execution","Data accuracy","Report quality at first pass"],C:["Capacity planning"],I:["Client escalations","Quality audit findings"]},
+ rights:{can:["Spend to ₹2,500","Daily task and portfolio allocation","Reallocate work within the team"],
+   approve:["Leave and roster changes — Branch Manager","Any expense above ₹2,500 — Branch Manager"],
+   escalate:["Any case at risk of TAT breach — same working day","Client query beyond 24 hours","Repeated executive underperformance"],
+   delegate:["Case execution to executives — but not accountability for the number"]},
+ risk:[{r:"Currently holds an Assistant Manager KRA under a Team Leader title, and a second Team Leader KRA totalling 105% is also in circulation",m:"Both withdrawn. A single Team Leader KRA to be written fresh on the standard architecture"}],
+ ch:["C04010101","C04010102"]},
+
+{id:"C050101",t:"Team Leader",n:"",vac:1,lvl:2,
+ purpose:"Same mandate as the Pune Team Leader chair.",
+ acc:["Daily team target","Team productivity","TAT","Data accuracy"],
+ tasks:[{t:"As per the standard Team Leader chair definition",subs:["Daily target","Productivity","TAT","Data accuracy and MIS"]}],
+ kpis:["Daily team target ≥95%","% cases within TAT","Error rate <3%"],
+ raci:{A:["Daily target and allocation"],R:["TAT execution","Data accuracy"],C:[],I:["Client escalations"]},
+ rights:{can:["Spend to ₹2,500","Daily allocation"],approve:["Above ₹2,500 — Branch Manager"],escalate:["TAT breach risk same day"],delegate:["Case execution to executives"]},
+ risk:[{r:"Vacant",m:"Fill from within the branch executive pool where a P4+ candidate exists"}],
+ ch:["C05010101"]},
+
+{id:"C04010101",t:"Executive — Field",n:"",vac:1,lvl:1,
+ purpose:"Executes field verification — FI, BV, PD, DV, FCU-RCU and legal checks — at the assigned location.",
+ acc:["Assigned case completion within TAT","Accuracy and authenticity of field findings"],
+ tasks:[{t:"Field verification",subs:["Visit and verify at address","Capture evidence per SOP","Record findings accurately","Submit within TAT"]},
+        {t:"Compliance",subs:["Follow client SOP without deviation","Maintain confidentiality of client data","Report adverse findings honestly"]}],
+ kpis:["Cases per day vs product benchmark","% cases within TAT","Error rate","Zero SOP deviation"],
+ raci:{A:["Own case completion and accuracy"],R:["Field execution"],C:[],I:["Quality findings on own cases"]},
+ rights:{can:["No financial authority"],approve:["All expenses — Team Leader"],escalate:["Any case that cannot be completed within TAT — same day","Any suspected fraud or document tampering — immediately"],delegate:["Nothing"]},
+ risk:[{r:"Field verification quality is where client trust is won or lost, at the lowest-paid chair in the company",m:"Independent quality sampling by RQC; structured induction and refresher training via L&D"}],
+ ch:[]},
+
+{id:"C04010102",t:"Executive — Back Office",n:"",vac:1,lvl:1,
+ purpose:"Processes cases, prepares reports and maintains the system record.",
+ acc:["Case processing accuracy","Report preparation within TAT","System record integrity"],
+ tasks:[{t:"Case processing",subs:["Receive and log allocation","Compile field inputs","Prepare the verification report","Upload to client portal within TAT"]},
+        {t:"Records",subs:["Maintain documentation completeness","Keep audit trail intact"]}],
+ kpis:["Cases processed per day","% within TAT","Error rate <3%","Rejection or rework count"],
+ raci:{A:["Own case accuracy"],R:["Report preparation","Portal upload"],C:[],I:["Quality findings on own cases"]},
+ rights:{can:["No financial authority"],approve:["All expenses — Team Leader"],escalate:["Incomplete or contradictory field input","Portal or system failure blocking submission"],delegate:["Nothing"]},
+ risk:[{r:"Data entry error propagates directly into a client-facing report",m:"Team Leader verification before submission; RQC pre-dispatch audit sampling"}],
+ ch:[]},
+
+{id:"C05010101",t:"Executive — Field & Back Office",n:"",vac:1,lvl:1,
+ purpose:"Combined field and back-office execution at smaller branches.",
+ acc:["Assigned case completion within TAT","Accuracy of findings and report"],
+ tasks:[{t:"As per the standard Executive chair definitions",subs:["Field verification","Case processing","Report submission"]}],
+ kpis:["Cases per day","% within TAT","Error rate"],
+ raci:{A:["Own case accuracy"],R:["Field and back-office execution"],C:[],I:["Quality findings"]},
+ rights:{can:["No financial authority"],approve:["All expenses — Team Leader"],escalate:["TAT risk same day","Suspected fraud immediately"],delegate:["Nothing"]},
+ risk:[{r:"Combined role reduces the second pair of eyes on a report",m:"Mandatory Team Leader verification before submission at combined-role branches"}],
+ ch:[]},
+
+/* ---------- BUSINESS EXCELLENCE & PMO ---------- */
+{id:"C30",t:"Head — Business Excellence & PMO",n:"Shantanu Suravase",lvl:5,new:1,dual:"Also AVP — Operations & Growth (C03)",
+ purpose:"Designs the operating system. Process, projects, org design and business intelligence. It designs the standard; Risk, Quality & Compliance independently verifies conformance to it — that boundary is why both functions can exist.",
+ acc:["SOP authoring and version control (D6)","Management MIS accuracy across all functions (D10)","Job architecture and the KRA/KPI framework standard (D15)","Branch and zone launch playbook (D20)","Change and transformation programme delivery"],
+ tasks:[{t:"Process and SOP",subs:["Author and version-control every SOP","Design process for new services and clients","Publish change to all functions"]},
+        {t:"Project governance",subs:["PMO for all cross-functional change","Branch and zone launch playbook","Systems and tools deployment governance"]},
+        {t:"Intelligence",subs:["Single management MIS across all functions","Dashboard and reporting standard","Data definition and computation integrity"]},
+        {t:"Org design",subs:["Job architecture and chair levels L1–L5","KRA and KPI framework standard","Migrate all roles onto one architecture by FY27"]}],
+ kpis:["SOP coverage and currency","MIS accuracy and on-time delivery","Programme milestones delivered on time","KRA migration completion against FY27 deadline","Process improvement initiatives implemented"],
+ raci:{A:["SOP authoring and version control (D6)","Management MIS accuracy (D10)","Job architecture and KPI framework (D15)","Launch playbook (D20)"],
+   R:["Change programme execution","Tool and system deployment review"],
+   C:["Every implementation, change, requirement and strategy across the company — mandatory consultation before deployment"],
+   I:["All functional MIS","Quality audit findings","Client and regulatory changes"]},
+ rights:{can:["Spend to ₹3,00,000","Mandate process change on compliance and control items","Recommend process change on efficiency items, with MD arbitration on dispute","Publish and version SOPs","Set the MIS and data definition standard"],
+   approve:["Any tool or system deployment — reviewed by BE&PMO before go-live","Headcount for the new function — MD"],
+   escalate:["Operations refusal on a compliance or control mandate — MD","Data integrity failure in management reporting — MD"],
+   delegate:["SOP drafting to Process & SOP Manager","Dashboard build to MIS & BI Manager"]},
+ risk:[{r:"Overlaps three functions unless the boundary holds — process improvement is also claimed by Quality Control, governance by Legal, systems by Technology, intelligence by five MIS claimants",m:"BE&PMO designs, RQC verifies. Written into both chair definitions"},
+       {r:"A PMO with no authority becomes a reporting desk",m:"Mandate authority on compliance and control items is explicit and MD-arbitrated"},
+       {r:"Dual hat — governs process for the function where he is also AVP",m:"Separate reporting lines; RQC audits Operations, not BE&PMO. Review at the next structural checkpoint"}],
+ ch:["C31","C32","C33","C34"]},
+
+{id:"C31",t:"Manager — MIS & Business Intelligence",n:"Vicky Salvi",lvl:4,dual:"Also Executive Assistant to MD (C71)",
+ purpose:"One source of management truth. Consolidates Operations, Finance, Collections and HR into a single reporting standard — neutral across functions, which is why it sits here rather than in Finance.",
+ acc:["Weekly, monthly and quarterly MIS accuracy and timeliness","Board and Director dashboard preparation","Reporting template standardisation across departments"],
+ tasks:[{t:"MIS",subs:["Consolidate Operations, Finance, Collections and HR data","Validate and reconcile before publication","Submit within defined TAT"]},
+        {t:"Analysis",subs:["Branch, region and client-wise performance","TAT, revenue and collection gap identification","Trend and variance analysis — MoM, QoQ, YoY"]},
+        {t:"Decks",subs:["Board and management review packs 24 hours before meetings","Analytical dashboards and performance charts"]},
+        {t:"Automation",subs:["Automate routine reports","Maintain the digital repository","Minimum two improvement initiatives annually"]}],
+ kpis:["100% report submission within TAT","Data accuracy ≥99%","Zero major discrepancies in management reporting","Rework <5% due to data errors","Queries resolved within 24–48 hours"],
+ raci:{A:["MIS accuracy and timeliness"],R:["Management MIS accuracy (D10)","Dashboard and template standard"],C:["Data definitions","New KPI design"],I:["All functional performance data"]},
+ rights:{can:["Spend to ₹50,000","Set reporting templates and formats","Request data from any function on the agreed cadence"],
+   approve:["New KPI definitions — Head BE&PMO","Repository and tool changes — Head BE&PMO"],
+   escalate:["Any function failing to submit data on cadence — Head BE&PMO, then MD","Any discrepancy between reported and actual data — immediately"],
+   delegate:["Routine report production to MIS Analyst once hired"]},
+ risk:[{r:"Previously sat under Business Development with no BD content, and escalated other departments' failures to the Director without authority",m:"Now under BE&PMO with a defined escalation path through the Head. Authority matches the accountability"},
+       {r:"Dual hat with Executive Assistant to MD — gatekeeping the MD while arbitrating other functions' data quality",m:"Split recommended as load grows. Until then, MIS escalation runs through Head BE&PMO, not directly via the EA channel"}],
+ ch:["C311"]},
+
+{id:"C311",t:"Analyst — MIS",n:"",vac:1,lvl:2,new:1,
+ purpose:"Produces the recurring reporting so the Manager can do analysis rather than assembly.",
+ acc:["Routine report production accuracy and timeliness"],
+ tasks:[{t:"Report production",subs:["Daily and weekly operational dashboards","Data pull and validation","Repository maintenance"]}],
+ kpis:["On-time production","Data accuracy ≥99%","Rework rate"],
+ raci:{A:["Own report accuracy"],R:["Report production"],C:[],I:["Performance data"]},
+ rights:{can:["No financial authority"],approve:["All — Manager MIS & BI"],escalate:["Source data missing or contradictory"],delegate:["Nothing"]},
+ risk:[{r:"Vacant — the Manager is currently doing both assembly and analysis",m:"First hire into BE&PMO"}],ch:[]},
+
+{id:"C32",t:"Manager — PMO & Projects",n:"",vac:1,lvl:4,new:1,
+ purpose:"Runs cross-functional change as managed projects. Owns the branch and zone launch playbook — the highest-volume repeatable project in a 60-branch plan.",
+ acc:["Programme and project delivery against milestone","Branch and zone launch playbook currency","Change governance across functions"],
+ tasks:[{t:"Project governance",subs:["Project charter, milestone and RAID log for every programme","Stage-gate review before deployment","Benefits tracking post-implementation"]},
+        {t:"Launch playbook",subs:["Site, systems, staffing, client onboarding, go-live checklist","Handover to Operations for execution","Post-launch review at 30 and 90 days"]}],
+ kpis:["Milestones delivered on time","Launch time from approval to go-live","Post-launch review completion","Benefits realised against business case"],
+ raci:{A:["Programme delivery","Launch playbook (D20 — playbook half)"],R:["Change governance"],C:["Any new tool or system deployment"],I:["Operational performance post-launch"]},
+ rights:{can:["Spend to ₹1,00,000 once appointed","Call stage-gate reviews","Halt a deployment that fails a control gate"],
+   approve:["Programme budget — Head BE&PMO","Go-live — Head BE&PMO and COO jointly"],
+   escalate:["Milestone slippage beyond tolerance","Control gate failure"],delegate:["Execution to the owning function"]},
+ risk:[{r:"Joint ownership of launch with Operations can blur into no ownership",m:"BE&PMO owns the playbook and the gate; Operations owns execution and the outcome. Written into both chairs"}],ch:[]},
+
+{id:"C33",t:"Manager — Process & SOP Design",n:"",vac:1,lvl:4,new:1,
+ purpose:"Authors the standard. Does not audit against it — that is deliberate and structural.",
+ acc:["SOP authoring, version control and publication","Process design for new services and clients"],
+ tasks:[{t:"SOP",subs:["Author and maintain every operational SOP","Version control and change publication","Client-specific process design"]},
+        {t:"Improvement",subs:["Root-cause analysis with RQC on recurring defects","Redesign process where defects are systemic"]}],
+ kpis:["SOP coverage across services","SOP currency — none beyond review date","Defect reduction after process change"],
+ raci:{A:["SOP content and version (D6)"],R:["Process design"],C:["Quality findings","Client requirement changes"],I:["Audit results against SOPs"]},
+ rights:{can:["Spend to ₹50,000 once appointed","Publish and version SOPs"],approve:["Material SOP change — Head BE&PMO, with COO consulted"],
+   escalate:["Operations operating outside a published SOP — Head BE&PMO and RQC"],delegate:["Nothing — authorship is the chair"]},
+ risk:[{r:"If this chair also audits compliance, the self-assurance defect returns in a new place",m:"Audit sits with RQC. Non-negotiable in the design"}],ch:[]},
+
+{id:"C34",t:"Manager — Org Design & Job Architecture",n:"",vac:1,lvl:4,new:1,
+ purpose:"Owns the chair levels, the KRA framework and the migration of every role onto one architecture. Nobody owns this today, which is why seventeen documents are in four formats.",
+ acc:["Job architecture and chair level L1–L5 definitions (D15)","KRA and KPI framework standard","Migration of all roles to one architecture by FY27"],
+ tasks:[{t:"Architecture",subs:["Define and maintain chair levels for every seat","Maintain the KRA and KPI template standard","Define KPI computation method with MIS"]},
+        {t:"Migration",subs:["Audit all live KRAs for arithmetic and consistency","Reissue on the standard format with HR and the function head","Track migration to the FY27 deadline"]}],
+ kpis:["% roles on the standard architecture","KRA arithmetic errors — target zero","Chair level coverage across the organisation","Migration against FY27 deadline"],
+ raci:{A:["Job architecture and KRA framework standard (D15)"],R:["KRA migration"],C:["Appraisal design","Promotion criteria"],I:["Assessment outcomes","Headcount changes"]},
+ rights:{can:["Spend to ₹50,000 once appointed","Set the KRA and KPI template standard","Reject a KRA that fails the arithmetic or consistency check"],
+   approve:["Chair level changes — Head BE&PMO and VP HR jointly"],
+   escalate:["A function refusing to migrate by deadline — MD"],delegate:["Nothing"]},
+ risk:[{r:"Three live KRAs contain arithmetic errors — two totalling 125% and one 105% — and cannot be scored as written",m:"HR and Operations reissue; this chair sets the standard and gate-checks every future document"},
+       {r:"Chair level and proficiency band are two different scales and will be confused if not clearly separated",m:"Chair level = the seat's grade. Proficiency P1–P5 = the person in it. Promotion eligibility at P5. Publish both definitions before the first appraisal cycle"}],ch:[]},
+
+/* ---------- FINANCE ---------- */
+{id:"C20",t:"VP — Finance & Accounts",n:"Sneha Radhe",lvl:5,
+ purpose:"Sole owner of order-to-cash. Billing, ledger, receipts, credit policy and DSO all sit here — the single largest control change in this design.",
+ acc:["DSO and collection target achievement (D4)","Customer credit limits and service suspension (D3)","Financial reporting, statutory accounts and audit","Budget and cash flow","Revenue assurance across both channels"],
+ tasks:[{t:"Planning and control",subs:["Annual budget and quarterly forecast","Branch and zone profitability reporting","Variance analysis and corrective action","Cost optimisation"]},
+        {t:"Order-to-cash",subs:["Set collection targets that Operations executes against","Own AR ageing and DSO","Set customer credit limits and service suspension policy","Own the partner settlement process"]},
+        {t:"Reporting",subs:["Monthly closure within 7–10 days","Cash flow forecasting","Financial MIS to MD and Board"]},
+        {t:"Team",subs:["Lead Accounts, Credit Control and Collections","Internal control design","Process automation"]}],
+ kpis:["Budget variance within ±5%","DSO ≤45 days","Collection efficiency ≥95%","AR >90 days <5%","Billing accuracy ≥99%","Monthly closure within 7–10 days","EBITDA against target"],
+ raci:{A:["DSO and collection targets (D4)","Credit limits and service suspension (D3)","Financial reporting and statutory accounts"],
+   R:["Cash flow","Budget control","Revenue assurance"],C:["Pricing feasibility","Partner commercial terms","New client credit assessment"],I:["Operational MIS","Quality findings affecting billing"]},
+ rights:{can:["Spend to ₹10,00,000","Set customer credit limits","Suspend service to a defaulting client, with COO informed","Set collection targets by region and branch"],
+   approve:["Any expense above ₹10,00,000 — MD","Write-off of bad debt — MD, and Board above threshold"],
+   escalate:["Bad debt provision above tolerance — MD and Board","Any suspected financial irregularity — MD immediately","Auditor qualification — Board"],
+   delegate:["Ledger and closing to Head — Accounts & Controls","Collection follow-up execution to Operations","Credit control operations to Manager — Credit Control"]},
+ risk:[{r:"Previously shared receivables accountability with the Operations Head, and the KRA counted receivables twice at 30% and 20%",m:"Single ownership restored. Operations executes follow-up against targets Finance sets"},
+       {r:"Setting collection targets and reporting achievement against them sits in one function",m:"MIS accuracy is owned independently by BE&PMO; Board sees collection data through the BE&PMO pack, not only through Finance"}],
+ ch:["C21","C24","C27"]},
+
+{id:"C21",t:"Head — Accounts & Controls",n:"Maruf Shaikh",lvl:4,
+ purpose:"Books, closing, statutory compliance and the integrity of the ledger — including partner revenue-share settlement.",
+ acc:["Client invoicing and billing accuracy (D1)","AR ledger integrity and receipt allocation (D2)","Revenue-share computation and partner settlement (D13)","Statutory, tax and regulatory compliance — GST, TDS, Income Tax, PT (D17)","Month, quarter and year-end closing"],
+ tasks:[{t:"Accounting",subs:["Books per accounting standards","Month, quarter and year-end closing","P&L, Balance Sheet, Cash Flow","Accuracy across branches and HO"]},
+        {t:"Billing",subs:["Timely and accurate client invoicing","Verify billing against contracts and SLAs","Reconcile billing with Operations case data"]},
+        {t:"Partner settlement",subs:["Compute the revenue share monthly from billing data","Reconcile against partner records","Raise the payable and process settlement","Maintain the dispute log and audit trail"]},
+        {t:"Statutory",subs:["GST, TDS, Income Tax, PT filings within due dates","Coordinate auditors and tax authorities","Maintain statutory records"]},
+        {t:"Controls",subs:["Financial control systems","Support internal, statutory and client audits","Close audit observations"]}],
+ kpis:["Month-end closure within timeline","Zero material accounting errors","Invoices raised within SLA","Zero revenue leakage from billing errors","100% statutory filings within due dates","Zero penalties from non-compliance","Partner settlement accuracy and timeliness"],
+ raci:{A:["Billing accuracy (D1)","AR ledger and receipt allocation (D2)","Partner settlement (D13)","Tax and statutory filings (D17)"],
+   R:["Closing","Audit support","Control operation"],C:["Credit limits","Partner commercial terms","Pricing structure"],I:["Collection performance","Operational volume"]},
+ rights:{can:["Spend to ₹2,00,000","Raise and issue client invoices","Process partner settlement within agreed terms","Sign statutory filings within delegation"],
+   approve:["Credit note or invoice adjustment above ₹50,000 — VP Finance","Partner settlement dispute resolution — VP Finance"],
+   escalate:["Any suspected financial irregularity — VP Finance and MD immediately","Tax notice or demand — VP Finance","Unreconciled balance beyond tolerance"],
+   delegate:["Transaction processing to Accounts Executives","Settlement computation to Partner Revenue & Settlement Executive"]},
+ risk:[{r:"Revenue-share settlement had no owner anywhere in the organisation — it was happening informally or not at all",m:"Now a defined process with a dedicated executive, a payable, a dispute path and an audit trail"},
+       {r:"Same function raises the invoice and controls the ledger",m:"Independent audit of billing and ledger by RQC; VP Finance approves adjustments above threshold"}],
+ ch:["C22","C23","C231"]},
+
+{id:"C22",t:"Accounts Executive",n:"Faizan Bagwan",lvl:2,
+ purpose:"Transaction processing, reconciliation and filing support.",
+ acc:["Accuracy of assigned transaction processing and reconciliation"],
+ tasks:[{t:"Processing",subs:["Book entries accurately and on time","Bank and ledger reconciliation","Vendor payment processing"]},
+        {t:"Support",subs:["Statutory filing preparation","Audit documentation"]}],
+ kpis:["Processing accuracy","Reconciliation completion on schedule","Rework and error count"],
+ raci:{A:["Own transaction accuracy"],R:["Processing and reconciliation"],C:[],I:["Closing timetable"]},
+ rights:{can:["No financial authority"],approve:["All — Head Accounts & Controls"],escalate:["Any unreconciled item beyond tolerance","Any entry that appears irregular"],delegate:["Nothing"]},
+ risk:[{r:"No KRA document exists for this chair",m:"Issue on the standard architecture in the FY27 migration"}],ch:[]},
+
+{id:"C23",t:"Accounts Executive",n:"Harshita Gupta",lvl:2,
+ purpose:"Transaction processing, reconciliation and filing support.",
+ acc:["Accuracy of assigned transaction processing and reconciliation"],
+ tasks:[{t:"Processing",subs:["Book entries accurately and on time","Bank and ledger reconciliation","Vendor payment processing"]},
+        {t:"Support",subs:["Statutory filing preparation","Audit documentation"]}],
+ kpis:["Processing accuracy","Reconciliation completion on schedule","Rework and error count"],
+ raci:{A:["Own transaction accuracy"],R:["Processing and reconciliation"],C:[],I:["Closing timetable"]},
+ rights:{can:["No financial authority"],approve:["All — Head Accounts & Controls"],escalate:["Any unreconciled item beyond tolerance","Any entry that appears irregular"],delegate:["Nothing"]},
+ risk:[{r:"No KRA document exists for this chair",m:"Issue on the standard architecture in the FY27 migration"}],ch:[]},
+
+{id:"C231",t:"Executive — Partner Revenue & Settlement",n:"",vac:1,lvl:3,new:1,
+ purpose:"Computes and reconciles the partner revenue share. This chair did not exist anywhere in the organisation — a fixed-payout model does not need it, a revenue-share model does.",
+ acc:["Monthly revenue-share computation accuracy","Partner settlement reconciliation and audit trail"],
+ tasks:[{t:"Computation",subs:["Extract partner-attributed billing monthly","Apply the agreed share per partner agreement","Reconcile against partner records"]},
+        {t:"Settlement",subs:["Raise the payable","Process settlement within agreed terms","Maintain the dispute log"]},
+        {t:"Audit trail",subs:["Retain computation working for every period","Support internal and partner audit"]}],
+ kpis:["Settlement accuracy — target 100%","Settlement within agreed terms","Disputes raised and resolution time","Audit trail completeness"],
+ raci:{A:["Own computation accuracy"],R:["Revenue-share computation and settlement (D13)"],C:["Partner agreement terms","Billing attribution"],I:["Partner performance","Collection status on partner accounts"]},
+ rights:{can:["No independent financial authority"],approve:["Settlement release — Head Accounts & Controls","Dispute resolution — VP Finance"],
+   escalate:["Any discrepancy between Crux billing and partner claim","Any partner claim outside agreement terms"],delegate:["Nothing"]},
+ risk:[{r:"Crux bills the client and pays the partner a share, so partner revenue and credit risk both sit on the Crux ledger",m:"Partner settlement is conditional on collection where the agreement permits; Finance holds the credit risk knowingly rather than by accident"},
+       {r:"Computation done in a spreadsheet without an owner is the current state",m:"Defined chair, defined method, retained working papers, auditable"}],ch:[]},
+
+{id:"C24",t:"Manager — Credit Control & Collections",n:"",vac:1,lvl:4,new:1,
+ purpose:"The missing supervisor. Four AR executives currently report to the VP directly with no one owning the collection number between them.",
+ acc:["Collection target achievement against Finance plan","AR ageing reduction","Credit control operation and dispute escalation"],
+ tasks:[{t:"Collections",subs:["Allocate collection portfolios to AR executives","Track daily and weekly collection against target","Escalate ageing accounts to Operations and VP Finance"]},
+        {t:"Credit control",subs:["Operate credit limits set by VP Finance","Flag limit breaches","Recommend service suspension for chronic defaulters"]},
+        {t:"Disputes",subs:["Log and route billing disputes","Coordinate resolution with Operations and Accounts","Track TDS, GST and deduction reconciliation"]}],
+ kpis:["Collection efficiency ≥95%","DSO ≤45 days","AR >90 days <5%","Dispute resolution within SLA","Credit limit breach count"],
+ raci:{A:["Collection operation against target"],R:["DSO and collection achievement (D4)","Credit control operation (D3)"],
+   C:["Credit limit setting","Service suspension decisions"],I:["Client billing","Operational escalations"]},
+ rights:{can:["Spend to ₹1,00,000 once appointed","Allocate collection portfolios","Escalate any account to Operations for field follow-up"],
+   approve:["Service suspension — VP Finance","Credit limit change — VP Finance","Write-off — VP Finance and MD"],
+   escalate:["Any account beyond 90 days","Chronic defaulter requiring suspension","Dispute unresolved beyond SLA"],
+   delegate:["Account-level follow-up to AR executives"]},
+ risk:[{r:"Highest-priority hire in the design. Collections is the first thing that fails at 1.5× scale",m:"Fill before the next zone opens, not after"}],
+ ch:["C241","C242","C243","C244"]},
+
+{id:"C241",t:"Senior AR & Collections Executive",n:"Pranish Khankal",lvl:2,
+ purpose:"Works an assigned receivables portfolio to collection.",
+ acc:["Collection against assigned portfolio target","Accuracy of receipt and allocation records"],
+ tasks:[{t:"Collection",subs:["Client follow-up for invoice approval and payment","Maintain contact and commitment log","Escalate non-responsive accounts"]},
+        {t:"Records",subs:["Receipt logging and allocation","Ageing report maintenance","Dispute documentation"]}],
+ kpis:["Portfolio collection against target","Ageing reduction on portfolio","Contact and follow-up discipline","Dispute logging completeness"],
+ raci:{A:["Own portfolio collection"],R:["Follow-up and allocation"],C:[],I:["Credit limit changes"]},
+ rights:{can:["No financial authority"],approve:["All — Manager Credit Control"],escalate:["Any account beyond 60 days","Any client disputing an invoice"],delegate:["Nothing"]},
+ risk:[{r:"No KRA and no supervisor at present",m:"Manager — Credit Control chair created; KRA issued in the FY27 migration"}],ch:[]},
+
+{id:"C242",t:"Senior AR & Collections Executive",n:"Sneha Kadam",lvl:2,
+ purpose:"Works an assigned receivables portfolio to collection.",
+ acc:["Collection against assigned portfolio target","Accuracy of receipt and allocation records"],
+ tasks:[{t:"Collection",subs:["Client follow-up for invoice approval and payment","Maintain contact and commitment log","Escalate non-responsive accounts"]},
+        {t:"Records",subs:["Receipt logging and allocation","Ageing report maintenance","Dispute documentation"]}],
+ kpis:["Portfolio collection against target","Ageing reduction on portfolio","Dispute logging completeness"],
+ raci:{A:["Own portfolio collection"],R:["Follow-up and allocation"],C:[],I:["Credit limit changes"]},
+ rights:{can:["No financial authority"],approve:["All — Manager Credit Control"],escalate:["Any account beyond 60 days","Any client disputing an invoice"],delegate:["Nothing"]},
+ risk:[{r:"No KRA and no supervisor at present",m:"Manager — Credit Control chair created; KRA issued in the FY27 migration"}],ch:[]},
+
+{id:"C243",t:"Senior AR & Collections Executive",n:"Piyush Singh",lvl:2,
+ purpose:"Works an assigned receivables portfolio to collection.",
+ acc:["Collection against assigned portfolio target","Accuracy of receipt and allocation records"],
+ tasks:[{t:"Collection",subs:["Client follow-up for invoice approval and payment","Maintain contact and commitment log","Escalate non-responsive accounts"]},
+        {t:"Records",subs:["Receipt logging and allocation","Ageing report maintenance","Dispute documentation"]}],
+ kpis:["Portfolio collection against target","Ageing reduction on portfolio","Dispute logging completeness"],
+ raci:{A:["Own portfolio collection"],R:["Follow-up and allocation"],C:[],I:["Credit limit changes"]},
+ rights:{can:["No financial authority"],approve:["All — Manager Credit Control"],escalate:["Any account beyond 60 days","Any client disputing an invoice"],delegate:["Nothing"]},
+ risk:[{r:"No KRA and no supervisor at present",m:"Manager — Credit Control chair created; KRA issued in the FY27 migration"}],ch:[]},
+
+{id:"C244",t:"Senior AR & Collections Executive",n:"Sandhya Jaiswar",lvl:2,
+ purpose:"Works an assigned receivables portfolio to collection.",
+ acc:["Collection against assigned portfolio target","Accuracy of receipt and allocation records"],
+ tasks:[{t:"Collection",subs:["Client follow-up for invoice approval and payment","Maintain contact and commitment log","Escalate non-responsive accounts"]},
+        {t:"Records",subs:["Receipt logging and allocation","Ageing report maintenance","Dispute documentation"]}],
+ kpis:["Portfolio collection against target","Ageing reduction on portfolio","Dispute logging completeness"],
+ raci:{A:["Own portfolio collection"],R:["Follow-up and allocation"],C:[],I:["Credit limit changes"]},
+ rights:{can:["No financial authority"],approve:["All — Manager Credit Control"],escalate:["Any account beyond 60 days","Any client disputing an invoice"],delegate:["Nothing"]},
+ risk:[{r:"No KRA and no supervisor at present",m:"Manager — Credit Control chair created; KRA issued in the FY27 migration"}],ch:[]},
+
+{id:"C27",t:"Senior Executive — Finance",n:"Jyostna Patil",lvl:2,
+ purpose:"Finance support. Scope to be defined — no KRA document exists for this chair.",
+ acc:["To be defined on issue of the KRA"],
+ tasks:[{t:"Scope not documented",subs:["Define with VP Finance during the FY27 KRA migration"]}],
+ kpis:["To be defined"],
+ raci:{A:["To be defined"],R:["To be defined"],C:[],I:[]},
+ rights:{can:["No financial authority pending definition"],approve:["All — VP Finance"],escalate:["As defined"],delegate:["Nothing"]},
+ risk:[{r:"A chair with no documented accountability fails RACI Test 3 — every seat must be Accountable for something",m:"Define, merge into Credit Control or Accounts, or remove. Decision required from VP Finance"}],ch:[]},
+
+/* ---------- RISK QUALITY COMPLIANCE ---------- */
+{id:"C40",t:"Head — Risk, Quality & Compliance",n:"",vac:1,lvl:5,new:1,
+ purpose:"Independent assurance. Verifies conformance to the standards BE&PMO designs and Operations executes. Reports to the MD with a dotted line to the Board — the line that makes it independent.",
+ acc:["Report quality score and defect rate (D5)","Regulatory and client compliance","Contract drafting and legal vetting (D21)","Independent audit across delivery, finance and partner channel"],
+ tasks:[{t:"Quality assurance",subs:["Own the quality score reported to clients","Pre and post-dispatch audit programme","Defect root-cause with BE&PMO"]},
+        {t:"Compliance",subs:["Client and regulatory compliance","Labour, statutory and licence compliance oversight","Audit observation closure tracking"]},
+        {t:"Legal",subs:["Contract drafting and vetting","Litigation and dispute management","Policy governance"]},
+        {t:"Independent audit",subs:["Audit billing and ledger integrity","Independent periodic partner audit","Report findings to MD and Board"]}],
+ kpis:["Report accuracy ≥98%","Defect rate trend","SOP compliance score ≥95%","Zero critical compliance breach","Audit observations closed within timeline","Contract turnaround time"],
+ raci:{A:["Report quality score and defect rate (D5)","Regulatory and client compliance","Contract and legal vetting (D21)"],
+   R:["Independent audit programme"],C:["SOP design","Partner appointment","Client contract terms","Information security policy"],I:["Operational performance","Partner operational audit findings"]},
+ rights:{can:["Spend to ₹3,00,000 once appointed","Audit any function without prior notice","Halt dispatch of a report failing quality gate","Set the quality scoring method"],
+   approve:["Contract execution within standard terms — MD signs non-standard","Audit plan — MD"],
+   escalate:["Any critical compliance breach — MD immediately, Board within 48 hours","Any integrity or fraud indicator — MD and Board","Regulatory notice — MD and Board"],
+   delegate:["Audit execution to Manager — Quality Control","Secretarial matters to Company Secretary"]},
+ risk:[{r:"Quality previously reported into Operations, which audited its own output; compliance sat with the VP whose functions it audited",m:"Both moved here. Independence is the entire purpose of the chair"},
+       {r:"Vacant. Until filled, quality and compliance remain inside the functions they assure",m:"Priority appointment alongside Manager — Credit Control"}],
+ ch:["C41","C43","C44"]},
+
+{id:"C41",t:"Manager — Quality Control",n:"",vac:1,lvl:4,
+ purpose:"Runs the audit programme against SOPs authored by BE&PMO and executed by Operations.",
+ acc:["Audit programme completion and quality of findings","Vendor and field-agency quality oversight","Client quality escalation resolution"],
+ tasks:[{t:"Audit",subs:["Pre and post-dispatch audits of verification reports","Random, risk-based and client-specific audits","Actionable audit reports within 48–72 hours"]},
+        {t:"Standards",subs:["Enforce quality benchmarks per client SLA and SOP","Update QC checklists on policy or client change","Flag deviations and recommend corrective action"]},
+        {t:"Capability",subs:["Quality refresher training for field and back-office teams","Coaching on repeat errors"]},
+        {t:"Vendor and partner",subs:["Monitor outsourced vendor and field agency quality","Independent periodic partner location audit","Recommend empanelment, suspension or corrective action"]},
+        {t:"Analytics",subs:["Daily, weekly and monthly QC MIS","Defect trend by branch and product","Insights to management"]}],
+ kpis:["Report accuracy ≥98%","Error rate ≤2% per audit cycle","100% planned audits completed on schedule","Audit closure TAT","Reduction in repeat observations","Client rejection and re-verification reduction"],
+ raci:{A:["Audit programme and findings quality"],R:["Report quality score and defect rate (D5)","Independent partner audit"],
+   C:["SOP design","Vendor empanelment","Training design"],I:["Operational volume","Client feedback"]},
+ rights:{can:["Spend to ₹75,000 once appointed","Audit any location without prior notice","Halt dispatch of a report failing the quality gate","Recommend vendor suspension"],
+   approve:["Vendor suspension or termination — COO, with RQC consulted","Audit plan changes — Head RQC"],
+   escalate:["Any systemic defect pattern — Head RQC and BE&PMO","Any client-impacting quality failure — same day","Any suspected falsification of a verification report — immediately"],
+   delegate:["Audit execution to QC Executives"]},
+ risk:[{r:"Previously reported into Operations",m:"Now reports to Head RQC, outside the function being audited"}],
+ ch:["C411"]},
+
+{id:"C411",t:"QC Executive",n:"",vac:1,lvl:2,new:1,
+ purpose:"Executes the audit sample and logs defects.",
+ acc:["Audit sample completion and defect logging accuracy"],
+ tasks:[{t:"Audit execution",subs:["Sample verification reports per plan","Log defects against the checklist","Prepare audit summary"]}],
+ kpis:["Audits completed against plan","Defect logging accuracy","Turnaround on audit reports"],
+ raci:{A:["Own audit accuracy"],R:["Audit execution and defect logging"],C:[],I:["Defect trends"]},
+ rights:{can:["No financial authority"],approve:["All — Manager Quality Control"],escalate:["Any suspected falsification — immediately, without going through Operations"],delegate:["Nothing"]},
+ risk:[{r:"Vacant — no independent audit capacity exists today",m:"Hire with the Manager — Quality Control chair"}],ch:[]},
+
+{id:"C43",t:"Legal & Compliance",n:"",vac:1,lvl:4,new:1,
+ purpose:"Contracts, litigation and compliance. Moved out from under HR and Admin so it no longer audits the function it belongs to.",
+ acc:["Contract drafting, vetting and legal safeguards (D21)","Litigation and dispute management","Statutory, labour and client compliance monitoring"],
+ tasks:[{t:"Contracts",subs:["Draft and vet client, vendor, employment and partner agreements","Ensure adequate legal safeguards","Track contract renewal and expiry"]},
+        {t:"Litigation",subs:["Respond to legal notices within timeline","Coordinate external counsel","Reduce litigation exposure and cost"]},
+        {t:"Compliance",subs:["Labour law and licence compliance monitoring","Client compliance requirements","Policy governance and legal vetting of internal documents"]}],
+ kpis:["Contract turnaround time","Pending case count and legal expense trend","Zero penalties or adverse remarks","Compliance checklist status","Audit observation closure"],
+ raci:{A:["Contract and legal vetting (D21)","Compliance monitoring"],R:["Litigation management"],
+   C:["Partner agreements","Client contracts","HR disciplinary matters","Data protection policy"],I:["Regulatory change","Client audit findings"]},
+ rights:{can:["Spend to ₹1,00,000 once appointed","Vet and clear contracts within standard terms","Instruct external counsel within budget"],
+   approve:["Non-standard contract terms — MD","Litigation settlement — MD, and Board above threshold"],
+   escalate:["Any legal notice or regulatory action — MD and Board","Any contract term creating material exposure","Any data protection incident"],
+   delegate:["Routine vetting to external counsel where retained"]},
+ risk:[{r:"Previously sat with the VP who also owned HR, Admin and the compliance audit of those functions",m:"Moved to independent assurance. Whether this is a hire or retained counsel is a Board decision"},
+       {r:"Data protection obligations under current Indian law were not assigned to any chair",m:"Policy ownership sits here with Technology; confirm the current statutory position with your counsel — this design does not constitute legal advice"}],ch:[]},
+
+{id:"C44",t:"Company Secretary",n:"Anuja Adhali — acting",lvl:4,dual:"Substantive chair is Manager — Business Development (C51). CS chair remains open to be hired",
+ purpose:"Statutory and secretarial compliance. Moved out from under Business Development — a governance chair should not report into a commercial function.",
+ acc:["Board and statutory secretarial compliance (D24)","Statutory registers, filings and records"],
+ tasks:[{t:"Secretarial",subs:["Board and general meeting convening, notice and minutes","Statutory registers and filings","Companies Act compliance"]},
+        {t:"Governance",subs:["Advise the Board on governance requirements","Maintain the compliance calendar"]}],
+ kpis:["100% statutory filings within due dates","Zero adverse remarks or penalties","Board minutes circulated within timeline"],
+ raci:{A:["Statutory and secretarial compliance (D24)"],R:["Filings and registers"],C:["Board matters","Related-party transactions"],I:["Financial results","Material contracts"]},
+ rights:{can:["Spend to ₹50,000","Sign statutory filings within delegation"],approve:["Board documentation — MD and Board"],
+   escalate:["Any statutory non-compliance — MD and Board immediately","Any governance breach"],delegate:["Routine filing to a retained professional"]},
+ risk:[{r:"Held in an acting capacity alongside a substantive Business Development chair, so the governance role sits with a commercial one",m:"Chair kept open and marked to be hired. Interim arrangement should be time-boxed"},
+       {r:"Whether a whole-time Company Secretary is statutorily required depends on Crux's current paid-up capital, and the threshold has changed in recent years",m:"Confirm with your Company Secretary or auditor. This is a design document, not legal advice"}],ch:[]},
+
+/* ---------- HR & ADMIN ---------- */
+{id:"C50",t:"VP — HR & Administration",n:"PP Valsan",lvl:5,
+ purpose:"People and facilities. Legal and Compliance have moved to independent assurance, so this chair no longer audits itself.",
+ acc:["ORS and eSat scores (D9)","Recruitment and vacancy closure (D23)","Payroll accuracy and statutory benefits (D16)","Labour law compliance (D17)","The appraisal process, assessment and promotion decisions"],
+ tasks:[{t:"People",subs:["Annual manpower plan and vacancy closure within TAT","100% BGV before confirmation","Onboarding, induction and employee master data"]},
+        {t:"Performance",subs:["Run the appraisal cycle on the BE&PMO framework","Administer knowledge test and psychometric assessment for level progression","Calibration and promotion decisions","PIP for low performance"]},
+        {t:"Payroll",subs:["Error-free and timely payroll","Accurate statutory deductions and filings","Zero penalties from payroll non-compliance"]},
+        {t:"Employee relations",subs:["Code of conduct and policy implementation","Grievance resolution within TAT","Disciplinary process and domestic inquiry","POSH compliance and training"]},
+        {t:"Administration",subs:["Office, lease, utilities, security and housekeeping","Asset tagging, tracking and annual verification","Admin vendor empanelment and SLA","Travel and expense policy enforcement"]}],
+ kpis:["Vacancy closure TAT","BGV compliance 100%","Payroll accuracy and filing timeliness","Appraisal completion %","Grievance resolution TAT","ORS and eSat scores","Regrettable attrition","Asset reconciliation status"],
+ raci:{A:["ORS and eSat (D9)","Recruitment and vacancy closure (D23)","Payroll (D16)","Labour law compliance","Appraisal process and promotion decisions (D15 — assessment half)"],
+   R:["Employee relations","Administration and facilities"],C:["Job architecture and chair levels","Partner appointment","Organisation change"],I:["Compliance audit findings","Headcount plan"]},
+ rights:{can:["Spend to ₹3,00,000","Approve hiring one level below any requesting manager, jointly with the manager's superior","Issue policy within approved framework","Empanel admin vendors"],
+   approve:["Termination — AVP and above only, HR facilitates","Salary and band changes — MD","Headcount additions — MD"],
+   escalate:["Any POSH complaint — MD, and Board where material","Any statutory labour notice — MD","Integrity or misconduct at manager level and above — MD"],
+   delegate:["HR operations to the HR Manager","Facilities to Administration"]},
+ risk:[{r:"Previously held HR, Admin, Legal and Compliance with one three-person roster, and audited its own compliance",m:"Legal and Compliance moved to RQC. Scope now matches capacity"},
+       {r:"The HR Manager chair is vacant, leaving one HR executive covering operational HR for a 60-branch plan",m:"Priority hire. Until filled, this function cannot support the expansion sequence"}],
+ ch:["C51x","C53","C54"]},
+
+{id:"C51x",t:"HR Manager",n:"",vac:1,lvl:3,
+ purpose:"Runs HR operations day to day so the VP can run the function.",
+ acc:["HR operations delivery — recruitment, records, payroll input, exits","Appraisal cycle administration"],
+ tasks:[{t:"Recruitment",subs:["Coordinate hiring against approved manpower plan","Interview scheduling and tracker","Offer and appointment issuance"]},
+        {t:"Operations",subs:["Employee records and master data","Attendance and leave finalisation before payroll cut-off","Exit, clearance and final settlement data"]},
+        {t:"Performance",subs:["Run the appraisal cycle","Administer knowledge and psychometric assessments","Maintain level progression records"]}],
+ kpis:["Vacancy closure TAT","Payroll input accuracy ≥99%","Appraisal completion %","Exit documentation within TAT","Zero missing documents in joining files"],
+ raci:{A:["HR operations delivery"],R:["Recruitment (D23)","Payroll input (D16)","Appraisal administration"],C:["Chair level changes","Disciplinary matters"],I:["Headcount plan","Organisation change"]},
+ rights:{can:["Spend to ₹75,000 once appointed","Schedule and coordinate hiring","Issue standard HR documentation"],
+   approve:["Offer issuance — VP HR and hiring manager's superior","Any policy exception — VP HR"],
+   escalate:["Any grievance beyond standard resolution","Any BGV adverse finding","Any payroll error with financial impact"],
+   delegate:["Records, filing and coordination to the HR Executive"]},
+ risk:[{r:"Vacant and actively being hired",m:"Until filled, one HR executive carries the operational load for the whole company"}],
+ ch:["C52"]},
+
+{id:"C52",t:"HR Executive — generalist",n:"Arti Sonawane",lvl:2,
+ purpose:"Operational HR across the employee lifecycle. Titled 'HR Assistant' in the KRA and 'Senior HR' in the structure — the work is a full generalist load and the title should be reconciled.",
+ acc:["Employee records accuracy and audit readiness","Attendance and leave finalisation before payroll cut-off","Statutory documentation and register maintenance"],
+ tasks:[{t:"Recruitment support",subs:["Coordinate approved manpower requirements","Interview scheduling and recruitment tracker","Pre-joining document collection and verification","Appointment letters within timeline"]},
+        {t:"Records",subs:["Physical and digital employee files","Employee master data and HR trackers","Contract, ID and declaration filing","Confidentiality of employee data"]},
+        {t:"Attendance and payroll input",subs:["Daily attendance and leave monitoring","Branch discrepancy coordination","Monthly attendance finalisation","Payroll input preparation and verification"]},
+        {t:"Statutory",subs:["PF, ESIC, Gratuity, Bonus and PT support","Statutory registers","Coordinate filings with consultants","Support labour audits and inspections"]},
+        {t:"Lifecycle",subs:["Policy communication and acknowledgement tracking","Disciplinary and grievance documentation","Exit tracker, clearance and asset recovery","Training records and engagement support"]}],
+ kpis:["100% employee files audit-ready","Attendance finalised before payroll cut-off","<2% attendance discrepancies monthly","Payroll input accuracy ≥99%","100% compliance filings within due dates","Zero confidentiality breaches"],
+ raci:{A:["Employee records accuracy","Attendance finalisation"],R:["Recruitment coordination","Payroll input","Statutory documentation","Exit processing"],
+   C:["Policy changes"],I:["Appraisal outcomes","Headcount changes"]},
+ rights:{can:["No independent financial authority"],approve:["All — HR Manager, or VP HR while the Manager chair is vacant"],
+   escalate:["Any attendance or payroll discrepancy with financial impact","Any statutory filing at risk of deadline","Any confidentiality concern"],delegate:["Nothing"]},
+ risk:[{r:"Prepares and verifies payroll input in the same chair, with no HR Manager currently between this chair and the VP",m:"Accounts provides the independent check on payroll before disbursement until the HR Manager chair is filled"},
+       {r:"Title mismatch between the KRA and the structure",m:"Reconcile during the FY27 KRA migration"}],ch:[]},
+
+{id:"C53",t:"Manager — Learning & Development",n:"",vac:1,lvl:3,new:1,
+ purpose:"Builds capability at the pace the expansion needs. No L&D owner exists today, and a 60-branch plan cannot be staffed without one.",
+ acc:["Induction and capability build for every new location","Assessment content for level progression"],
+ tasks:[{t:"Capability",subs:["Structured induction for field and back-office executives","Branch Manager and Team Leader development programme","Quality refresher training with RQC"]},
+        {t:"Assessment",subs:["Knowledge test content and administration","Support psychometric assessment for level progression"]}],
+ kpis:["Time to productivity for new joiners","Training coverage against calendar","Assessment completion for level progression","Quality score improvement post-training"],
+ raci:{A:["Capability build programme"],R:["Induction","Assessment content"],C:["Quality findings","Chair level definitions"],I:["Attrition","Headcount plan"]},
+ rights:{can:["Spend to ₹75,000 once appointed","Set the training calendar","Require attendance at mandatory induction"],
+   approve:["Training budget — VP HR","External training provider — VP HR"],
+   escalate:["Any location operating without inducted staff","Capability gap blocking a launch"],delegate:["Delivery to trained internal facilitators"]},
+ risk:[{r:"Absent today. Capability is the constraint the expansion will hit before capital does",m:"Sequence this hire against the branch opening plan, not after it"}],ch:[]},
+
+{id:"C54",t:"Administration",n:"",vac:1,lvl:2,
+ purpose:"Facilities, assets, travel and admin vendors across all locations.",
+ acc:["Office and infrastructure functioning","Asset reconciliation","Travel and expense policy enforcement"],
+ tasks:[{t:"Facilities",subs:["Lease, utilities, security and housekeeping","Office readiness for new locations with PMO"]},
+        {t:"Assets",subs:["Tagging, tracking and annual physical verification","Recovery on exit with HR"]},
+        {t:"Vendors and travel",subs:["Admin vendor empanelment and SLA monitoring","Travel and expense policy enforcement","Claim scrutiny"]}],
+ kpis:["Asset reconciliation status","Office downtime and complaint count","Vendor SLA compliance","Expense policy deviation count"],
+ raci:{A:["Facilities and asset integrity"],R:["Vendor management for admin","Travel and expense enforcement"],C:["New location setup"],I:["Budget variance"]},
+ rights:{can:["Spend to ₹50,000","Empanel admin vendors within approved list"],approve:["Above ₹50,000 — VP HR & Admin","New lease — MD"],
+   escalate:["Asset loss or unreconciled variance","Vendor SLA failure affecting operations"],delegate:["Nothing"]},
+ risk:[{r:"Vendor management is claimed by Operations, Quality Control and Administration",m:"Split by type — delivery vendors and field agencies to Operations, admin and facilities vendors here"}],ch:[]},
+
+/* ---------- CLIENT & GROWTH ---------- */
+{id:"C60",t:"Head — Client & Growth",n:"",vac:1,lvl:5,new:1,
+ purpose:"All revenue acquisition and retention in one chair, so the MD can step out of line business development — which the company's own vision requires.",
+ acc:["National client relationship ownership (D8)","New client empanelment pipeline (D12 — execution)","Partner network commercial health","Bid and tender conversion"],
+ tasks:[{t:"Growth",subs:["New bank and NBFC empanelment pipeline","Client expansion within existing mandates","Revenue plan against the 10× objective"]},
+        {t:"National accounts",subs:["Single ownership of any client operating across more than one region","Consistent pricing and service terms nationally","Senior client governance"]},
+        {t:"Partner channel",subs:["Partner network commercial performance","Partner appointment recommendation to MD","Territory and exclusivity management"]}],
+ kpis:["New clients empanelled","Revenue from new mandates","National account revenue trend","Partner channel revenue and activation","Mandate renewal rate","Bid conversion rate"],
+ raci:{A:["National client relationships (D8)","Partner network commercial outcome"],
+   R:["New client empanelment execution (D12)","Bid and tender conversion"],
+   C:["Pricing — recommends, MD approves","Partner agreement terms","Service feasibility"],I:["Delivery performance","Collection status on own accounts"]},
+ rights:{can:["Spend to ₹3,00,000 once appointed","Own client relationship strategy","Recommend partner appointment and territory"],
+   approve:["Any pricing or discount — MD only, no discount authority at any level below MD","Partner agreement — MD signs","New client empanelment — MD"],
+   escalate:["Any client at risk of loss","Any pricing pressure requiring a decision","Partner territory conflict — AVP arbitrates operationally, MD on contract"],
+   delegate:["Account management to Key Accounts Manager","Bid execution to Bids & Contracts Manager","Partner day-to-day to Partner Network Manager"]},
+ risk:[{r:"Vacant. Until filled the MD continues to hold line business development, against the stated vision",m:"Appoint or explicitly assign an interim holder with a date"},
+       {r:"No national account ownership exists today — banks operating across four regions are managed separately in each",m:"Key Accounts chair created; national ownership is the point of this function"}],
+ ch:["C51","C62","C63","C64"]},
+
+{id:"C51",t:"Manager — Business Development",n:"Anuja Adhali",lvl:4,dual:"Also acting Company Secretary (C44)",
+ purpose:"New client acquisition and empanelment execution.",
+ acc:["New client empanelment pipeline execution","Client onboarding coordination"],
+ tasks:[{t:"Acquisition",subs:["Identify and pursue new bank and NBFC mandates","Empanelment documentation and process","Client onboarding coordination with Operations"]},
+        {t:"Pipeline",subs:["Maintain the pipeline with realistic conversion assumptions","Report pipeline accurately without inflation"]}],
+ kpis:["New clients empanelled","Pipeline conversion rate","Pipeline accuracy against actual conversion","Onboarding time to first case"],
+ raci:{A:["Empanelment pipeline execution"],R:["New client acquisition (D12)"],C:["Pricing recommendation","Service feasibility"],I:["Delivery performance","Collection status"]},
+ rights:{can:["Spend to ₹75,000","Client outreach within approved territory and segment"],
+   approve:["Any pricing or discount — MD only","Empanelment — MD"],
+   escalate:["Any client requiring non-standard terms","Any commitment beyond standard SLA"],delegate:["Onboarding execution to Operations"]},
+ risk:[{r:"No KRA document exists for this chair despite it being a revenue function",m:"Issue on the standard architecture as a priority in the FY27 migration"},
+       {r:"Dual hat with the acting Company Secretary role — a commercial chair holding a governance chair",m:"CS chair kept open and marked to be hired; time-box the interim arrangement"}],ch:[]},
+
+{id:"C62",t:"Manager — Bids, Tenders & Contracts",n:"Vrunda Potadar",lvl:4,
+ purpose:"Bid and tender pipeline through to executed agreement. Retitled from Project Manager, which described neither the work nor the level. The 30% collections weighting moves to Finance.",
+ acc:["Tender identification, qualification and submission","Agreement preparation and execution within deadline","EMD and bank guarantee tracking"],
+ tasks:[{t:"Bid pipeline",subs:["Track GeM, bank portals, RFPs and RFQs","Coordinate documentation, pricing input, compliance and credentials","Ensure eligibility and technical specification compliance","Follow up on clarifications, presentations and negotiations"]},
+        {t:"Contracts",subs:["Prepare, compile and execute agreements","Maintain the standard document repository — PAN, GST, financials, experience letters","Record contracts, LOIs and work orders"]},
+        {t:"Instruments",subs:["EMD and BG tracking, renewal and refund","Compliance with statutory and contractual requirements"]},
+        {t:"Reporting",subs:["Weekly tender status","Revenue forecast from awarded tenders"]}],
+ kpis:["100% agreement execution within deadline","Zero disqualification from documentation gaps","Technical qualification rate ≥95%","Tender compilation TAT 48–72 hours from internal approval","EMD and BG tracking accuracy 100%","Forecast variance within ±10%"],
+ raci:{A:["Tender submission and agreement execution (D22)"],R:["Bid compilation","EMD and BG tracking"],
+   C:["Pricing input","Legal vetting","Service feasibility"],I:["Award outcomes","Delivery performance on won mandates"]},
+ rights:{can:["Spend to ₹75,000","Compile and submit bids within approved pricing","Manage EMD and BG within approved limits"],
+   approve:["Pricing in any bid — MD only","Non-standard contract terms — Legal & Compliance, then MD","EMD or BG above approved limit — VP Finance"],
+   escalate:["Any tender requiring pricing outside the approved structure","Any eligibility gap that risks disqualification","Any BG or EMD at risk"],delegate:["Documentation compilation to support staff once hired"]},
+ risk:[{r:"Previously carried 30% collections weighting alongside bid management — two unrelated disciplines diluting both",m:"Collections moves to Manager — Credit Control. This chair keeps bid and contract only"},
+       {r:"Collection KPI in the old KRA read 60% efficiency against ≥95% elsewhere",m:"One receivables policy set by Finance; this chair is no longer measured on it"}],ch:[]},
+
+{id:"C63",t:"Manager — Partner Network",n:"",vac:1,lvl:4,new:1,
+ purpose:"Single commercial owner of the partner channel. Partners operate locations under the Crux brand on revenue share, accountable for business KPIs only — business, collection and business development — with no P&L, employee management or payroll.",
+ acc:["Partner channel commercial performance","Partner onboarding, documentation and territory management","Partner SLA and quality execution alongside the Regional Manager"],
+ tasks:[{t:"Channel",subs:["Partner pipeline and appointment recommendation","Territory and exclusivity management","Partner commercial review cadence"]},
+        {t:"Performance",subs:["Partner business KPI tracking — business, collection, business development","Partner activation and revenue uplift","Joint initiative delivery with the branch"]},
+        {t:"Governance",subs:["Partner documentation and agreement currency","Coordinate independent audit with RQC","Support settlement queries with Finance"]}],
+ kpis:["Partner channel revenue","Partner activation rate","Partner collection performance","Partner SLA and quality score","Partner agreement currency","Brand compliance score"],
+ raci:{A:["Partner channel commercial outcome"],R:["Partner SLA and quality (C5 — jointly with Regional Manager)","Partner onboarding and documentation"],
+   C:["Partner appointment","Revenue-share terms","Territory conflict"],I:["Partner settlement","Independent audit findings"]},
+ rights:{can:["Spend to ₹75,000 once appointed","Manage partner relationships day to day","Recommend partner appointment or termination"],
+   approve:["Partner appointment — Head Client & Growth, MD signs the agreement","Revenue-share terms — MD","Territory change — MD"],
+   escalate:["Partner-versus-branch client conflict — AVP arbitrates, company branch takes precedence","Any partner brand or compliance breach — RQC and MD","Partner settlement dispute — VP Finance"],
+   delegate:["Day-to-day operational supervision to the Branch and Regional Manager"]},
+ risk:[{r:"Accountability for partner SLA and quality was answered as a split between Regional Manager and this chair — but two Accountable owners breaks the RACI",m:"Regional Manager is Accountable for delivery outcome on partner locations, exactly as for company branches. This chair is Responsible for partner performance management. Single A preserved"},
+       {r:"Operations audits partner locations while partner revenue counts toward Operations targets",m:"Accepted as the operating model. Mitigated by an independent periodic audit from RQC covering brand, data protection and quality sampling — the items that carry client and regulatory exposure"}],
+ ch:["C631"]},
+
+{id:"C631",t:"Partner — location operator",n:"",lvl:3,dotted:1,
+ purpose:"Operates a location under the Crux brand on a revenue-share basis. Accountable for business KPIs only — business, collection and business development. No P&L ownership, no employee management, no payroll.",
+ acc:["Business generated from the territory","Collection on partner-sourced accounts","Business development in the territory"],
+ tasks:[{t:"Business",subs:["Client acquisition within agreed territory","Account activation and revenue uplift","Meet the same SLA, TAT and quality standards as a company branch"]},
+        {t:"Collection",subs:["Follow up on invoice approval and payment for sourced accounts","Support dispute resolution"]},
+        {t:"Brand and compliance",subs:["Operate within Crux brand guidelines","Follow SOPs without deviation","Protect client data to the same standard as employees"]}],
+ kpis:["Partner channel revenue","New clients onboarded","Sourced account activation rate","File TAT against branch SLA","Quality score on partner files","Defect rate","SOP and brand audit score","Collection on sourced accounts"],
+ raci:{A:["Own business and collection KPIs"],R:["Service delivery to Crux standard","Client relationship for sourced accounts"],
+   C:["Territory planning","Joint initiatives"],I:["Settlement computation","Audit findings"]},
+ rights:{can:["Client outreach within agreed territory","Local team hiring for own operations","Day-to-day client relationship for sourced accounts","Operational intervention on own files"],
+   approve:["Any pricing — MD only, no discount authority","Territory or scope expansion — MD","Brand use outside agreed scope — MD"],
+   escalate:["Material client complaint or compliance issue","Any contractual change","Conflict with a company branch over a client — AVP arbitrates"],
+   delegate:["Nothing to Crux — the partner operates its own team"]},
+ risk:[{r:"Revenue share creates a structural incentive toward volume, and volume pressure is where verification quality fails",m:"Same SLA and quality bar as company branches, with independent periodic audit by RQC"},
+       {r:"Territorial exclusivity granted, but company branches may pursue the same client",m:"Company branch takes precedence; AVP arbitrates. Written into the partner agreement"},
+       {r:"Crux bills the client and pays the partner a share, so credit risk sits on the Crux ledger",m:"Settlement conditional on collection where the agreement permits; Finance holds credit risk knowingly"}],ch:[]},
+
+{id:"C64",t:"Manager — Key Accounts (National)",n:"",vac:1,lvl:4,new:1,
+ purpose:"Single national owner for any bank operating across more than one region. Today the same bank is managed separately in each region, which risks inconsistent pricing and fragmented relationships.",
+ acc:["National relationship and revenue for assigned key accounts (D8)"],
+ tasks:[{t:"Account ownership",subs:["Single relationship owner across all regions for assigned banks","Consistent commercial and service terms nationally","Senior client governance and review cadence"]},
+        {t:"Growth",subs:["Expansion within the account — new service lines, new geographies","Renewal management"]}],
+ kpis:["National account revenue trend","Renewal rate on key accounts","Service consistency across regions","Client satisfaction on assigned accounts"],
+ raci:{A:["National relationship for assigned accounts (D8)"],R:["Account growth and renewal"],
+   C:["Regional service delivery","Pricing recommendation"],I:["Regional performance","Collection status"]},
+ rights:{can:["Spend to ₹75,000 once appointed","Own the client governance calendar for assigned accounts"],
+   approve:["Any pricing — MD only","Service term changes — Head Client & Growth"],
+   escalate:["Any national account at risk","Inconsistent service across regions affecting the relationship"],delegate:["Regional execution to Regional Managers"]},
+ risk:[{r:"Growth trigger chair — appoint when any single client operates across three or more regions",m:"Do not hire ahead of the trigger; do not delay past it"}],ch:[]},
+
+/* ---------- TECHNOLOGY ---------- */
+{id:"C70",t:"Chief Development Officer — Technology",n:"Vishal Pandey",lvl:5,
+ purpose:"Platform, product and technology scale. Reports to the MD — platform build is a delivery capability, not an assurance one, so it sits outside BE&PMO with a functional line into Operations as its primary internal customer.",
+ acc:["Technology roadmap and platform delivery (D25)","Information security and client data protection (D11)","System uptime and release quality","Technology budget and vendor management"],
+ tasks:[{t:"Strategy",subs:["Technology roadmap aligned to business goals","Digital transformation and automation","Evaluate and adopt emerging technology"]},
+        {t:"Delivery",subs:["Timely and quality product releases","SDLC discipline — Agile and DevOps","Architecture scalability and performance","Deployment cycle management"]},
+        {t:"Security",subs:["Secure coding practices","Data security and regulatory compliance","Vulnerability assessment","Documentation and audit readiness"]},
+        {t:"Business alignment",subs:["Requirement alignment with function heads","Scalable revenue-enabling platforms","Analytics and reporting systems with BE&PMO"]},
+        {t:"Governance",subs:["Technology budget and cloud cost optimisation","Vendor SLA management","Team capability and retention"]}],
+ kpis:["Roadmap completion","System uptime ≥99.5%","On-time delivery rate","Defect leakage rate","Critical vulnerability count","Security incident response time","Audit compliance score","Budget adherence","Cost saving from automation"],
+ raci:{A:["Technology roadmap and platform (D25)","Information security and client data protection (D11)"],
+   R:["Release delivery","Infrastructure and cloud","Technology vendor management"],
+   C:["Any system or tool deployment — BE&PMO reviews before go-live","Process automation design","Data definitions"],I:["Operational requirements","Compliance and audit findings"]},
+ rights:{can:["Spend to ₹5,00,000","Set architecture and technology standards","Approve releases within the change process","Manage technology vendors within budget"],
+   approve:["Any deployment — reviewed by BE&PMO before go-live (B1)","Budget above ₹5,00,000 — MD","New platform investment — MD"],
+   escalate:["Any security incident or data breach — MD and Board immediately","Any critical vulnerability","System outage affecting client delivery"],
+   delegate:["Build and run to the engineering team","Security operations to the InfoSec chair"]},
+ risk:[{r:"The chair title is Chief Development Officer while the documented KRA scope — architecture, SDLC, security, infrastructure, cloud — is a technology leadership scope",m:"Either align the KRA to the title or the title to the scope during the FY27 migration. Ambiguity here affects hiring, banding and client-facing credibility"},
+       {r:"No team or headcount is documented anywhere for this function",m:"Define the technology headcount plan alongside the BE&PMO plan"},
+       {r:"Client data for financial institutions is processed at scale with no named information security owner today",m:"InfoSec chair created. Confirm current statutory data protection obligations with your counsel — this is a design document, not legal advice"}],
+ ch:["C71x","C72"]},
+
+{id:"C71x",t:"Engineering & Platform Team",n:"",vac:1,lvl:3,
+ purpose:"Builds and runs the platform. No headcount is documented in any source.",
+ acc:["Release delivery and platform stability"],
+ tasks:[{t:"Build and run",subs:["Feature development against roadmap","Release and deployment","Production support and incident response"]}],
+ kpis:["Sprint velocity","Release cycle time","Defect leakage","Uptime"],
+ raci:{A:["Own delivery quality"],R:["Build, release and support"],C:["Requirements"],I:["Business priorities"]},
+ rights:{can:["No independent financial authority"],approve:["All — CDO"],escalate:["Production incident","Security vulnerability"],delegate:["Nothing"]},
+ risk:[{r:"Headcount undocumented — the function may be a single person or an outsourced arrangement",m:"Confirm and document as part of the headcount register"}],ch:[]},
+
+{id:"C72",t:"Information Security Owner",n:"",vac:1,lvl:3,new:1,
+ purpose:"Owns client data protection. No chair anywhere in the organisation held this before.",
+ acc:["Information security policy and control operation","Data protection incident response"],
+ tasks:[{t:"Policy and control",subs:["Access control and least privilege","Data classification and retention","Vendor and partner data handling standards"]},
+        {t:"Assurance",subs:["Vulnerability assessment programme","Incident response and reporting","Client security audit support"]}],
+ kpis:["Critical vulnerabilities open","Incident response time","Client security audit outcomes","Access review completion"],
+ raci:{A:["Information security control operation"],R:["Data protection (D11)","Incident response"],
+   C:["Partner data handling","Contract data clauses","Compliance requirements"],I:["Audit findings","Regulatory change"]},
+ rights:{can:["No independent financial authority pending appointment","Suspend access on security grounds"],
+   approve:["Policy — CDO and RQC","Budget — CDO"],
+   escalate:["Any data breach or suspected breach — CDO, MD and Board immediately","Any partner or vendor data handling failure"],delegate:["Nothing"]},
+ risk:[{r:"Bank client data is processed across branches and partner locations with no security owner today",m:"Priority chair. Confirm the current statutory position with counsel"}],ch:[]},
+
+/* ---------- MD OFFICE ---------- */
+{id:"C10",t:"Executive Assistant to MD",n:"Vicky Salvi",lvl:3,dotted:1,dual:"Also Manager — MIS & Business Intelligence (C31)",
+ purpose:"Staff chair supporting the MD. Not a function and not a management layer.",
+ acc:["MD calendar, meeting and travel coordination","Minutes and follow-up tracking"],
+ tasks:[{t:"Coordination",subs:["Calendar, meetings and travel","Agenda notes and minutes within 24 hours","Follow-up tracker updated weekly"]},
+        {t:"Communication",subs:["Draft official correspondence","Coordinate with internal teams and external stakeholders for the MD","Maintain confidentiality of strategic and financial information"]}],
+ kpis:["100% adherence to meeting schedules","Minutes circulated within 24 hours","Follow-up tracker current","Zero breach of confidentiality"],
+ raci:{A:["MD office coordination"],R:["Scheduling, minutes, follow-up tracking"],C:[],I:["Business priorities"]},
+ rights:{can:["No financial authority","Schedule and coordinate on the MD's behalf"],approve:["All — MD"],
+   escalate:["Any conflict in MD commitments","Any confidentiality concern"],delegate:["Nothing"]},
+ risk:[{r:"Dual hat with Manager — MIS & Business Intelligence. The chair that gatekeeps the MD also arbitrates other functions' data quality",m:"Split recommended as MIS load grows. Until then MIS escalation runs through Head BE&PMO, not the EA channel"}],ch:[]}
+];
+
+const P=[
+{g:"Governance & enterprise",r:"G1",p:"Strategy, capital approval and statutory standing",A:"C00",R:["C01"],C:["C20","C40","C44"],I:["C02","C30"]},
+{g:"Governance & enterprise",r:"D12",p:"New client empanelment and pricing approval",A:"C01",R:["C60","C51"],C:["C20","C02","C62"],I:["C00","C40"]},
+{g:"Governance & enterprise",r:"C4",p:"Partner appointment and revenue-share terms",A:"C01",R:["C60","C63"],C:["C50","C43","C20"],I:["C02","C21"]},
+{g:"Governance & enterprise",r:"G2",p:"Organisation design, structure and senior appointments",A:"C01",R:["C30","C50"],C:["C34","C00"],I:["C02","C20","C40","C70","C60"]},
+{g:"Governance & enterprise",r:"G3",p:"MD office coordination, minutes and follow-up tracking",A:"C10",R:["C10"],C:["C31"],I:["C01"]},
+{g:"Service delivery",r:"D18",p:"SLA and TAT adherence across all locations",A:"C02",R:["C03","C04","C061","C07","C0401","C0501"],C:["C41","C06","C08","C30"],I:["C01","C60","C40"]},
+{g:"Service delivery",r:"D7",p:"Vendor and field-agency empanelment and termination",A:"C02",R:["C04","C061"],C:["C41","C20","C54"],I:["C01","C03"]},
+{g:"Service delivery",r:"D20b",p:"Branch and zone launch — execution and go-live",A:"C02",R:["C04","C0401"],C:["C32","C54","C70"],I:["C01","C50"]},
+{g:"Service delivery",r:"D14",p:"Partner brand and SOP audit — operational, day to day",A:"C02",R:["C04","C63"],C:["C40","C41"],I:["C01","C60"]},
+{g:"Service delivery",r:"S1",p:"West and South regional outcome, and partner-versus-branch arbitration",A:"C03",R:["C04","C05","C06","C061"],C:["C63","C60"],I:["C02","C01"]},
+{g:"Service delivery",r:"S2",p:"West-I regional P&L — Rest of Maharashtra, Goa, Chhattisgarh",A:"C04",R:["C0401"],C:["C24","C03"],I:["C02","C60"]},
+{g:"Service delivery",r:"S3",p:"Mumbai regional P&L and branch performance",A:"C05",R:["C0501"],C:["C24","C03"],I:["C02","C60"]},
+{g:"Service delivery",r:"S4",p:"Gujarat regional P&L and branch performance",A:"C06",R:["C06"],C:["C24","C03"],I:["C02","C60"]},
+{g:"Service delivery",r:"S5",p:"South zone P&L and branch performance",A:"C061",R:["C061"],C:["C24","C03"],I:["C02","C60"]},
+{g:"Service delivery",r:"S6",p:"East zone P&L — North East, Bengal and Orissa",A:"C07",R:["C07"],C:["C24","C02"],I:["C01","C60"]},
+{g:"Service delivery",r:"S7",p:"North zone P&L — interim, pending Regional Manager appointment",A:"C08",R:["C08"],C:["C24","C50"],I:["C01","C00"]},
+{g:"Service delivery",r:"S8",p:"Pune branch P&L, clients, people and books",A:"C0401",R:["C040101"],C:["C04","C24"],I:["C02","C50"]},
+{g:"Service delivery",r:"S9",p:"Thane branch P&L, clients, people and books",A:"C0501",R:["C050101"],C:["C05","C24"],I:["C02","C50"]},
+{g:"Service delivery",r:"D19",p:"Pune branch daily target, allocation and productivity",A:"C040101",R:["C04010101","C04010102"],C:["C0401"],I:["C41","C31"]},
+{g:"Service delivery",r:"S10",p:"Thane branch daily target, allocation and productivity",A:"C050101",R:["C05010101"],C:["C0501"],I:["C41","C31"]},
+{g:"Service delivery",r:"S11",p:"Field verification execution and evidence integrity — Pune",A:"C04010101",R:["C04010101"],C:["C040101","C41"],I:["C0401"]},
+{g:"Service delivery",r:"S12",p:"Back-office case processing and report accuracy — Pune",A:"C04010102",R:["C04010102"],C:["C040101","C41"],I:["C0401"]},
+{g:"Service delivery",r:"S13",p:"Combined field and back-office case accuracy — Thane",A:"C05010101",R:["C05010101"],C:["C050101","C41"],I:["C0501"]},
+{g:"Service delivery",r:"C5",p:"Partner location SLA, TAT and quality outcome",A:"C04",R:["C63","C631"],C:["C41","C02"],I:["C60","C21"]},
+{g:"Quality & assurance",r:"D5",p:"Report quality score and defect rate",A:"C40",R:["C41","C0401","C040101"],C:["C02","C33"],I:["C01","C60","C04"]},
+{g:"Quality & assurance",r:"Q1",p:"Independent partner audit — brand, data protection, quality sampling",A:"C40",R:["C41"],C:["C63","C72","C43"],I:["C01","C02"]},
+{g:"Quality & assurance",r:"Q2",p:"Regulatory and client compliance",A:"C40",R:["C43","C41"],C:["C50","C20","C44"],I:["C01","C00"]},
+{g:"Quality & assurance",r:"D21",p:"Contract drafting and legal vetting",A:"C40",R:["C43"],C:["C20","C02","C62"],I:["C01","C63"]},
+{g:"Quality & assurance",r:"Q3",p:"Audit programme completion, findings quality and vendor quality oversight",A:"C41",R:["C411"],C:["C33","C02"],I:["C40","C30"]},
+{g:"Quality & assurance",r:"Q4",p:"Audit sample execution and defect logging accuracy",A:"C411",R:["C411"],C:["C41"],I:["C40","C04010101"]},
+{g:"Quality & assurance",r:"Q5",p:"Contract turnaround, litigation exposure and compliance monitoring",A:"C43",R:["C43"],C:["C20","C62","C50"],I:["C40","C01"]},
+{g:"Quality & assurance",r:"D24",p:"Board and statutory secretarial compliance",A:"C44",R:["C44","C00"],C:["C43","C20","C01"],I:["C40","C30"]},
+{g:"Finance & controls",r:"D3",p:"Customer credit limits and service suspension",A:"C20",R:["C24"],C:["C02","C60"],I:["C01","C21"]},
+{g:"Finance & controls",r:"D4",p:"DSO and collection target achievement",A:"C20",R:["C24","C04","C061","C0401"],C:["C02","C03"],I:["C01","C60"]},
+{g:"Finance & controls",r:"F1",p:"Financial reporting, statutory accounts and audit",A:"C20",R:["C21"],C:["C40","C31"],I:["C01","C00"]},
+{g:"Finance & controls",r:"D1",p:"Client invoicing and billing accuracy",A:"C21",R:["C22","C23"],C:["C02","C0401"],I:["C20","C24"]},
+{g:"Finance & controls",r:"D2",p:"AR ledger integrity and receipt allocation",A:"C21",R:["C241","C242","C243","C244"],C:["C24"],I:["C20","C40"]},
+{g:"Finance & controls",r:"D13",p:"Revenue-share computation and partner settlement",A:"C21",R:["C231"],C:["C63","C43"],I:["C20","C01","C631"]},
+{g:"Finance & controls",r:"D17",p:"Tax and statutory financial compliance — GST, TDS, IT, PT",A:"C21",R:["C22","C23"],C:["C43","C44"],I:["C20","C40"]},
+{g:"Finance & controls",r:"F2",p:"Collection operation against target and AR ageing reduction",A:"C24",R:["C241","C242","C243","C244"],C:["C02","C04"],I:["C20","C21"]},
+{g:"Finance & controls",r:"F3",p:"Assigned receivables portfolio — portfolio 1",A:"C241",R:["C241"],C:["C24"],I:["C21","C0401"]},
+{g:"Finance & controls",r:"F4",p:"Assigned receivables portfolio — portfolio 2",A:"C242",R:["C242"],C:["C24"],I:["C21","C0501"]},
+{g:"Finance & controls",r:"F5",p:"Assigned receivables portfolio — portfolio 3",A:"C243",R:["C243"],C:["C24"],I:["C21","C061"]},
+{g:"Finance & controls",r:"F6",p:"Assigned receivables portfolio — portfolio 4",A:"C244",R:["C244"],C:["C24"],I:["C21","C07"]},
+{g:"Finance & controls",r:"F7",p:"Transaction processing and reconciliation accuracy — ledger 1",A:"C22",R:["C22"],C:["C21"],I:["C20","C27"]},
+{g:"Finance & controls",r:"F8",p:"Transaction processing and reconciliation accuracy — ledger 2",A:"C23",R:["C23"],C:["C21"],I:["C20","C27"]},
+{g:"Finance & controls",r:"F9",p:"Partner revenue-share computation accuracy and audit trail",A:"C231",R:["C231"],C:["C63","C21"],I:["C20","C631"]},
+{g:"Finance & controls",r:"OPEN",p:"Scope undefined — no KRA exists for this chair. Define, merge or remove.",A:"C27",R:["C27"],C:["C20","C34"],I:["C21","C50"]},
+{g:"Excellence, data & technology",r:"D6",p:"SOP authoring and version control",A:"C30",R:["C33"],C:["C02","C41"],I:["C00","C50","C70"]},
+{g:"Excellence, data & technology",r:"D10",p:"Management MIS accuracy across all functions",A:"C30",R:["C31","C311"],C:["C20","C02","C50"],I:["C01","C00"]},
+{g:"Excellence, data & technology",r:"D15a",p:"Job architecture, chair levels and KRA/KPI framework",A:"C30",R:["C34"],C:["C50","C02"],I:["C00","C01"]},
+{g:"Excellence, data & technology",r:"E1",p:"Tool and system deployment review before go-live",A:"C30",R:["C32"],C:["C70","C02","C40"],I:["C01","C20"]},
+{g:"Excellence, data & technology",r:"E2",p:"MIS accuracy, timeliness and reporting template standard",A:"C31",R:["C311"],C:["C20","C02"],I:["C30","C10"]},
+{g:"Excellence, data & technology",r:"E3",p:"Routine report production accuracy and on-time delivery",A:"C311",R:["C311"],C:["C31"],I:["C30","C34"]},
+{g:"Excellence, data & technology",r:"D20a",p:"Branch and zone launch — playbook and stage gate",A:"C32",R:["C33"],C:["C02","C50","C70","C54"],I:["C01","C30"]},
+{g:"Excellence, data & technology",r:"E4",p:"SOP content currency and process design for new services",A:"C33",R:["C33"],C:["C02","C41"],I:["C30","C53"]},
+{g:"Excellence, data & technology",r:"D15b",p:"Chair level definitions and KRA migration to one architecture by FY27",A:"C34",R:["C34"],C:["C50","C53"],I:["C30","C01"]},
+{g:"Excellence, data & technology",r:"D25",p:"Technology roadmap and platform delivery",A:"C70",R:["C71x"],C:["C02","C30"],I:["C01","C00"]},
+{g:"Excellence, data & technology",r:"D11",p:"Information security and client data protection",A:"C70",R:["C72"],C:["C40","C43"],I:["C01","C00"]},
+{g:"Excellence, data & technology",r:"E5",p:"Release delivery, platform stability and production support",A:"C71x",R:["C71x"],C:["C30","C02"],I:["C70","C31"]},
+{g:"Excellence, data & technology",r:"E6",p:"Information security control operation and incident response",A:"C72",R:["C72"],C:["C40","C43"],I:["C70","C01"]},
+{g:"People & capability",r:"D23",p:"Recruitment and vacancy closure",A:"C50",R:["C51x","C52"],C:["C02","C60","C30"],I:["C01","C20"]},
+{g:"People & capability",r:"D16",p:"Payroll accuracy and statutory benefits",A:"C50",R:["C51x","C52"],C:["C21"],I:["C20","C40"]},
+{g:"People & capability",r:"D9",p:"ORS and eSat scores",A:"C50",R:["C51x","C0401"],C:["C30","C53"],I:["C02","C01"]},
+{g:"People & capability",r:"D15c",p:"Appraisal process, assessment and promotion decisions",A:"C50",R:["C51x","C53"],C:["C34","C02"],I:["C01","C30"]},
+{g:"People & capability",r:"H1",p:"HR operations delivery and appraisal cycle administration",A:"C51x",R:["C52"],C:["C34","C53"],I:["C50","C02"]},
+{g:"People & capability",r:"H2",p:"Employee records, attendance finalisation and statutory documentation",A:"C52",R:["C52"],C:["C51x"],I:["C50","C21"]},
+{g:"People & capability",r:"H3",p:"Capability build, induction and level assessment content",A:"C53",R:["C53"],C:["C41","C02","C34"],I:["C50","C51x"]},
+{g:"People & capability",r:"H4",p:"Facilities, assets, travel and admin vendors",A:"C54",R:["C54"],C:["C32","C02"],I:["C50","C20"]},
+{g:"Client & growth",r:"D8",p:"National client relationship — client operating across regions",A:"C60",R:["C64","C04","C061","C07"],C:["C02","C20"],I:["C01","C05"]},
+{g:"Client & growth",r:"G4",p:"Partner channel commercial outcome",A:"C63",R:["C631"],C:["C60","C04","C02"],I:["C21","C40"]},
+{g:"Client & growth",r:"D22",p:"Tender and bid submission, agreement execution",A:"C62",R:["C62"],C:["C20","C43","C02"],I:["C01","C60"]},
+{g:"Client & growth",r:"G5",p:"New client empanelment pipeline execution and onboarding",A:"C51",R:["C51"],C:["C02","C20"],I:["C60","C01"]},
+{g:"Client & growth",r:"G6",p:"National relationship and revenue for assigned key accounts",A:"C64",R:["C64"],C:["C04","C061","C07"],I:["C60","C02"]},
+{g:"Client & growth",r:"C9",p:"Partner business, collection and business development KPIs",A:"C631",R:["C631"],C:["C63","C0401"],I:["C04","C21"]},
+{g:"Client & growth",r:"G7",p:"Branch-level client servicing and escalation — Pune",A:"C0401",R:["C040101"],C:["C04","C64"],I:["C60","C41"]},
+{g:"Cross-cutting",r:"X1",p:"Annual operating plan — delivery against the 10x objective",A:"C01",R:["C02","C03","C20","C30","C40","C50","C60","C70"],C:["C00","C31","C10"],I:["C04","C05","C06","C061","C07","C08","C0401","C0501","C44","C62","C64","C43","C63"]},
+{g:"Cross-cutting",r:"X2",p:"SOP, process and system change — consultation with the people who run it",A:"C33",R:["C33"],C:["C04010101","C04010102","C05010101","C040101","C050101","C22","C23","C241","C242","C243","C244","C411","C52","C311","C231","C27","C54","C71x","C631","C51","C10","C01"],I:["C30","C02","C41","C32"]},
+{g:"Cross-cutting",r:"X3",p:"Quality findings, defect trends and client feedback circulation",A:"C41",R:["C411"],C:["C040101","C050101","C0401","C0501"],I:["C04010101","C04010102","C05010101","C22","C23","C241","C242","C243","C244","C311","C231","C52","C51","C71x","C631","C06","C08","C43"]},
+{g:"Cross-cutting",r:"X4",p:"Policy, compliance and statutory change publication",A:"C40",R:["C43","C44"],C:["C50","C30","C01","C63"],I:["C040101","C050101","C32","C33","C54","C62","C64","C72","C10","C27","C411","C22","C23","C52"]}
+];
+
+
+/* ===== L1–L5 PROGRESSION FRAMEWORK =====
+   Every chair has its own five levels. L1–L5 describe the PERSON in that chair,
+   never the seniority of the seat. Promotion eligibility begins only at L5. */
+const FAM={
+frontline:{name:"Frontline execution",
+ psy:"Conscientiousness · attention to detail · integrity when findings are adverse · resilience in field conditions · resistance to inducement",
+ lv:[
+ {n:"L1 — Supervised",d:"Completes assigned cases under close checking. Knows the SOP for one product. Cannot yet judge an ambiguous address, document or uncooperative respondent. Every report verified before dispatch.",ev:"Induction passed · 4 weeks of completed cases · zero integrity incidents"},
+ {n:"L2 — Reliable",d:"Completes standard cases independently within TAT across the main products. Recognises a non-standard case and escalates rather than guessing. Error rate at or below branch benchmark.",ev:"3 months at benchmark productivity · error rate at or below target · no TAT breach without same-day escalation"},
+ {n:"L3 — Proficient",d:"Handles the full product range including difficult locations, ambiguous documents and hostile respondents. Spots fraud indicators others miss. Evidence pack needs no rework.",ev:"6 months error rate below target · at least one fraud indicator correctly escalated · clean QC sampling across two cycles"},
+ {n:"L4 — Advanced",d:"Trusted with disputed and high-value verifications. Trains new joiners on the ground. Represents Crux at a client site without supervision.",ev:"Two joiners trained to L2 · zero client complaints · QC sampling consistently clean"},
+ {n:"L5 — Mastery · promotion eligible",d:"Sets the practical standard for the branch. Their evidence packs are used as training examples. Ready to be assessed for Team Leader.",ev:"Sustained L4 across two review cycles · knowledge test at threshold · psychometric clears the supervisory profile"}]},
+
+transact:{name:"Specialist execution",
+ psy:"Accuracy under repetition · rule adherence · escalation discipline · discretion with confidential data · resistance to pressure to adjust a number",
+ lv:[
+ {n:"L1 — Supervised",d:"Processes routine transactions with checking. Knows the system and the format. Needs guidance on every exception.",ev:"Induction passed · 4 weeks of processed volume · no unreported error"},
+ {n:"L2 — Owns the desk",d:"Runs a defined portfolio, ledger or dataset independently. Reconciles unaided. Escalates exceptions correctly and early.",ev:"3 months owning the desk · reconciliation on schedule · exceptions escalated within tolerance"},
+ {n:"L3 — Proficient",d:"Handles complex exceptions, disputes and reconciliations. Explains variances before being asked. Reliable through month-end close and audit.",ev:"Two clean closes · zero unreconciled items beyond tolerance · audit queries answered without escalation"},
+ {n:"L4 — Improver",d:"Improves the process rather than only running it. Trains others. Trusted with the most sensitive accounts, records or data.",ev:"One documented process improvement adopted · one person trained to L2 · clean audit finding"},
+ {n:"L5 — Mastery · promotion eligible",d:"Could run the desk unsupervised for a month. Ready to be assessed for manager grade.",ev:"Sustained L4 across two cycles · knowledge test at threshold · psychometric clears the supervisory profile"}]},
+
+teamlead:{name:"First-line supervision",
+ psy:"Coaching orientation · composure under target pressure · fairness in allocation · follow-through · willingness to deliver hard feedback",
+ lv:[
+ {n:"L1 — Allocator",d:"Allocates work and reports the number. Relies on the Branch Manager for corrective action when the team misses.",ev:"Allocation and MIS submitted on time · daily reviews held"},
+ {n:"L2 — Hits the number",d:"Meets the daily target consistently. Manages roster and the ageing bucket unaided.",ev:"3 months at or above daily target · ageing within tolerance · MIS accurate"},
+ {n:"L3 — Lifts the team",d:"Improves the bottom performers rather than only protecting the top. TAT and error rate stable without escalation.",ev:"Measurable improvement in the bottom quartile · error rate below target · no repeat TAT breach"},
+ {n:"L4 — Runs the floor",d:"Runs branch operations for a week without the Branch Manager. Coaches rather than supervises.",ev:"Covered the Branch Manager for at least five working days · team stable · one executive developed to L3"},
+ {n:"L5 — Mastery · promotion eligible",d:"Carries branch operations end to end. Ready to be assessed for Branch Manager.",ev:"Sustained L4 across two cycles · knowledge test at threshold · psychometric clears the management profile"}]},
+
+branch:{name:"Unit leadership",
+ psy:"Ownership without excuses · client-facing composure · integrity in financial reporting · developing a successor · constructive escalation",
+ lv:[
+ {n:"L1 — Directed",d:"Runs the branch on instruction. Escalates most decisions. Books need correction at review.",ev:"Branch operating · reviews attended with data · reconciliation attempted monthly"},
+ {n:"L2 — Meets target",d:"Branch meets target with regional support. Books reconcile. Team stable.",ev:"Two quarters at target · clean monthly reconciliation · attrition within tolerance"},
+ {n:"L3 — Self-running",d:"Branch runs without regional intervention. Clean books, current collections, clients renewing.",ev:"Escalations to the Regional Manager rare · DSO at target · renewal rate at target"},
+ {n:"L4 — Grows the branch",d:"Wins new mandates on delivery reputation. Develops the Team Leader to cover the branch for 72 hours.",ev:"New mandate won · Team Leader at L4 · branch P&L growth year on year"},
+ {n:"L5 — Mastery · promotion eligible",d:"Branch is the model others copy. Credible successor identified. Ready to be assessed for Regional Manager.",ev:"Sustained L4 across two cycles · named successor at L4 · knowledge test and psychometric clear the P&L profile"}]},
+
+regional:{name:"Regional P&L leadership",
+ psy:"Commercial judgment · executive presence with bank stakeholders · zero-surprise reporting · talent development · integrity under commercial pressure",
+ lv:[
+ {n:"L1 — Senior operator",d:"Manages branches as a senior Branch Manager would. Needs the AVP for commercial decisions.",ev:"Region operating · branch reviews held · reporting submitted on cadence"},
+ {n:"L2 — Region delivers",d:"Region meets target. Branch Managers are managed. Escalations upward are still frequent.",ev:"Two quarters at regional target · all branches reporting reliably"},
+ {n:"L3 — Region autonomous",d:"Region grows. Branch Managers run their branches. Escalations are rare and resolved at region level.",ev:"Majority of branches at target · escalations to AVP materially reduced · DSO at target"},
+ {n:"L4 — Region expands",d:"New banks empanelled and new branches opened. Commercial judgment trusted on pricing recommendations to the MD.",ev:"New bank empanelled · new branch opened to plan · pricing recommendations accepted"},
+ {n:"L5 — Mastery · promotion eligible",d:"Runs the region as a business with a bench of Branch Manager successors. Ready to be assessed for AVP.",ev:"Sustained L4 across two cycles · named successor per key branch · knowledge test and psychometric clear the senior leadership profile"}]},
+
+fnmgr:{name:"Functional management",
+ psy:"Technical depth · cross-functional credibility · control mindset · constructive challenge of more senior chairs · comfort holding an unpopular line",
+ lv:[
+ {n:"L1 — Delivers routine",d:"Produces the function's routine output under the head's direction. Standard work still reviewed.",ev:"Routine deliverables on time · no material rework"},
+ {n:"L2 — Owns the discipline",d:"Standard work needs no review. Deadlines met without chasing. Escalates the genuinely ambiguous.",ev:"Two cycles delivered unreviewed · stakeholder deadlines met"},
+ {n:"L3 — Handles complexity",d:"Manages ambiguous and contested cases. Advises other functions credibly and is sought out.",ev:"Complex case resolved without the head · cross-functional advice acted on"},
+ {n:"L4 — Designs the system",d:"Sets policy and method in the discipline rather than only operating it. Trains and develops others in it.",ev:"Policy or method authored and adopted · one person developed to L3"},
+ {n:"L5 — Mastery · promotion eligible",d:"The discipline could run a quarter without the head. Ready to be assessed for function head.",ev:"Sustained L4 across two cycles · knowledge test at threshold · psychometric clears the function head profile"}]},
+
+head:{name:"Function leadership",
+ psy:"Enterprise judgment · building successors · transparency when the news is bad · integrity when targets bite · delegation discipline",
+ lv:[
+ {n:"L1 — New in seat",d:"Directs the function but relies on the MD for structure and prioritisation.",ev:"Function operating · reporting established · team in place"},
+ {n:"L2 — Function delivers",d:"Team stable, reporting reliable, commitments met on cadence.",ev:"Two quarters of reliable delivery · KPI pack accurate · attrition within tolerance"},
+ {n:"L3 — Trusted partner",d:"Controls hold. The function is a dependable partner to the business. No MD intervention required.",ev:"Zero control failures · business stakeholders rate the function reliable · audit findings closed on time"},
+ {n:"L4 — Shapes decisions",d:"The function shapes company decisions rather than supporting them. A successor is identified and developing.",ev:"Function-led recommendation adopted at Board or MD level · named successor at L4"},
+ {n:"L5 — Mastery",d:"Enterprise-level. Could deputise for the MD in this domain. Ready to be assessed for CXO scope.",ev:"Sustained L4 across two cycles · successor ready · psychometric clears the executive profile"}]},
+
+exec:{name:"Executive leadership",
+ psy:"Strategic judgment · delegation discipline · composure in crisis · ethical conduct under commercial pressure · willingness to be contradicted",
+ lv:[
+ {n:"L1 — Directs",d:"Operates through direct intervention. The layer below escalates routinely and waits for instruction.",ev:"Function or business operating · reporting cadence established"},
+ {n:"L2 — Delegates",d:"The layer below owns its outcomes. Intervention is by exception rather than by habit.",ev:"Escalation volume falling · direct reports meeting targets without daily involvement"},
+ {n:"L3 — Builds the layer",d:"Successors are developing. Escalations are resolved at this level without going above.",ev:"Named successors in the layer below · escalations to MD or Board materially reduced"},
+ {n:"L4 — Scales the business",d:"Growth is delivered without adding proportional management. The structure holds at higher volume.",ev:"Volume growth absorbed without layer addition · new locations launched to plan"},
+ {n:"L5 — Mastery",d:"The organisation runs without leader dependence in this domain. Board-ready.",ev:"Sustained L4 across two cycles · domain operates through an absence of several weeks · Board confidence evidenced"}]},
+
+board:{name:"Governance",
+ psy:"Assessed by board skills matrix, independence and conflict declaration — not by the employee framework",
+ note:"The Board is not assessed on the employee P-scale. These five levels describe governance maturity, and are reviewed annually rather than at appraisal.",
+ lv:[
+ {n:"L1 — Informal",d:"Meets when needed. Minutes incomplete. Oversight is reactive.",ev:"Statutory minimum meetings held"},
+ {n:"L2 — Constituted",d:"Statutory cadence met. Minutes, registers and filings current.",ev:"All filings within due dates · registers complete"},
+ {n:"L3 — Informed",d:"Receives a reliable MIS pack ahead of meetings. Reviews audit and compliance findings substantively.",ev:"MIS pack circulated before every meeting · audit findings minuted with owners"},
+ {n:"L4 — Effective oversight",d:"Independent assurance reports directly to the Board. Risk and capital decisions are evidenced.",ev:"Risk, Quality & Compliance reporting received directly · capital decisions documented"},
+ {n:"L5 — Governance mature",d:"Skills matrix complete, succession planned, independent voice present. Investor-ready.",ev:"Board skills matrix maintained · succession plan for MD · independent director or adviser in place"}]},
+
+staff:{name:"Executive support",
+ psy:"Discretion · anticipation · organisation under interruption · judgment about what reaches the principal",
+ lv:[
+ {n:"L1 — Coordinates",d:"Manages diary and logistics with direction.",ev:"Calendar maintained · meetings scheduled without clash"},
+ {n:"L2 — Anticipates",d:"Runs the calendar and follow-ups unaided. Minutes reliable within 24 hours.",ev:"Minutes within 24 hours for a full quarter · follow-up tracker current"},
+ {n:"L3 — Filters",d:"Judges what needs the principal and what does not. Trusted with confidential strategic and financial material.",ev:"Zero confidentiality incidents · principal's time demonstrably protected"},
+ {n:"L4 — Represents",d:"Corresponds and coordinates on the principal's behalf with senior internal and external stakeholders.",ev:"External correspondence handled without correction · senior stakeholders engaged directly"},
+ {n:"L5 — Mastery · promotion eligible",d:"Runs the principal's office end to end. Ready to be assessed for chief-of-staff or manager grade.",ev:"Sustained L4 across two cycles · knowledge test and psychometric clear the manager profile"}]},
+
+partner:{name:"Commercial partner — external",
+ psy:"Not an employee. Assessed against the partnership agreement, brand standards and commercial conduct — not by internal psychometric testing.",
+ note:"The partner is an independent commercial party. These levels describe partnership standing and drive territory and scope decisions, not employment or promotion.",
+ lv:[
+ {n:"L1 — Onboarding",d:"Agreement signed, brand and SOP induction complete, first files processed under branch supervision.",ev:"Agreement executed · induction complete · first files accepted"},
+ {n:"L2 — Operating",d:"Meets branch-equivalent SLA, TAT and quality. Reporting is accurate and on cadence.",ev:"Two quarters at branch-equivalent SLA · reporting accurate · zero brand incidents"},
+ {n:"L3 — Contributing",d:"Sustained incremental revenue. Collections current. Zero compliance incidents.",ev:"Revenue sustained across three quarters · collections at target · clean SOP audit"},
+ {n:"L4 — Growing",d:"Expands the territory's book. Joint initiatives with the branch delivered on time.",ev:"New clients onboarded · joint initiatives delivered · quality at or above branch average"},
+ {n:"L5 — Strategic",d:"Channel exemplar. Eligible for expanded territory or scope at the MD's discretion.",ev:"Sustained L4 · clean audit history · MD and Head Client & Growth endorsement"}]}
+};
+const FAMOF={
+C00:"board",C01:"exec",C02:"exec",C03:"exec",
+C20:"head",C30:"head",C40:"head",C50:"head",C60:"head",C70:"head",
+C04:"regional",C05:"regional",C06:"regional",C061:"regional",C07:"regional",C08:"regional",
+C0401:"branch",C0501:"branch",
+C040101:"teamlead",C050101:"teamlead",
+C04010101:"frontline",C04010102:"frontline",C05010101:"frontline",
+C21:"fnmgr",C24:"fnmgr",C31:"fnmgr",C32:"fnmgr",C33:"fnmgr",C34:"fnmgr",C41:"fnmgr",C43:"fnmgr",
+C44:"fnmgr",C51x:"fnmgr",C51:"fnmgr",C53:"fnmgr",C62:"fnmgr",C63:"fnmgr",C64:"fnmgr",C71x:"fnmgr",C72:"fnmgr",
+C22:"transact",C23:"transact",C231:"transact",C241:"transact",C242:"transact",C243:"transact",
+C244:"transact",C27:"transact",C311:"transact",C411:"transact",C52:"transact",C54:"transact",
+C10:"staff",C631:"partner"
+};
+
+
+const M={};D.forEach(d=>M[d.id]=d);
+const ROLL={};D.forEach(d=>ROLL[d.id]={A:[],R:[],C:[],I:[]});
+P.forEach(x=>{if(ROLL[x.A])ROLL[x.A].A.push(x);
+ ['R','C','I'].forEach(k=>(x[k]||[]).forEach(id=>{if(ROLL[id])ROLL[id][k].push(x);}));});
+const nm=id=>M[id]?M[id].t:id;
+const famOf=id=>FAM[FAMOF[id]]||FAM.transact;
+
+(function(){const z=D.filter(d=>['A','R','C','I'].some(k=>ROLL[d.id][k].length===0)).length;
+ const noR=P.filter(x=>!x.R||!x.R.length).length;
+ const bad=[...new Set(P.flatMap(x=>[x.A,...(x.R||[]),...(x.C||[]),...(x.I||[])]))].filter(i=>!M[i]);
+ document.getElementById('vbar').innerHTML=
+ `<span>Processes: <b>${P.length}</b></span><span>Chairs: <b>${D.length}</b></span>`+
+ `<span>Exactly one manager per process: <b>${P.length}/${P.length}</b></span>`+
+ `<span>Every process has a doer: <b class="${noR?'bad':''}">${P.length-noR}/${P.length}</b></span>`+
+ `<span>Chairs at zero on A, R, C or I: <b class="${z?'bad':''}">${z}</b></span>`+
+ `<span>Unknown references: <b class="${bad.length?'bad':''}">${bad.length}</b></span>`;})();
+
+/* ---- chart ---- */
+const oc=document.getElementById('oc');
+function card(d){const r=ROLL[d.id],tg=[];
+ if(d.vac)tg.push('<span class="tg v">TBH</span>');
+ if(d.new)tg.push('<span class="tg n">New</span>');
+ if(d.dual)tg.push('<span class="tg d">Dual</span>');
+ const who=d.n?`<span class="cname">${d.n}</span>`:`<span class="cname vac">Vacant — to be hired</span>`;
+ const acc=r.A.length?`<span class="cacc"><b>MANAGES</b> ${r.A.map(x=>x.p).join(' · ')}</span>`:'';
+ return `<div class="cw"><button class="card d${d.lvl}${d.dotted?' dot':''}" data-id="${d.id}">
+   <span class="cid"><span>${d.id}</span><em>${famOf(d.id).name}</em></span>
+   <span class="ctitle">${d.t}</span>${who}
+   <span class="craci"><i class="a">A${r.A.length}</i><i class="r">R${r.R.length}</i><i class="c">C${r.C.length}</i><i class="i">I${r.I.length}</i></span>
+   ${tg.length?`<span class="tags">${tg.join('')}</span>`:''}${acc}</button>
+   ${(d.ch&&d.ch.length)?`<button class="knob" aria-expanded="false" aria-label="Expand ${d.t}">+<span class="n">${d.ch.length}</span></button>`:''}</div>`;}
+function build(id){const d=M[id];if(!d)return'';
+ const s=(d.ch&&d.ch.length)?`<ul hidden>${d.ch.map(build).join('')}</ul>`:'';
+ return `<li data-id="${id}">${card(d)}${s}</li>`;}
+oc.innerHTML=`<ul>${build('C00')}</ul>`;
+function setNode(li,open){const ul=li.querySelector(':scope > ul'),k=li.querySelector(':scope > .cw > .knob');
+ if(!ul||!k)return;ul.hidden=!open;
+ k.innerHTML=(open?'&minus;':'+')+`<span class="n">${M[li.dataset.id].ch.length}</span>`;
+ k.setAttribute('aria-expanded',String(open));}
+function setAll(o){oc.querySelectorAll('li').forEach(li=>setNode(li,o));}
+setAll(false);['C00','C01'].forEach(i=>{const li=oc.querySelector(`li[data-id="${i}"]`);if(li)setNode(li,true);});
+
+/* zoom + scroll: origin 0 0 with an explicit sizer so both edges are reachable */
+let z=.75;const sc=document.getElementById('ocscale'),sz=document.getElementById('ocsizer'),
+ wp=document.getElementById('ocwrap'),zv=document.getElementById('zV');
+function apply(){sc.style.transform='scale('+z+')';
+ const w=oc.offsetWidth||1,h=oc.offsetHeight||1,avail=wp.clientWidth-24;
+ sz.style.width=(w*z)+'px';sz.style.height=(h*z)+'px';
+ sz.style.marginLeft=(w*z<avail)?((avail-w*z)/2)+'px':'0px';
+ zv.textContent=Math.round(z*100)+'%';}
+function fit(){const w=oc.offsetWidth||1;z=Math.min(1,Math.max(.28,(wp.clientWidth-30)/w));apply();}
+document.getElementById('zI').onclick=()=>{z=Math.min(1.5,z+.1);apply();};
+document.getElementById('zO').onclick=()=>{z=Math.max(.25,z-.1);apply();};
+document.getElementById('zF').onclick=fit;
+window.addEventListener('resize',apply);
+oc.addEventListener('click',e=>{const k=e.target.closest('.knob');
+ if(k){const li=k.closest('li');setNode(li,li.querySelector(':scope > ul').hidden);apply();return;}
+ const c=e.target.closest('.card');if(c)open(c.dataset.id,c);});
+document.getElementById('bE').onclick=()=>{setAll(true);apply();};
+document.getElementById('bC').onclick=()=>{setAll(false);
+ ['C00','C01'].forEach(i=>setNode(oc.querySelector(`li[data-id="${i}"]`),true));apply();};
+const bN=document.getElementById('bN'),bA=document.getElementById('bA');
+bN.onclick=()=>{const o=document.body.classList.toggle('names');bN.setAttribute('aria-pressed',o);bN.textContent=o?'Hide names':'Show names';apply();};
+bA.onclick=()=>{const o=document.body.classList.toggle('acc');bA.setAttribute('aria-pressed',o);bA.textContent=o?'Hide accountability':'Show accountability';apply();};
+/* drag to pan */
+let dg=0,sx,sy,sl,st;
+wp.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;
+ dg=1;sx=e.clientX;sy=e.clientY;sl=wp.scrollLeft;st=wp.scrollTop;wp.classList.add('drag');wp.setPointerCapture(e.pointerId);});
+wp.addEventListener('pointermove',e=>{if(!dg)return;wp.scrollLeft=sl-(e.clientX-sx);wp.scrollTop=st-(e.clientY-sy);});
+['pointerup','pointercancel'].forEach(v=>wp.addEventListener(v,()=>{dg=0;wp.classList.remove('drag');}));
+document.getElementById('q').addEventListener('input',e=>{const v=e.target.value.trim().toLowerCase();
+ oc.querySelectorAll('.card').forEach(c=>c.classList.remove('hit'));if(!v){apply();return;}
+ let f=null;D.forEach(d=>{if((d.t+' '+(d.n||'')).toLowerCase().includes(v)){
+  const li=oc.querySelector(`li[data-id="${d.id}"]`);if(!li)return;
+  li.querySelector('.card').classList.add('hit');if(!f)f=li;
+  let p=li.parentElement.closest('li');while(p){setNode(p,true);p=p.parentElement.closest('li');}}});
+ apply();if(f)f.scrollIntoView({block:'center',inline:'center',behavior:'smooth'});});
+
+/* ---- responsibility matrix ---- */
+const mx=document.getElementById('mx');
+const chips=(a,c)=>(a&&a.length)?a.map(i=>`<button class="chip ${c||''}" data-id="${i}">${nm(i)}</button>`).join(''):'<span style="color:var(--mute)">—</span>';
+function drawMx(f){f=(f||'').toLowerCase();let h='';
+ [...new Set(P.map(x=>x.g))].forEach(g=>{
+  const rows=P.filter(x=>x.g===g&&(!f||(x.p+' '+x.r+' '+nm(x.A)+' '+(x.R||[]).map(nm).join(' ')+' '+(x.C||[]).map(nm).join(' ')+' '+(x.I||[]).map(nm).join(' ')).toLowerCase().includes(f)));
+  if(!rows.length)return;
+  h+=`<div class="mxg"><h3>${g}</h3></div><table><thead><tr><th>Ref</th><th>Process</th>
+   <th style="color:var(--stamp)">Manager &mdash; accountable, one only</th><th>Doer &mdash; responsible</th><th>Consulted</th><th>Informed</th></tr></thead><tbody>`;
+  rows.forEach(x=>{h+=`<tr><td class="ref">${x.r}</td><td class="pr">${x.p}</td>
+   <td>${chips([x.A],'A')}</td><td>${chips(x.R)}</td><td>${chips(x.C)}</td><td>${chips(x.I)}</td></tr>`;});
+  h+='</tbody></table>';});
+ mx.innerHTML=h||'<div class="mxg"><h3>No match</h3></div>';}
+drawMx();
+document.getElementById('qm').addEventListener('input',e=>drawMx(e.target.value));
+mx.addEventListener('click',e=>{const c=e.target.closest('.chip');if(c)open(c.dataset.id,null);});
+
+/* ---- level framework tab ---- */
+function drawLv(f){f=(f||'').toLowerCase();let h='';
+ Object.keys(FAM).forEach(key=>{
+  const fm=FAM[key],chairs=D.filter(d=>FAMOF[d.id]===key);
+  if(f && !(fm.name.toLowerCase().includes(f)||chairs.some(c=>(c.t+' '+(c.n||'')).toLowerCase().includes(f))))return;
+  h+=`<div class="fam"><div class="famh"><h3>${fm.name}</h3>
+   <p><b>Psychometric focus:</b> ${fm.psy}</p>${fm.note?`<p style="color:var(--stamp)">${fm.note}</p>`:''}
+   <div class="who">Chairs: ${chairs.map(c=>c.t).join(' · ')}</div></div>`;
+  fm.lv.forEach(l=>{h+=`<div class="lvrow"><div class="lvn">${l.n}</div>
+   <div class="lvd">${l.d}<em>Evidence required: ${l.ev}</em></div></div>`;});
+  h+='</div>';});
+ document.getElementById('lvv').innerHTML=h||'<div class="fam"><div class="famh"><h3>No match</h3></div></div>';}
+drawLv();
+document.getElementById('qf').addEventListener('input',e=>drawLv(e.target.value));
+
+/* ---- tabs ---- */
+const T1=document.getElementById('t1'),T2=document.getElementById('t2'),T3=document.getElementById('t3');
+function tab(n){[T1,T2,T3].forEach((t,i)=>t.setAttribute('aria-selected',String(i===n)));
+ ['v1','v2','v3'].forEach((v,i)=>document.getElementById(v).hidden=(i!==n));if(n===0)fit();}
+T1.onclick=()=>tab(0);T2.onclick=()=>tab(1);T3.onclick=()=>tab(2);
+
+/* ---- panel ---- */
+const pn=document.getElementById('pn'),scrim=document.getElementById('scrim');let last=null;
+const L=a=>(a&&a.length)?`<ul>${a.map(x=>`<li>${x}</li>`).join('')}</ul>`:'<p style="color:var(--mute)">None defined.</p>';
+const PL=a=>(a&&a.length)?`<ul>${a.map(x=>`<li>${x.p} <span style="color:var(--mute);font-family:var(--m);font-size:10px">${x.r}</span></li>`).join('')}</ul>`:'<p style="color:var(--mute)">—</p>';
+function open(id,src){const d=M[id];if(!d)return;last=src;
+ oc.querySelectorAll('.card').forEach(c=>c.classList.remove('sel'));if(src)src.classList.add('sel');
+ const par=D.find(x=>x.ch&&x.ch.includes(id)),r=ROLL[id],fm=famOf(id);
+ document.getElementById('pI').textContent=`Chair ${d.id} · ${fm.name}${d.dotted?' · Dotted line':''}`;
+ document.getElementById('pT').textContent=d.t;
+ const w=document.getElementById('pW');w.textContent=d.n||'Vacant — to be hired';w.className='who'+(d.n?'':' vac');
+ const kt=(d.tasks||[]).map(t=>t.t).join(' · ');
+ let h=`<div class="sec"><h3>Reporting</h3><dl class="kv">
+  <dt>Reports to</dt><dd>${par?par.t:'—'}</dd>
+  <dt>Direct reports</dt><dd>${(d.ch&&d.ch.length)?d.ch.map(nm).join(' · '):'None — individual contributor'}</dd>
+  ${d.dual?`<dt>Dual hat</dt><dd style="color:var(--amber)">${d.dual}</dd>`:''}</dl></div>
+ <div class="sec"><h3>Purpose — why this chair exists</h3><p>${d.purpose}</p></div>
+ <div class="sec"><h3>Responsibility position — doer and manager</h3>
+  <div class="rrow A"><b>A</b><div><span class="rlab">Manages — sole accountable owner</span>
+   ${r.A.length?PL(r.A):'<span style="color:var(--stamp)">Nothing. Define, merge or remove this chair.</span>'}</div></div>
+  <div class="rrow R"><b>R</b><div><span class="rlab">Does — responsible for execution</span>${PL(r.R)}</div></div>
+  <div class="rrow C"><b>C</b><div><span class="rlab">Consulted</span>${PL(r.C)}</div></div>
+  <div class="rrow I"><b>I</b><div><span class="rlab">Informed</span>${PL(r.I)}</div></div></div>
+ <div class="sec"><h3>Level framework L1–L5 for this chair</h3>
+  <p style="margin-bottom:10px">Levels describe the person in this chair, not the seat. Promotion eligibility begins at L5.</p>
+  ${fm.note?`<div class="note" style="margin:0 0 10px"><b>Note</b> ${fm.note}</div>`:''}
+  ${fm.lv.map(l=>`<div class="lvrow" style="padding:10px 0;grid-template-columns:140px 1fr">
+    <div class="lvn">${l.n}</div><div class="lvd">${l.d}<em>Evidence required: ${l.ev}</em></div></div>`).join('')}
+  <dl class="kv" style="margin-top:12px">
+   <dt>Knowledge test</dt><dd>${kt||'To be defined'}</dd>
+   <dt>Performance</dt><dd>${(d.kpis||[]).slice(0,4).join(' · ')||'To be defined'}</dd>
+   <dt>Psychometric</dt><dd>${fm.psy}</dd>
+   <dt>Assessed by</dt><dd>VP — HR &amp; Administration, on the framework owned by Business Excellence &amp; PMO</dd></dl></div>
+ <div class="sec"><h3>Key accountabilities</h3>${L(d.acc)}</div>
+ <div class="sec"><h3>Tasks and sub-tasks</h3><ul>${(d.tasks||[]).map(t=>`<li><b>${t.t}</b>${(t.subs&&t.subs.length)?`<ul>${t.subs.map(s=>`<li>${s}</li>`).join('')}</ul>`:''}</li>`).join('')}</ul></div>
+ <div class="sec"><h3>KPIs</h3>${L(d.kpis)}</div>
+ <div class="sec"><h3>Decision rights</h3>
+  <div class="rt can"><strong>Can decide alone</strong>${(d.rights.can||[]).map(x=>`<div>${x}</div>`).join('')||'<div>—</div>'}</div>
+  <div class="rt app"><strong>Needs approval</strong>${(d.rights.approve||[]).map(x=>`<div>${x}</div>`).join('')||'<div>—</div>'}</div>
+  <div class="rt esc"><strong>Must escalate</strong>${(d.rights.escalate||[]).map(x=>`<div>${x}</div>`).join('')||'<div>—</div>'}</div>
+  <div class="rt del"><strong>Should delegate down</strong>${(d.rights.delegate||[]).map(x=>`<div>${x}</div>`).join('')||'<div>—</div>'}</div></div>
+ <div class="sec"><h3>Risk and mitigation</h3>${(d.risk||[]).map(x=>`<div class="risk"><b>${x.r}</b>${x.m}</div>`).join('')||'<p style="color:var(--mute)">None recorded.</p>'}</div>
+ <div class="note"><b>Financial limits</b> are recommended against industry practice and not yet ratified. The Board should approve the delegation schedule before issue.</div>`;
+ document.getElementById('pB').innerHTML=h;
+ pn.classList.add('on');scrim.classList.add('on');pn.scrollTop=0;pn.focus();}
+function shut(){pn.classList.remove('on');scrim.classList.remove('on');
+ oc.querySelectorAll('.card').forEach(c=>c.classList.remove('sel'));if(last)last.focus();}
+document.getElementById('bX').onclick=shut;scrim.onclick=shut;
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&pn.classList.contains('on'))shut();});
+tab(0);
+</script>
+</html>

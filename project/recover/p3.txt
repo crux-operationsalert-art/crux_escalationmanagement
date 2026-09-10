@@ -1,0 +1,268 @@
+
+  extra(me){
+    const S = this.state, t = m => () => this.setState({ toast:m });
+    const goGuide = (route, assist) => () => this.setState({ route, reportKey:assist, guideOff:false, bellOpen:false, toast:'' });
+    const pct = (a, b) => Math.round((a / b) * 100) + '%';
+
+    // ---------- PMS ----------
+    // No chair may show another chair's KPIs: a chair with none says so.
+    const kpiSet = Component.PMS_KPIS[S.persona] || [];
+    const kpiOv = (S.kpiOv || {})[S.persona];
+    const kpiLive = kpiOv || kpiSet;
+    const canKpi = false;
+    const kpiOwnerNote = 'Your KPIs and targets are set by your manager, not by you — this list is read-only on purpose. A manager sets them on their own team below, and a change applies from the next cadence period.';
+    const kpiWrite = next => this.setState(st => ({ kpiOv:{ ...(st.kpiOv || {}), [S.persona]:next } }));
+    const kpis = kpiLive.map((k, i) => ({
+      n:String(k.n), name:k.name, kind: k.mandatory ? 'Mandatory' : 'Optional',
+      target:k.target + ' ' + k.unit, achieved:k.achieved + ' ' + k.unit, pct:pct(k.achieved, k.target),
+      subs:k.subs.map(s => ({ name:s.name, target:String(s.target), achieved:String(s.achieved), pct:pct(s.achieved, s.target) })),
+      hasSubs:k.subs.length > 0, subNote:k.subs.length ? k.subs.length + ' sub-categories set by your manager' : 'No sub-categories',
+      canKpi,
+      editing:S.kpiEdit === k.n, notEditing:S.kpiEdit !== k.n,
+      nameVal:k.name, targetVal:String(k.target), unitVal:k.unit,
+      edit:() => this.setState({ kpiEdit:k.n, toast:'' }),
+      setName:e => { const v = e.target.value; kpiWrite(kpiLive.map((x, j) => j === i ? { ...x, name:v } : x)); },
+      setTarget:e => { const v = e.target.value; kpiWrite(kpiLive.map((x, j) => j === i ? { ...x, target:(v === '' ? 0 : (isNaN(Number(v)) ? v : Number(v))) } : x)); },
+      doneEdit:() => this.setState({ kpiEdit:null, toast:'“' + k.name + '” saved. A KPI change applies from the next cadence period — targets already set for this month keep their value, so nobody is re-scored on a rule that moved mid-month.' }),
+      remove:() => { kpiWrite(kpiLive.filter((x, j) => j !== i).map((x, j) => ({ ...x, n:j + 1 })));
+        this.setState({ kpiEdit:null, toast:'“' + k.name + '” removed from this chair. History against it stays readable and last month is not restated; it simply stops counting from the next period. ' + (k.mandatory ? 'It was mandatory — the score now runs on ' + (kpiLive.length - 1) + ' KPIs until you add another.' : '') }); }
+    }));
+    const kpiCanAdd = canKpi && kpiLive.length < 8;
+    const kpiAdd = () => { const n = kpiLive.length + 1;
+      kpiWrite(kpiLive.concat([{ n, name:'New KPI ' + n, mandatory:false, unit:'%', target:100, achieved:0, subs:[] }]));
+      this.setState({ kpiEdit:n, toast:'KPI added and open for editing. Name it and set the target — it counts from the next cadence period, not retrospectively.' }); };
+    const kpiReset = () => this.setState(st => { const o = { ...(st.kpiOv || {}) }; delete o[S.persona]; return { kpiOv:o, kpiEdit:null, toast:'Back to the KPIs this chair started with. Nothing you removed was deleted — it was only stopped.' }; });
+    const kpiScore = 7.4, attrScore = 8.6, weightKpi = 70, weightAttr = 30;
+    const finalScore = ((kpiScore * weightKpi) + (attrScore * weightAttr)) / 100;
+
+    // D8 again: no fallback. Last month is each person's own record, carried on
+    // the roster row, because a manager setting targets from identical history
+    // is setting them from nothing.
+    const teamTargets = (Component.TEAM_BY_PERSONA[S.persona] || []).filter(p => p.direct).map(p => ({
+      name:p.name, chair:p.chair, lastMonth: p.lastMonth || 'no history on this chair',
+      thisMonth: p.target === 'set' ? 'Targets set · 5 KPIs' : 'Not set — P-03 applies at 18:00 on the 3rd',
+      needs: p.target !== 'set',
+      setTargets: () => this.setState({ form:'targets', toast:'' }),
+      assignTask: () => this.setState({ form:'task', toast:'' }),
+      eligibility: () => this.setState({ form:'eligibility', toast:'' }) }));
+
+    // ---------- daily roll-up: everyone sees the whole chain below them ----------
+    const open = k => !!S.peopleOpen['r:' + k];
+    // Which KPI the chain is showing. Every KPI, not only verifications —
+    // each with its target, what has been achieved, and the gap as a percentage.
+    const rollKpis = (Component.KPIS[S.persona] || Component.KPIS.BM_P || []);
+    const rollIdx = Math.min(S.rollKpi || 0, Math.max(0, rollKpis.length - 1));
+    const rollKpi = rollKpis[rollIdx] || { name:'Verifications completed', target:'1,200', achieved:'742', unit:'' };
+    // How a KPI rolls up depends on what it measures. Counts and rupees add up.
+    // Percentages and scores do not — averaging is the only honest aggregate,
+    // and the label says which one you are looking at.
+    const kName = String(rollKpi.name || '');
+    const rollIsPct = /\(%\)|percent/i.test(kName);
+    const rollIsScore = /score/i.test(kName);
+    const rollIsMoney = /₹/.test(kName);
+    const rollMode = (rollIsPct || rollIsScore) ? 'avg' : 'sum';
+    const rollCeil = rollIsScore ? 10 : 100;
+    const rNum0 = v => { const n = parseFloat(String(v).replace(/[^0-9.]/g, '')); return Number.isFinite(n) ? n : 0; };
+    const achievedNum = rNum0(rollKpi.achieved);
+    // Raw weights are the day's submissions. For an additive KPI they are scaled
+    // so the chain reconciles to the achieved figure in the header — the two
+    // numbers in this card can never disagree again.
+    const RAW_TOTAL = 97;
+    const sumFactor = achievedNum / RAW_TOTAL;
+    const fmt = n => rollIsMoney ? n.toFixed(2) : rollIsScore ? n.toFixed(1)
+      : rollIsPct ? Math.round(n) + '%' : Math.round(n).toLocaleString('en-IN');
+    let rollCorr = { mul:1, add:0 };
+    const valueFor = raw => {
+      if (raw <= 0) return null;                       // did not submit — excluded, not counted as zero
+      if (rollMode === 'sum') return raw * sumFactor * rollCorr.mul;   // rounded only at display, so the chain adds up exactly
+      const spread = ((raw % 7) - 3) * (rollIsScore ? 0.3 : 1.6);
+      return Math.max(0, Math.min(rollCeil, Math.round((achievedNum + spread + rollCorr.add) * 10) / 10));
+    };
+    const rollNode = (k, name, chair, mineRaw, kids) => {
+      const mineVal = valueFor(mineRaw);
+      const kidSum = kids.reduce((n, c) => n + c.aggSum, 0);
+      const kidN = kids.reduce((n, c) => n + c.aggN, 0);
+      const aggSum = (mineVal === null ? 0 : mineVal) + kidSum;
+      const aggN = (mineVal === null ? 0 : 1) + kidN;
+      const shown = rollMode === 'sum' ? aggSum : (aggN ? aggSum / aggN : 0);
+      return { key:k, name, chair, aggSum, aggN,
+        own: mineVal === null ? 'not submitted' : fmt(mineVal),
+        total: aggN ? fmt(shown) : '—',
+        contributors:String(aggN),
+        people:String(aggN),
+        hasKids:kids.length > 0, expanded:open(k), kids,
+        toggle: () => this.setState(s => ({ peopleOpen: { ...s.peopleOpen, ['r:' + k]: !s.peopleOpen['r:' + k] } })),
+        toggleLabel: open(k) ? 'Collapse' : 'Expand ' + kids.length };
+    };
+    const leaf = (k, name, chair, v) => rollNode(k, name, chair, v, []);
+    const buildChain = () => {
+      const gk = rollNode('gk', 'Girish Kate', 'Team Leaders — Pune', 18, [
+        leaf('ap', 'Akanksha Pawar', 'Field Executives — Pune', 22),
+        leaf('rd', 'Rupam Das', 'Field Executives — Pune', 0),
+        leaf('bn', 'Bhaskar Nath', 'Field Executives — Pune', 19)
+      ]);
+      const ac = leaf('ac', 'Avinash Chaskar', 'Collections — Pune', 26);
+      const vk = leaf('vk', 'Vaibhavi Kanavaje', 'Back Office — Thane', 0);
+      const bmChain = [gk, ac, vk];
+      const bmNode = rollNode('bm', 'Amit Kulkarni · you', 'Branch Manager — Pune', 12, bmChain);
+      const rmwRows = [bmNode,
+        leaf('bmt', 'Branch Manager — Thane', 'Branch · Thane', 0),
+        leaf('bmn', 'Branch Manager — Nashik', 'Branch · Nashik', 41)];
+      const opsRows = [
+        leaf('w', 'West region', 'Regional Manager — West', 138),
+        leaf('n', 'North region', 'Regional Manager — North', 96),
+        leaf('s', 'South region', 'Regional Manager — South', 112),
+        leaf('e', 'North East & East', 'Regional Manager — NE&E', 44)];
+      return { bmChain, bmNode, rmwRows, opsRows };
+    };
+    // First pass measures the chain; the second corrects it so the figure in the
+    // card is exactly the achieved number in its header. Two numbers in one card
+    // must never disagree — that is the whole point of the rebuild.
+    let built = buildChain();
+    const viewRows = me.key === 'OPS' ? built.opsRows : me.key === 'RM_W' ? built.rmwRows : [built.bmNode];
+    const vSum = viewRows.reduce((n, r) => n + r.aggSum, 0);
+    const vN = viewRows.reduce((n, r) => n + r.aggN, 0);
+    if (vN) {
+      if (rollMode === 'sum' && vSum > 0) rollCorr = { mul: achievedNum / vSum, add:0 };
+      else if (rollMode === 'avg') rollCorr = { mul:1, add: achievedNum - (vSum / vN) };
+      built = buildChain();
+    }
+    const bmChain = built.bmChain, bmNode = built.bmNode, rmwRows = built.rmwRows, opsRows = built.opsRows;
+    const aggregate = rows => {
+      const s = rows.reduce((n, r) => n + r.aggSum, 0);
+      const c = rows.reduce((n, r) => n + r.aggN, 0);
+      if (!c) return '—';
+      return fmt(rollMode === 'sum' ? s : s / c);
+    };
+    const rollUpFor = {
+      BM_P:{ title:rollKpi.name + ' · your chain', rows:bmChain,
+        own:(valueFor(12) === null ? 'not submitted' : fmt(valueFor(12))),
+        total:aggregate([bmNode]),
+        missing:'2 people have not submitted — they are left out of the figure rather than counted as zero' },
+      RM_W:{ title:rollKpi.name + ' · West region', rows:rmwRows,
+        own:'—', total:aggregate(rmwRows), missing:'Thane has submitted nothing for 2 days' },
+      OPS:{ title:rollKpi.name + ' · national', rows:opsRows,
+        own:'—', total:aggregate(opsRows), missing:'North East is 44 against a plan of 110' }
+    };
+
+    const rNum = v => { const n = parseFloat(String(v).replace(/[^0-9.]/g, '')); return Number.isFinite(n) ? n : 0; };
+    const rT = rNum(rollKpi.target), rA = rNum(rollKpi.achieved);
+    const rP = rT ? Math.round((rA / rT) * 100) : 0;
+    const rollKpiBits = {
+      rollTabs: rollKpis.map((k, i) => ({ label:k.name, on:i === rollIdx,
+        pick: () => this.setState({ rollKpi:i }) })),
+      rollTarget:String(rollKpi.target), rollAchieved:String(rollKpi.achieved),
+      rollPct:rP + '%', rollBar:Math.min(100, rP) + '%',
+      rollTint: rP >= 95 ? '#2f7355' : rP >= 75 ? '#8a6d1f' : '#b4562f',
+      rollGap: rT > rA ? (rT - rA).toLocaleString('en-IN') + ' to go' : 'target met',
+      rollAggLabel: rollMode === 'sum' ? 'Chain total' : 'Chain average',
+      rollAggWhy: rollMode === 'sum'
+        ? 'Counts and rupees add up, so this is the sum of everyone below you and it reconciles to the achieved figure above.'
+        : 'A percentage cannot be added up, so this is the average across everyone who submitted. People who have not submitted are left out rather than counted as zero.',
+      rollUnit: rollKpi.unit || ''
+    };
+
+    // ---------- target builder: KPIs and sub-categories are added and removed here ----------
+    const defTgt = [
+      { name:'Field verifications completed', target:'1,200', unit:'count', mandatory:true, last:'1,050 target, 1,092 achieved',
+        subs:[{ name:'SBI · Pune', target:'700' },{ name:'Bajaj · Pune', target:'350' },{ name:'HDB · Pune', target:'150' }] },
+      { name:'Cases within TAT', target:'95', unit:'%', mandatory:true, last:'95 target, 91 achieved', subs:[] },
+      { name:'Collections', target:'18', unit:'₹ lakh', mandatory:true, last:'16 target, 14.2 achieved',
+        subs:[{ name:'Kothrud', target:'6' },{ name:'Hadapsar', target:'6' },{ name:'Deccan', target:'6' }] },
+      { name:'Report quality score', target:'9', unit:'score', mandatory:false, last:'9 target, 8.4 achieved', subs:[] },
+      { name:'New client branches onboarded', target:'6', unit:'count', mandatory:false, last:'4 target, 3 achieved', subs:[] }
+    ];
+    const tgt = S.tgt || defTgt;
+    const setTgt = next => this.setState({ tgt:next });
+    const editKpi = (i, patch) => setTgt(tgt.map((k, x) => x === i ? { ...k, ...patch } : k));
+    const tNum = v => { const n = parseFloat(String(v).replace(/[^0-9.]/g, '')); return Number.isFinite(n) ? n : 0; };
+    const tgtBits = {
+      tgtPerson:'Girish Kate · Team Leaders — Pune',
+      tgtNote: tgt.length + ' KPIs · ' + tgt.filter(k => k.mandatory).length + ' mandatory · a KPI with sub-categories totals from them',
+      tgtFoot:'Three mandatory KPIs are the minimum. Add as many optional ones as the chair genuinely needs — every one you add is something they must report on every day, so add sparingly.',
+      addKpi: () => setTgt(tgt.concat([{ name:'', target:'', unit:'count', mandatory:false, last:'no history', subs:[] }])),
+      tgtKpis: tgt.map((k, i) => {
+        const subTotal = k.subs.reduce((n, s) => n + tNum(s.target), 0);
+        const t = tNum(k.target);
+        const matches = !k.subs.length || Math.abs(subTotal - t) < 0.01;
+        return {
+          n:String(i + 1), name:k.name, target:k.target, unit:k.unit, last:k.last,
+          kind: k.mandatory ? 'mandatory' : 'optional',
+          hasSubs: k.subs.length > 0,
+          sumNote: k.subs.length ? (matches
+            ? 'Sub-categories add up to ' + subTotal.toLocaleString('en-IN') + ', matching the KPI target.'
+            : 'Sub-categories add up to ' + subTotal.toLocaleString('en-IN') + ' against a KPI target of ' + k.target + '. Fix one or the other before saving.') : '',
+          sumTint: matches ? '#2f7355' : '#b4562f',
+          setName: e => editKpi(i, { name:e.target.value }),
+          setTarget: e => editKpi(i, { target:e.target.value }),
+          setUnit: e => editKpi(i, { unit:e.target.value }),
+          remove: () => k.mandatory
+            ? this.setState({ toast:'A mandatory KPI cannot be removed here. Make it optional in Configuration first — mandatory KPIs are what the company measures every chair on.' })
+            : setTgt(tgt.filter((x, y) => y !== i)),
+          addSub: () => editKpi(i, { subs:k.subs.concat([{ name:'', target:'' }]) }),
+          subs: k.subs.map((s, j) => ({
+            name:s.name, target:s.target,
+            setName: e => { const v = e.target.value; editKpi(i, { subs:k.subs.map((x, y) => y === j ? { ...x, name:v } : x) }); },
+            setTarget: e => { const v = e.target.value; editKpi(i, { subs:k.subs.map((x, y) => y === j ? { ...x, target:v } : x) }); },
+            remove: () => editKpi(i, { subs:k.subs.filter((x, y) => y !== j) })
+          }))
+        };
+      })
+    };
+
+    // ---------- tasks: every chair gets them, not only HR ----------
+    const taskSets = {
+      HRH:[
+        { what:'Approve the chair for Sagar Mane', from:'Girish Kate · 2 Sep', due:'Due 4 Sep', risk:'Joiner cannot be created until you approve', form:'approve' },
+        { what:'Amit Kulkarni has changed his address — approve the record', from:'Amit Kulkarni · 3 Sep', due:'Due 6 Sep', risk:'', form:'profile' },
+        { what:'Decide the dispute on ESC-00193', from:'Yash Desai · 2 Sep', due:'Clock paused pending your decision', risk:'The ₹500 penalty is held until you decide', form:'' },
+        { what:'2 warning letters unacknowledged past 72 hours', from:'Rule P-07 · system', due:'Overdue', risk:'₹250 each applies to the recipients', form:'' },
+        { what:'Close 4 August appraisals', from:'Rule P-04 · system', due:'10 Sep, 18:00', risk:'₹1,000 if missed', form:'' }
+      ],
+      FIN:[
+        { what:'Approve claim CLM-0405 · ₹1,150', from:'Avinash Chaskar · 24 Aug', due:'Due 5 Sep', risk:'', form:'claimStage' },
+        { what:'Bill 2 matrix penalties · ₹1,500', from:'Rule P-06 · system', due:'This month', risk:'', form:'ledgerState' },
+        { what:'Meera Iyer has no September target', from:'Rule P-03 · system', due:'Today 18:00', risk:'₹1,000 applies to you', form:'targets' },
+        { what:'Answer the assistance request on the Kothrud rate card', from:'Amit Kulkarni · 2 Sep', due:'Due in 6 working hours', risk:'Unactioned requests escalate against you', form:'' }
+      ],
+      BEX:[
+        { what:'Review IDE-017 · collections dashboard by branch manager', from:'Sneha Radhe · 1 Sep', due:'Due 5 Sep', risk:'', form:'ideaAction' },
+        { what:'Assign a sponsor to IDE-019', from:'Accepted 30 Aug', due:'Due 4 Sep', risk:'An accepted idea with no sponsor stalls', form:'ideaAction' },
+        { what:'IDE-014 held for 14 days — decide or release', from:'Vrunda Potdar · 20 Aug', due:'Overdue', risk:'The person who raised it has not been told why', form:'ideaAction' },
+        { what:'Charter update due on IDE-021', from:'Girish Kate · initiated 28 Aug', due:'Weekly', risk:'', form:'ideaAction' }
+      ],
+      ADM:[
+        { what:'MIS desk has no primary person', from:'Rule R-06 · system', due:'Blocking', risk:'MIS escalations cannot route', form:'setting' },
+        { what:'Holiday calendar is empty', from:'Rule R-03 · system', due:'Before October', risk:'The strike clock cannot exclude holidays', form:'setting' },
+        { what:'Create the account for Sagar Mane', from:'HR approved 2 Sep', due:'Due 4 Sep', risk:'', form:'approve' },
+        { what:'Confirm the identity merge for Aniket Chalke', from:'Migration · 3 Sep', due:'Review', risk:'583 coverage rules were re-pointed', form:'' }
+      ],
+      PARTNER:[
+        { what:'Submit your daily count for Nagpur', from:'Rule P-01 · system', due:'Closes 23:59', risk:'₹200, billed not deducted', form:'' },
+        { what:'BR-01204 Nagpur East matrix incomplete', from:'Rule P-06 · system', due:'8 days incomplete', risk:'₹500 billed at 14 days', form:'matrixBranch' },
+        { what:'Claim CLM-0388 disputed — more detail needed', from:'Accounts · 1 Sep', due:'Back with you', risk:'', form:'claim' },
+        { what:'Set targets for your 2 executives', from:'Rule P-03 · system', due:'Today 18:00', risk:'₹1,000 billed if missed', form:'targets' }
+      ]
+    };
+    const myTasksList = taskSets[S.persona] || taskSets.FIN;
+
+    // ---------- profile ----------
+    const myTasks = myTasksList.map(k => ({ ...k,
+      act: k.form ? () => this.setState({ form:k.form, toast:'' })
+                  : () => this.setState({ toast:'Opened: ' + k.what + '. ' + (k.risk || 'No penalty attached to this one.') }) }));
+
+    // ---------- visits & claims ----------
+    const visitFields = {
+      Operations:['Branch visited','Purpose · audit, training, client meeting','Findings','Actions agreed','Photographs'],
+      'Human Resources':['Location visited','Purpose · engagement, grievance, onboarding','People met','Issues raised','Follow-up owner'],
+      'Finance & Accounts':['Location visited','Purpose · reconciliation, collection, vendor','Amount discussed','Documents collected','Next step'],
+      MIS:['Location visited','Purpose · data audit, process walkthrough','Gaps found','Owner agreed','Report due'],
+      Technology:['Location visited','Purpose · rollout, hardware, training','Systems touched','Issues logged','Closure date']
+    };
+    const claims = [
+      { ref:'CLM-0412', who:'Amit Kulkarni', visit:'Kothrud + Hadapsar · 28 Aug', amount:'₹2,340', stage:'Operations approval', next:'Nitish Bhope' },
+      { ref:'CLM-0410', who:'Girish Kate', visit:'Wakad · 27 Aug', amount:'₹880', stage:'HR approval', next:'Valsan P' },
+      { ref:'CLM-0405', who:'Avinash Chaskar', visit:'Deccan · 24 Aug', amount:'₹1,150', stage:'Accounts', next:'Sneha Radhe' },
+      { ref:'CLM-0398', who:'Rupam Das', visit:'Guwahati · 21 Aug', amount:'₹3,600', stage:'Disputed — more detail needed', next:'Back with Rupam Das' },
+      { ref:'CLM-0391', who:'Vaibhavi Kanavaje', visit:'Thane · 19 Aug', amount:'₹640', stage:'Paid · UTR 4471902', next:'Closed' }
+    ];

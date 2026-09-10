@@ -1,0 +1,21 @@
+{
+  "name": "crux-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "P0 persistence layer for Crux, against build/schema.sql",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "worker": "node worker.js",
+    "db:schema": "psql $DATABASE_URL -f ../schema.sql",
+    "db:migrate": "for s in ../migration/*.sql; do psql $DATABASE_URL -v ON_ERROR_STOP=1 -f $s; done",
+    "db:gate": "psql $DATABASE_URL -c 'select * from migration_gate' -c 'select * from migration_unaccounted' -c 'select * from migration_open_questions'"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pg": "^8.12.0",
+    "cookie": "^0.6.0",
+    "googleapis": "^140.0.0"
+  }
+}

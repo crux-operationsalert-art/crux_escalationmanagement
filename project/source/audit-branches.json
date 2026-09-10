@@ -1,0 +1,109 @@
+{
+ "rows": 101330,
+ "distinctBranchID": 1413,
+ "distinctBranchCode": 1196,
+ "duplicateClientCodeGroups": 0,
+ "rowsInThoseGroups": 0,
+ "duplicateNaturalKeyGroups": 5,
+ "rowsInThoseGroups2": 99925,
+ "distinctZones": 36,
+ "distinctLocations": 422,
+ "distinctRegionIDs": 31,
+ "distinctPOCEmails": 10,
+ "distinctBranchMgrEmails": 510,
+ "status": {
+  "ACTIVE": 722,
+  "INACTIVE": 691,
+  "(blank)": 99917
+ },
+ "blanks": {
+  "BMEmail": 100604,
+  "POCEmail": 99934,
+  "Location": 99935,
+  "LocationHead": 99918,
+  "RegionID": 99922,
+  "BranchID": 99917,
+  "ClientID": 99917,
+  "BranchName": 99917,
+  "BranchCode": 99917,
+  "Address": 99917,
+  "Zone": 99917
+ },
+ "topClients": [
+  [
+   "",
+   99917
+  ],
+  [
+   "CLI-00024",
+   784
+  ],
+  [
+   "CLI-00007",
+   209
+  ],
+  [
+   "CLI-00012",
+   208
+  ],
+  [
+   "CLI-00011",
+   105
+  ],
+  [
+   "CLI-00015",
+   46
+  ],
+  [
+   "CLI-00013",
+   29
+  ],
+  [
+   "CLI-00010",
+   23
+  ],
+  [
+   "CLI-00014",
+   4
+  ],
+  [
+   "CLI-00021",
+   2
+  ],
+  [
+   "CLI-00017",
+   1
+  ],
+  [
+   "CLI-00018",
+   1
+  ]
+ ],
+ "zoneSample": [
+  "AHMEDABAD",
+  "Andaman and Nicobar Island",
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "AURANGABAD",
+  "Bhavnagar",
+  "Bihar",
+  "Chandigarh",
+  "Chhattisgarh",
+  "Dadra and Nagar Haveli",
+  "Daman and Diu",
+  "Delhi",
+  "East",
+  "Goa",
+  "GOA",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "JALGAON",
+  "Jammu and Kashmir",
+  "Jharkhand",
+  "Karnataka",
+  "MUMBAI",
+  "North"
+ ]
+}

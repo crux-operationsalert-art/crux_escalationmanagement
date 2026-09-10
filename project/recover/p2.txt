@@ -1,0 +1,155 @@
+
+  // Self-service sign-up. The joiner owns their own record from the first
+  // minute; nothing here is typed on their behalf. Everything below the
+  // undertaking is somebody else's step, and the joiner is told whose.
+  signupVals(){
+    const S = this.state, set = o => this.setState(o);
+    if (S.auth !== 'signup') return { isSignup:false };
+    const kind = S.suKind === 'partner' ? 'partner' : 'staff';
+    const step = S.suStep || 1;
+    const ack = S.suAck || {};
+    const docs = kind === 'partner'
+      ? ['Partnership agreement', 'Scope of work and service levels', 'Commercial and payout terms',
+         'Code of conduct', 'Data confidentiality and privacy policy', 'Anti-fraud and integrity policy']
+      : ['Appointment letter', 'KPI and KRA for my chair', 'HR policy handbook',
+         'Standard operating procedures for my role', 'Code of conduct', 'Data confidentiality and privacy policy'];
+    const allAck = docs.every(d => ack[d]);
+
+    const fields = {
+      1:[['Full name, as on your photo ID', 'text'], ['Mobile number', 'tel'],
+         ['Personal e-mail', 'email'], ['Date of birth', 'date']],
+      2:kind === 'partner'
+        ? [['Firm or company name', 'text'], ['Registered address', 'text'], ['GST number', 'text'],
+           ['PAN of the firm', 'text'], ['Bank account for payouts', 'text'], ['Cancelled cheque', 'file']]
+        : [['Permanent address', 'text'], ['Current address', 'text'], ['Emergency contact name and number', 'text'],
+           ['Bank account for salary', 'text'], ['PAN', 'text'], ['Photo ID', 'file']]
+    };
+
+    const next = () => set({ suStep:Math.min(4, step + 1), suErr:'' });
+    const back = () => set({ suStep:Math.max(1, step - 1), suErr:'' });
+
+    return {
+      isSignup:true,
+      suKindStaff:kind === 'staff', suKindPartner:kind === 'partner',
+      suKinds:[{ label:'I am joining as an employee', on:kind === 'staff', pick:() => set({ suKind:'staff', suStep:1, suAck:{} }) },
+               { label:'I am joining as a franchise partner', on:kind === 'partner', pick:() => set({ suKind:'partner', suStep:1, suAck:{} }) }],
+      suStepNo:String(step),
+      suSteps:[{ n:'1', t:'Who you are' }, { n:'2', t:kind === 'partner' ? 'Your firm' : 'Your details' },
+               { n:'3', t:'What you are accepting' }, { n:'4', t:'With HR' }]
+        .map(x => ({ ...x, on:+x.n === step, done:+x.n < step })),
+      suOn1:step === 1, suOn2:step === 2, suOn3:step === 3, suOn4:step === 4,
+      suTitle:{ 1:'Start your own record', 2:kind === 'partner' ? 'Your firm and its bank details' : 'Your details',
+                3:'Read, understood and accepted', 4:'Sent to HR' }[step],
+      suLead:{ 1:'You fill this in yourself, not HR. Your mobile number is verified by a one-time code, and from then on every action in the tool is recorded against you rather than a shared branch inbox.',
+               2:kind === 'partner' ? 'Held for the agreement and for payouts. Legal and compliance will check these against the signed agreement before your account opens.'
+                                    : 'Held once, used everywhere. Payroll stays in the payroll system; this is the record of who you are, not what you are paid.',
+               3:'Tick each document only after you have opened and read it. This is the undertaking of record, so it is stored against you with a timestamp — not in a mailbox.',
+               4:'Nothing further is yours to do. Below is exactly who owns each remaining step, so you can see where your joining is sitting.' }[step],
+      suFields:(fields[step] || []).map(([label, type]) => ({ label, type,
+        hint:type === 'file' ? 'A photograph of the document is fine' :
+             label === 'Mobile number' ? 'We send a one-time code to this number' : '' })),
+      suDocs:docs.map(d => ({ label:d, on:!!ack[d],
+        toggle:() => this.setState(st => ({ suErr:'', suAck:{ ...(st.suAck || {}), [d]:!(st.suAck || {})[d] } })) })),
+      suAllAck:allAck,
+      suAckNote:allAck ? 'All six accepted. Your undertaking will be stored with today\u2019s date and your mobile-verified identity.'
+                       : 'Every document has to be accepted before this can be submitted. You cannot be signed up into an undertaking you have not read.',
+      suHandover:kind === 'partner'
+        ? [{ who:'Human Resources', what:'Verify your identity and the firm\u2019s documents, then approve the onboarding.' },
+           { who:'Legal and compliance', what:'Upload the signed partnership agreement, the security cheque and the commercial annexure. Your account cannot open without this.' },
+           { who:'Your Crux manager', what:'Confirm your territory, the branches you will cover and the KPIs you will be measured on.' },
+           { who:'All three together', what:'This onboarding is jointly owned. If any one of the three has not finished by the due date, an escalation is raised against all three — not against you.' }]
+        : [{ who:'Human Resources', what:'Verify your documents and reference check, then approve the joining. Nothing below can be filled in until they have.' },
+           { who:'Human Resources', what:'Upload your appointment letter and resume, record grade and salary with any PLB or incentive, and attach your signed KPI, KRA, policy and SOP documents.' },
+           { who:'Human Resources', what:'Set your probation end date, the review date and what is expected of you — taken from the operating structure for your chair.' },
+           { who:'Human Resources', what:'Place you in the operating structure: chair, designation, manager and team. From that moment the tool knows who you report to.' },
+           { who:'Your manager', what:'Review and accept your chair, your KPIs and your targets, then take you into the team. They may adjust the KPIs before accepting.' }],
+      suSubmit:() => allAck
+        ? set({ suStep:4, suErr:'', toast:'Sign-up submitted. HR has it now, with your undertaking timestamped and stored against you. You will be told when each step below is done.' })
+        : set({ suErr:'Still to accept: ' + docs.filter(d => !ack[d]).join(', ') + '. This is the undertaking of record, so it cannot be submitted until you have read and accepted each one.' }),
+      suNext:next, suBack:back,
+      suNextLabel:step === 3 ? 'Submit to HR' : 'Continue',
+      suCanGo:step === 3 ? allAck : true,
+      suBlocked:step === 3 && !allAck,
+      suErrText:S.suErr || '',
+      suHasErr:!!S.suErr,
+      suSubmitLabel:allAck ? 'Submit to HR' : 'Submit to HR \u00b7 ' + docs.filter(d => !ack[d]).length + ' still to accept',
+      suSubmitBg:allAck ? '#3a5a80' : '#fff',
+      suSubmitInk:allAck ? '#fff' : '#5c6470',
+      suSubmitEdge:allAck ? '#3a5a80' : '#8a8680',
+      suShowBack:step > 1,
+      suDone:() => set({ auth:'signin', suStep:1, suAck:{}, toast:'Your sign-up is with HR. You will get an e-mail when your account is opened.' })
+    };
+  }
+
+  // Coverage master. Admin and MIS both maintain it; everyone else reads it.
+  coverageVals(){
+    const S = this.state, me = this.me();
+    if (S.route !== 'coverage') return { isCoverage:false };
+    const t = m => () => this.setState({ toast:m, form:'' });
+    const canEdit = me.level === 'admin' || me.dept === 'MIS' || me.dept === 'Management';
+    const today = '2026-09-08';
+    const live = h => h.from <= today && (!h.to || h.to >= today);
+    const rowsAll = Component.HANDLERS.slice().sort((a, b) =>
+      a.loc.localeCompare(b.loc) || a.client.localeCompare(b.client) || a.from.localeCompare(b.from));
+
+    // Two handlers on the same location, client and product with overlapping
+    // dates is a genuine conflict — the tool names it rather than picking one.
+    const key = h => h.loc + '|' + h.client + '|' + h.product;
+    const seen = {};
+    rowsAll.forEach(h => { if (live(h)) (seen[key(h)] = seen[key(h)] || []).push(h.who); });
+
+    const byLoc = {};
+    rowsAll.forEach(h => { (byLoc[h.loc] = byLoc[h.loc] || []).push(h); });
+
+    const locs = Object.keys(byLoc).sort().map(L => {
+      const hs = byLoc[L];
+      const now = hs.filter(live);
+      const future = hs.filter(h => h.from > today);
+      const people = [...new Set(now.map(h => h.who))];
+      const clients = [...new Set(now.map(h => h.client))];
+      return {
+        loc:L,
+        summary:people.length + (people.length === 1 ? ' handler' : ' handlers') + ' \u00b7 ' +
+                clients.length + (clients.length === 1 ? ' client' : ' clients') +
+                (future.length ? ' \u00b7 ' + future.length + ' dated ahead' : ''),
+        multi:people.length > 1,
+        multiNote:people.length > 1
+          ? 'Split ownership: ' + people.join(', ') + '. Each holds a different client or product here, which is why the location has more than one handler.'
+          : '',
+        rows:hs.map(h => ({
+          id:h.id, client:h.client, product:h.product, who:h.who, chair:h.chair,
+          from:h.from, to:h.to || 'open-ended',
+          future:h.from > today,
+          stateLabel:h.from > today ? 'Starts ' + h.from : (h.to && h.to < today ? 'Ended ' + h.to : 'Live'),
+          stateTint:h.from > today ? '#7a5f18' : (h.to && h.to < today ? '#5c6470' : '#2f7355'),
+          conflict:(seen[key(h)] || []).length > 1 && live(h),
+          conflictNote:(seen[key(h)] || []).length > 1 && live(h)
+            ? 'Also held by ' + (seen[key(h)] || []).filter(w => w !== h.who).join(', ') + ' on the same client and product. One of the two needs an end date.'
+            : '',
+          edit:canEdit ? () => this.setState({ form:'handler', toast:'' })
+                       : t('Only an administrator or MIS may change coverage. Yours is read-only here, and it is what the MIS uses to decide whose numbers roll up where.')
+        }))
+      };
+    });
+
+    return {
+      isCoverage:true, covCanEdit:canEdit,
+      covNote:canEdit
+        ? 'Ownership is held at location \u00d7 client \u00d7 product, with an effective-from date. A handover is a new row dated ahead — never an edit that erases who held it before, because last month\u2019s numbers still belong to them.'
+        : 'Read-only. This is what the MIS uses to decide whose numbers roll up where; an administrator or MIS maintains it.',
+      covLocs:locs,
+      covConflicts:Object.keys(seen).filter(k => seen[k].length > 1).length,
+      covConflictNote:Object.keys(seen).filter(k => seen[k].length > 1).length === 0
+        ? 'No overlapping ownership today.'
+        : Object.keys(seen).filter(k => seen[k].length > 1).length + ' location-client-product combination(s) have two live handlers. Until one is ended, the MIS counts the business once but shows both names.',
+      covAdd:canEdit ? () => this.setState({ form:'handler', toast:'' })
+                     : t('Only an administrator or MIS may add coverage.'),
+      covGeo:Component.GEO.map(g => ({ grp:g.grp, zone:g.zone, locs:g.locs.join(', '),
+        count:g.locs.length + (g.locs.length === 1 ? ' location' : ' locations'),
+        edit:canEdit ? () => this.setState({ form:'geo', toast:'' })
+                     : t('Only an administrator or MIS may change the group and zone structure.') })),
+      covGeoAdd:canEdit ? () => this.setState({ form:'geo', toast:'' })
+                        : t('Only an administrator or MIS may add a zone.'),
+      covGeoNote:'Groups and zones are master data. Renaming a zone does not rewrite last month\u2019s reports — historical rows keep the zone they were reported under.'
+    };
+  }
