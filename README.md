@@ -8,6 +8,13 @@ currently runs on Google Apps Script over a 26-tab spreadsheet (1,413 branches,
 
 **https://oxpwqfbtbxlvuqpztbwg.supabase.co/functions/v1/crux**
 
+A signpost page for sharing lives in `docs/` and is served by GitHub Pages at
+**https://crux-operationsalert-art.github.io/crux_escalationmanagement/** once
+Pages is switched on: *Settings → Pages → Deploy from a branch → `main` →
+`/docs` → Save*. That page holds no data; it explains what Crux is and points
+at the address above, which is where sign-in happens and where the OAuth client
+already trusts the origin.
+
 Sign in with your Crux Google account, or with a password. Nine screens:
 Today, Escalations, OGL, Matrix, Performance, People, Penalties, and — for
 administrators — Data setup and Mail.
@@ -343,7 +350,32 @@ comfortably.
 Authenticating the domain (SPF, DKIM) later improves deliverability and raises
 the limits. It is worth doing, and it is not a blocker for going live.
 
-### Setting up a provider
+### Setting up a provider — Brevo, start to finish
+
+Nine steps, none of which needs an administrator of anything:
+
+1. Go to **brevo.com** and create a free account with your work address.
+2. Confirm the address from the mail they send you, and finish their short
+   sign-up questionnaire.
+3. In the left menu, **Senders, Domains & Dedicated IPs** → **Senders** →
+   **Add a sender**.
+4. Put in the name you want messages to come from (*Crux*) and the address you
+   want them to come from. Save.
+5. Brevo mails a confirmation link to that address. **Open your own inbox and
+   click it.** That address can now send. No DNS, no domain, no admin.
+6. Back in Brevo: click your account name, top right → **SMTP & API** →
+   **API Keys** tab → **Generate a new API key**. Name it *Crux*.
+7. **Copy it now.** Brevo shows an API key exactly once.
+8. In Crux → **Mail**: provider *Brevo*, from address = the one you verified in
+   step 5, from name *Crux*, paste the key, **Save**.
+9. **Send me a test.** It queues a message and drains the queue on the spot, so
+   what comes back is the real answer and not a promise.
+
+The free tier is 300 messages a day, which is more than escalation traffic
+needs. Authenticating a whole domain later lifts that and improves
+deliverability; it is worth doing and it is not a blocker.
+
+### Any of the others
 
 1. Open **Mail**, choose the provider, fill in the from address and name.
 2. Paste the API key and **Save**. The key goes into the database and is read
@@ -383,9 +415,18 @@ burns an attempt before anybody has set one up.
 
 ## Holidays
 
-26 days for 2026 and 2027. The three gazetted national days — Republic Day,
-Independence Day, Gandhi Jayanti — are **confirmed**. Everything else, Diwali
-and Id included, is loaded **unconfirmed** on its expected date.
+49 days across 2026 and 2027, loaded through the uploader like any other file.
+
+**Eighteen are confirmed** and stop the clock: the three gazetted national days
+— Republic Day, Independence Day, Gandhi Jayanti — plus the other fixed dates,
+New Year, Makar Sankranti, Good Friday, Ambedkar Jayanti, Maharashtra Day and
+Christmas. A fixed date does not move, so leaving it unconfirmed would mean the
+clock running through Christmas Day.
+
+**Thirty-one are provisional** — every one of them genuinely moves with a moon
+sighting: Diwali, Holi, both Ids, Muharram, Janmashtami, Ganesh Chaturthi,
+Dussehra and the rest. They are loaded on their expected date, and the 2027
+dates in particular are an estimate rather than the gazette.
 
 Only a confirmed holiday stops the working-hours clock. So a festival whose
 date moves with a moon sighting shows on the calendar, and shortens no
@@ -425,6 +466,7 @@ project/build/api/                  Express API, no ORM
 project/build/migration/            Sheets → Postgres migration SQL
 project/*.dc.html                   design prototypes
 project/*.md                        audit log, runbook, go-live plan
+docs/index.html                     the signpost page, served by GitHub Pages
 chats/                              the design conversations behind it
 ```
 
