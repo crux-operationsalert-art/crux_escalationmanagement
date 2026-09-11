@@ -8,9 +8,9 @@ currently runs on Google Apps Script over a 26-tab spreadsheet (1,413 branches,
 
 **https://oxpwqfbtbxlvuqpztbwg.supabase.co/functions/v1/crux**
 
-Sign in with your Crux Google account, or with a password. Eight screens:
-Today, Escalations, OGL, Matrix, Performance, People, Penalties, and Data setup
-for administrators.
+Sign in with your Crux Google account, or with a password. Nine screens:
+Today, Escalations, OGL, Matrix, Performance, People, Penalties, and — for
+administrators — Data setup and Mail.
 
 It runs as Supabase Edge Functions, inside the same network as the database, so
 there is no server to keep alive. Sign-in happens in the function itself; the
@@ -19,6 +19,9 @@ one IP in fifteen minutes locks that door for fifteen minutes.
 
 The page itself lives in the `app_page` table, not in the function, so changing
 a screen is an `UPDATE` rather than a redeploy.
+`project/build/supabase/functions/crux/app.html` is the readable source of that
+page; the installed copy is the same program with its stylesheet comments and
+indentation stripped.
 
 ### Signing in with Google
 
@@ -66,10 +69,12 @@ all.
 | Dummy dataset — 17 people, 5 clients, 16 branches | Loaded through the uploader | **Yes** |
 | Indian holiday calendar 2026–27 | 26 days, 6 confirmed | **Yes** |
 | The rest of the API — cases, matrix, PMS, people, penalties | Edge function `api` | **Yes** |
-| Front end — eight screens | Edge function `crux` | **Yes** |
-| Scheduled jobs — auto-close, SLA sweep | `pg_cron`, every 15 min | **Yes** |
+| Front end — nine screens | Edge function `crux` | **Yes** |
+| OGL engine — pause, auto-accept, escalation, strikes | Database functions | **Yes** |
+| Scheduled jobs — auto-close, SLA, sub-TAT, escalation, strikes | `pg_cron`, every 15 min | **Yes** |
 | Google sign-in | Configured | **Yes** |
-| Sending e-mail | — | No — needs mail credentials |
+| Mail — outbox, sender, four providers + Gmail | Edge function `mail`, every minute | **Yes** |
+| A mail provider chosen and its key pasted in | Data setup → Mail | Yours to do |
 
 Nothing needs a host any more. The Express app in `project/build/api` is still
 the reference implementation, but its route files now run inside Supabase as
@@ -137,10 +142,10 @@ export DATABASE_URL='postgresql://postgres.oxpwqfbtbxlvuqpztbwg:<DB-PASSWORD>@aw
 npm start          # :3000, or $PORT
 ```
 
-`npm run worker` runs the outbox. Scheduled DB work no longer needs it:
-`pg_cron` calls `crux_tick()` every fifteen minutes for auto-close and the SLA
-sweep. Sending e-mail is the one thing still without a home — it needs mail
-credentials, not a machine.
+`npm run worker` is no longer needed for anything. `pg_cron` calls
+`crux_tick()` every fifteen minutes for auto-close, the SLA sweep, sub-TATs,
+escalation and strikes, and `crux_mail_tick()` every minute to drain the
+outbox through the `mail` function. Nothing here needs a machine.
 
 ---
 
@@ -184,9 +189,95 @@ The clock counts business minutes against a working window, skipping weekends
 and **confirmed** holidays only. A naive timestamp in an upload is read as
 Asia/Kolkata, not UTC — a time typed in a Pune office is a Pune time.
 
-Built but not yet driven by any endpoint: the conditional-pause arithmetic on
-RFIs, delay auto-accept, the escalation sweep, and strike generation. Their
-tables exist; the logic does not, and the module does not pretend otherwise.
+### The engine
+
+Four things that used to be tables with nothing behind them now work, and each
+one is visible on the assignment's own screen.
+
+**The conditional pause.** A request for information stops the clock only when
+all three hold: less than half the TAT has gone, no pause has been granted on
+this cycle, and the reason is one that may stop a clock. The arithmetic is run
+**before** the assignee submits and shown in full — each condition, pass or
+fail, with the number behind it. Credit is capped at 120 business minutes; a
+pause that lasts longer than that costs the difference. A refusal names the
+test that failed rather than saying no.
+
+**Delay auto-accept.** The assignor has an hour of business time to review a
+reported delay. If nobody does, it accepts itself — and the time that follows
+is recorded as `PENDING_REVIEW`: it counts against the deadline, because it
+passed, and against nobody's record until a person says whose it was. It lands
+in **Confirm attribution** on the OGL screen and the assignor's manager is
+told. **One auto-accept per assignment.** A second unreviewed delay escalates
+instead of self-approving, because otherwise silence becomes a renewable
+extension.
+
+**Escalation.** One adapter, `raise_escalation`, called from one place. It
+resolves a recipient by client + location + branch, then client + location,
+then location, then by walking up the line from the assignee. It never drops a
+delivery because the matrix is incomplete — and it never lets the gap stay
+quiet either: the walk is recorded on the row and the exact missing key is
+mailed to the administrators. The idempotency key is the hash of assignment,
+cycle, level and trigger, so a sweep that runs twice raises one escalation.
+
+**Strikes.** Generated when three things hold together: the instance is
+breached past its grace, the assignee's *own* attributed minutes exceed the
+whole TAT, and no stretch of time on that cycle is still waiting to be
+attributed. A strike is waived, never deleted; the row stays visible with the
+reason and who waived it.
+
+All four run inside `crux_tick()`, every fifteen minutes.
+
+## Mail
+
+**Data setup → Mail.** The outbox has existed since the first schema and until
+now had no way out of the building. It has one.
+
+You do not administer the Google Workspace this sits in, and you do not need
+to. Two of the three routes need nobody's permission but yours:
+
+| Route | What it needs |
+|---|---|
+| **A transactional provider** — Resend, Brevo, SendGrid, Postmark | An account, and two or three DNS records on a domain you control: SPF, DKIM, usually DMARC. No Workspace console. This is the route that scales and the one whose failures you can read. |
+| **Gmail, your own mailbox** | The OAuth client you already own, with the `gmail.send` scope added and this tool's callback listed as an authorised redirect. You consent for your own mailbox. Google's own sending limits apply. |
+| **SMTP, or a Gmail app password** | **Not possible here.** This runs as an edge function, which may make an HTTPS request and nothing else. There is no socket to port 587 from inside it, so an app password has nowhere to go. |
+
+### Setting up a provider
+
+1. Open **Mail**, choose the provider, fill in the from address and name.
+2. Paste the API key and **Save**. The key goes into the database and is read
+   only by the sender; nothing in the tool will show it to you again.
+3. **Send me a test.** It queues a message and drains the queue immediately, so
+   the answer you get is the real one, not a promise.
+
+### Setting up Gmail instead
+
+1. In your Google Cloud project, on the OAuth client you already have: add the
+   scope `https://www.googleapis.com/auth/gmail.send`, and add
+   `https://oxpwqfbtbxlvuqpztbwg.supabase.co/functions/v1/crux/api/mail/oauth/callback`
+   to the authorised redirect URIs.
+2. In **Mail**, choose *Gmail (your own mailbox)*, paste the client id and
+   client secret, **Save**.
+3. **Connect Gmail**, consent in the tab that opens, come back, send a test.
+
+If Google says it returned no refresh token, that mailbox has consented before:
+revoke the grant at myaccount.google.com/permissions and connect again.
+
+### How it behaves
+
+`pg_cron` wakes the sender every minute, and only when something is waiting.
+Each message carries an idempotency key derived from the event, the recipient
+and the day — **not** supplied by the caller — so the same notification asked
+for twice is one message. A failure defers with a widening backoff and gives up
+after six attempts, with the provider's own error text on the row. A daily cap
+holds the whole queue rather than letting a loop empty the account.
+
+An address ending `.invalid`, `.test` or `.example` is skipped, not attempted.
+That is why the demo data queues nothing: every seeded address is
+`@example.invalid` by design.
+
+With no provider configured the sender does not touch the queue at all — it
+reports `no_transport_configured` and leaves every message intact, so nothing
+burns an attempt before anybody has set one up.
 
 ## Holidays
 
@@ -203,10 +294,15 @@ deadline, until somebody fixes it.
 ## Before go-live
 
 1. ~~Configure the Google Workspace OAuth client.~~ Done.
-2. Load people, chairs and coverage by bulk upload, in load order.
-3. Load the full holiday calendar and the rate card.
-4. `sample_purge()`, and clear the sample administrator's password.
-5. Get mail credentials so the outbox can drain.
+2. ~~Close the doors the linter found open.~~ Done — patch v19.
+3. **Choose a mail provider and paste its key** (Data setup → Mail), then send
+   yourself a test. Until this is done the tool works and tells nobody.
+4. Load people, chairs and coverage by bulk upload, in load order.
+5. Load the full holiday calendar and the rate card.
+6. Fill in `ogl_escalation_matrix`. It is not required — escalation falls back
+   to the reporting line and says so — but every fallback raises a
+   configuration alert, and you will get tired of them.
+7. `sample_purge()`, and clear the sample administrator's password.
 
 ---
 
@@ -214,9 +310,12 @@ deadline, until somebody fixes it.
 
 ```
 project/build/schema.sql            base schema — 103 tables
-project/build/schema-patch-v3..v16  applied in order after it
+project/build/schema-patch-v3..v19  applied in order after it
 project/build/supabase/             RLS, auth gate, storage buckets
-project/build/supabase/functions/   the two live edge functions
+project/build/supabase/functions/   the three live edge functions
+  crux/   the front door: the page, sign-in, upload, OGL, mail settings
+  api/    the ported Express routes
+  mail/   the sender
 project/build/api/                  Express API, no ORM
 project/build/migration/            Sheets → Postgres migration SQL
 project/*.dc.html                   design prototypes

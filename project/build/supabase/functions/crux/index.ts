@@ -1,16 +1,13 @@
 // =====================================================================
-// Crux — the hosted bulk upload service.
+// Crux — the front door.
 //
-// The Express API in build/api is the real one; it needs a machine. This
-// is the same lifecycle with no machine to look after: it runs inside
-// Supabase, next to the database, and every step it takes is one of the
-// upload_* functions from schema-patch-v10.sql. It parses CSV, holds a
-// session, and checks that the person is an administrator. It decides
-// nothing else — validation and the all-or-nothing rule stay in the
-// database, where they hold no matter who calls.
+// Serves the application and handles sign-in, bulk upload, the OGL
+// workflow, mail settings and the data reset. The page itself lives in
+// app_page, not in this file, so changing a screen is an UPDATE rather
+// than a redeploy.
 //
 // JWT verification is off at the gateway because this function does its
-// own: the browser has no Supabase key, and the service-role key never
+// own: the browser holds no Supabase key, and the service-role key never
 // leaves this process.
 // =====================================================================
 import { createHash, randomBytes, scryptSync } from "node:crypto";
@@ -48,7 +45,6 @@ const json = (body: unknown, status = 200) =>
     headers: { "content-type": "application/json", ...CORS },
   });
 
-// ------------------------------------------------------------- sessions
 async function personFor(req: Request) {
   const token = req.headers.get("x-crux-token");
   if (!token) return null;
@@ -60,10 +56,49 @@ function clientIp(req: Request) {
   return f ? f.split(",")[0].trim() : null;
 }
 
+// The address Google must redirect back to. It is derived from the request
+// rather than configured, so it is right in whatever environment this runs
+// in - and it is the exact string that has to be listed as an authorised
+// redirect URI on the OAuth client.
+function redirectUri(url: URL) {
+  return url.origin + "/functions/v1/crux/api/mail/oauth/callback";
+}
+
+// A page for a browser that arrived by redirect and has no application
+// around it. Plain, theme-aware, and it says what happened.
+const notice = (msg: string) =>
+  new Response(
+    `<!doctype html><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Crux · Mail</title>
+<style>
+:root{color-scheme:light dark}
+body{margin:0;display:grid;place-items:center;min-height:100vh;padding:24px;
+  font:16px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.box{max-width:520px;border:1px solid #8884;border-radius:12px;padding:24px}
+h1{font-size:17px;margin:0 0 10px}
+p{margin:0;opacity:.85}
+</style>
+<div class="box"><h1>Crux · Mail</h1><p>${
+      msg.replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    }</p></div>`,
+    { status: 200, headers: { "content-type": "text/html; charset=utf-8", ...CORS } },
+  );
+
+// Drive a drain by hand. The scheduler does this every minute; an
+// administrator who has just pasted a key should not have to wait for it.
+async function drainNow() {
+  const r = await fetch(SUPABASE_URL.replace("/rest/v1", "") +
+      "/functions/v1/mail?limit=25", {
+    method: "POST",
+    headers: { authorization: "Bearer " + SERVICE_KEY, apikey: SERVICE_KEY },
+  });
+  const t = await r.text();
+  try { return JSON.parse(t); } catch { return { error: "sender_unreachable", raw: t.slice(0, 300) }; }
+}
+
 // ------------------------------------------------------------------ CSV
 // Minimal RFC4180: quoted fields, embedded commas, doubled quotes, CRLF.
-// Same parser as the Express route, deliberately — a file must behave the
-// same way whichever door it comes through.
 function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
   let row: string[] = [], field = "", quoted = false;
@@ -97,22 +132,27 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
   const url = new URL(req.url);
-  // served at /functions/v1/crux/... — everything before the name is gateway
   const path = url.pathname.replace(/^.*?\/crux/, "") || "/";
 
   try {
     if (path === "/" || path === "") {
-      return new Response(PAGE, {
+      const html = await rpc("app_html", { p_slug: "app" });
+      return new Response(html ?? "<h1>No page installed.</h1>", {
         headers: { "content-type": "text/html; charset=utf-8", ...CORS },
       });
     }
+
+    // The client id is not a secret — it is in the page source of every site
+    // that uses Google sign-in. Serving it unauthenticated is what lets the
+    // sign-in button render before anyone has signed in.
+    if (path === "/api/config") return json(await rpc("app_config", {}));
 
     if (path === "/api/health") {
       const kinds = await rpc("upload_kinds", {});
       return json({ ok: true, kinds: kinds.length, at: new Date().toISOString() });
     }
 
-    // ------------------------------------------------------------ login
+    // ------------------------------------------------------------ sign in
     if (path === "/api/login" && req.method === "POST") {
       const { email, password } = await req.json();
       if (!email || !password) return json({ error: "missing" }, 400);
@@ -125,12 +165,48 @@ Deno.serve(async (req: Request) => {
 
       const token = randomBytes(32).toString("base64url");
       const out = await rpc("auth_login", {
-        p_email: String(email),
-        p_hash: hash,
-        p_token_hash: sha(token),
-        p_ip: clientIp(req),
+        p_email: String(email), p_hash: hash,
+        p_token_hash: sha(token), p_ip: clientIp(req),
       });
       if (out && out.error) return json(out, out.error === "locked_out" ? 429 : 403);
+      return json({ token, person: out });
+    }
+
+    // Google sign-in. The credential is an ID token Google signed; it is
+    // verified BY Google rather than parsed here, because a token this
+    // process merely decodes is a token anyone can forge.
+    if (path === "/api/google" && req.method === "POST") {
+      const { credential } = await req.json();
+      if (!credential) return json({ error: "missing_credential" }, 400);
+
+      const cfg = await rpc("app_config", {});
+      const r = await fetch("https://oauth2.googleapis.com/tokeninfo?id_token=" +
+        encodeURIComponent(String(credential)));
+      if (!r.ok) {
+        return json({ error: "bad_token",
+          reason: "Google did not recognise that sign-in. Try again." }, 403);
+      }
+      const t = await r.json();
+
+      if (t.aud !== cfg.googleClientId) {
+        return json({ error: "wrong_audience",
+          reason: "That sign-in was issued for a different application." }, 403);
+      }
+      if (t.email_verified !== "true" && t.email_verified !== true) {
+        return json({ error: "email_unverified",
+          reason: "Google has not verified that address." }, 403);
+      }
+      if (cfg.workspaceDomain && t.hd !== cfg.workspaceDomain) {
+        return json({ error: "wrong_domain",
+          reason: "Sign in with your " + cfg.workspaceDomain + " account.",
+          hint: "A personal address cannot hold a chair." }, 403);
+      }
+
+      const token = randomBytes(32).toString("base64url");
+      const out = await rpc("auth_google", {
+        p_email: String(t.email), p_token_hash: sha(token), p_ip: clientIp(req),
+      });
+      if (out && out.error) return json(out, 403);
       return json({ token, person: out });
     }
 
@@ -140,6 +216,54 @@ Deno.serve(async (req: Request) => {
       return json({ ok: true });
     }
 
+    // The callback is unauthenticated by necessity - Google sends the browser
+    // here. The nonce is what proves who asked, and it is spent on arrival.
+    if (path === "/api/mail/oauth/callback") {
+      const code = url.searchParams.get("code");
+      const state = url.searchParams.get("state") || "";
+      const err = url.searchParams.get("error");
+      if (err) return notice("Google returned: " + err + ". Nothing was changed.");
+
+      const actor = await rpc("mail_oauth_claim", { p_nonce: state });
+      if (!actor) {
+        return notice("That consent link had expired, or had already been used. " +
+                      "Start again from the Mail screen.");
+      }
+      if (!code) return notice("Google sent no code back. Nothing was changed.");
+
+      const cfg = await rpc("mail_settings", {});
+      const body = new URLSearchParams({
+        code: String(code),
+        client_id: cfg.mail_oauth_client_id || cfg.google_client_id,
+        client_secret: cfg.mail_oauth_client_secret,
+        redirect_uri: redirectUri(url),
+        grant_type: "authorization_code",
+      });
+      const tr = await fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: { "content-type": "application/x-www-form-urlencoded" },
+        body,
+      });
+      const tt = await tr.text();
+      if (!tr.ok) return notice("Google refused the exchange: " + tt.slice(0, 300));
+      const tok = JSON.parse(tt);
+
+      // whose mailbox actually consented - not whose account asked
+      let sendsAs = "";
+      try {
+        const who = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+          headers: { authorization: "Bearer " + tok.access_token } });
+        if (who.ok) sendsAs = (await who.json()).email ?? "";
+      } catch { /* the address is a convenience; the grant is the point */ }
+
+      const saved = await rpc("mail_oauth_save", {
+        p_actor: actor, p_refresh_token: tok.refresh_token ?? "", p_from: sendsAs });
+      if (saved && saved.error) return notice(saved.reason ?? saved.error);
+
+      return notice("Gmail is connected" + (sendsAs ? " as " + sendsAs : "") +
+                    ". You can close this tab and send a test message from the Mail screen.");
+    }
+
     // --------------------------------------------- everything below: auth
     const person = await personFor(req);
     if (!person) {
@@ -147,10 +271,98 @@ Deno.serve(async (req: Request) => {
     }
 
     if (path === "/api/me") return json(person);
-
-    // Templates are readable by anyone signed in — knowing the column names
-    // is how a file gets prepared before the administrator loads it.
     if (path === "/api/kinds") return json({ kinds: await rpc("upload_kinds", {}) });
+    if (path === "/api/refs") return json(await rpc("app_refs", { p_person: person.id }));
+    if (path === "/api/ogl") {
+      return json({ assignments: await rpc("ogl_list", { p_person: person.id }) });
+    }
+
+    // ------------------------------------------------------------ OGL
+    // Scoping lives in the database: ogl_detail refuses an assignment that
+    // belongs to another chair and says which relationship was missing.
+    if (path === "/api/ogl/reasons") {
+      return json({ reasons: await rpc("ogl_reasons", {
+        p_context: url.searchParams.get("context") || null }) });
+    }
+
+    if (path === "/api/ogl/detail") {
+      const id = url.searchParams.get("id");
+      if (!id) return json({ error: "missing_id" }, 400);
+      const out = await rpc("ogl_detail", { p_assignment: id, p_person: person.id });
+      if (out && out.error) return json(out, out.error === "not_yours" ? 403 : 404);
+      return json(out);
+    }
+
+    if (path === "/api/ogl/actions") {
+      const id = url.searchParams.get("id");
+      if (!id) return json({ error: "missing_id" }, 400);
+      return json(await rpc("ogl_actions", { p_assignment: id, p_person: person.id }));
+    }
+
+    if (path === "/api/ogl/tray") {
+      return json({ segments: await rpc("ogl_attribution_tray", { p_person: person.id }) });
+    }
+
+    if (path === "/api/ogl/strikes") {
+      return json({ strikes: await rpc("ogl_strikes", {
+        p_person: person.id, p_of: url.searchParams.get("of") || null }) });
+    }
+
+    // The pause arithmetic, asked for before anything is submitted. The
+    // assignee sees which of the three conditions holds and which does not,
+    // and then decides. Showing it afterwards would be showing a verdict.
+    if (path === "/api/ogl/pause-preview" && req.method === "POST") {
+      const { id, reason } = await req.json();
+      if (!id || !reason) return json({ error: "missing" }, 400);
+      return json(await rpc("ogl_pause_preview", { p_assignment: id, p_reason: reason }));
+    }
+
+    if (path === "/api/ogl/raise" && req.method === "POST") {
+      const b = await req.json();
+      const out = await rpc("ogl_request_raise", {
+        p_assignment: b.id, p_type: b.type, p_actor: person.id,
+        p_reason: b.reason, p_remarks: b.remarks ?? null,
+        p_delay_category: b.category ?? null,
+        p_expected_completion: b.expected ?? null,
+      });
+      if (out && out.error) return json(out, 409);
+      return json(out, 201);
+    }
+
+    if (path === "/api/ogl/resolve" && req.method === "POST") {
+      const b = await req.json();
+      const out = await rpc("ogl_request_resolve", {
+        p_request: b.request, p_resolution: b.resolution,
+        p_actor: person.id, p_remarks: b.remarks ?? null, p_system: false,
+      });
+      if (out && out.error) return json(out, 409);
+      return json(out);
+    }
+
+    if (path === "/api/ogl/transition" && req.method === "POST") {
+      const b = await req.json();
+      const out = await rpc("ogl_transition", {
+        p_assignment: b.id, p_to: b.to, p_actor: person.id, p_reason: b.reason ?? null });
+      if (out && out.error) return json(out, 409);
+      return json(out);
+    }
+
+    if (path === "/api/ogl/attribute" && req.method === "POST") {
+      const b = await req.json();
+      const out = await rpc("ogl_attribution_confirm", {
+        p_segment: b.segment, p_reason: b.reason,
+        p_actor: person.id, p_remarks: b.remarks ?? null });
+      if (out && out.error) return json(out, 409);
+      return json(out);
+    }
+
+    if (path === "/api/ogl/strike-waive" && req.method === "POST") {
+      const b = await req.json();
+      const out = await rpc("ogl_strike_waive", {
+        p_strike: b.id, p_actor: person.id, p_reason: b.reason ?? "" });
+      if (out && out.error) return json(out, 403);
+      return json(out);
+    }
 
     if (path === "/api/template") {
       const kind = url.searchParams.get("kind") || "";
@@ -161,8 +373,7 @@ Deno.serve(async (req: Request) => {
       return new Response(csv, {
         headers: {
           "content-type": "text/csv; charset=utf-8",
-          "content-disposition":
-            'attachment; filename="crux-' +
+          "content-disposition": 'attachment; filename="crux-' +
             kind.replace(/\s+/g, "-").toLowerCase() + '-template.csv"',
           ...CORS,
         },
@@ -170,11 +381,82 @@ Deno.serve(async (req: Request) => {
     }
 
     // ---------------------------------------- administrator work from here
-    // Uploads replace masters wholesale and carry personal data.
+    // Uploads replace masters wholesale and carry personal data; mail
+    // settings carry the key that speaks for the whole company.
     if (person.app_role !== "ADMIN") {
       return json({ error: "admin_only", reason: "Loading masters is administrator work." }, 403);
     }
 
+    // ------------------------------------------------------------- mail
+    // The keys go in and never come back out. mail_status answers whether a
+    // secret is set, never what it is, and nothing here returns one.
+    if (path === "/api/mail") return json(await rpc("mail_status", {}));
+
+    if (path === "/api/mail/configure" && req.method === "POST") {
+      const b = await req.json();
+      const out = await rpc("mail_configure", {
+        p_actor: person.id,
+        p_provider: b.provider ?? null,
+        p_from: b.from ?? null,
+        p_from_name: b.fromName ?? null,
+        p_reply_to: b.replyTo ?? null,
+        p_api_key: b.apiKey ?? null,
+        p_cap: b.cap ?? null,
+        p_oauth_client_id: b.oauthClientId ?? null,
+        p_oauth_client_secret: b.oauthClientSecret ?? null,
+      });
+      if (out && out.error) return json(out, 403);
+      return json(out);
+    }
+
+    if (path === "/api/mail/test" && req.method === "POST") {
+      const b = await req.json().catch(() => ({}));
+      const out = await rpc("mail_test", { p_actor: person.id, p_to: b.to ?? null });
+      if (out && out.error) return json(out, 400);
+      // queue it and push it straight out, so the answer is the real answer
+      const drained = await drainNow();
+      return json({ ...out, drain: drained });
+    }
+
+    if (path === "/api/mail/drain" && req.method === "POST") {
+      return json(await drainNow());
+    }
+
+    if (path === "/api/mail/forget" && req.method === "POST") {
+      const out = await rpc("mail_forget_secrets", { p_actor: person.id });
+      if (out && out.error) return json(out, 403);
+      return json(out);
+    }
+
+    // ------------------------------------------- Gmail, without an admin
+    // The consent round trip comes back as a plain redirect with no session
+    // header on it, so the session is not what carries across: a one-time
+    // nonce is, bound to this person and good for ten minutes.
+    if (path === "/api/mail/oauth/start" && req.method === "POST") {
+      const cfg = await rpc("mail_settings", {});
+      const clientId = cfg.mail_oauth_client_id || cfg.google_client_id;
+      if (!clientId || !cfg.mail_oauth_client_secret) {
+        return json({ error: "client_not_set",
+          reason: "Set the OAuth client id and secret first. They are the ones " +
+                  "from your own Google Cloud project - the same client sign-in uses." }, 400);
+      }
+      const st = await rpc("mail_oauth_begin", { p_actor: person.id });
+      if (st && st.error) return json(st, 403);
+
+      const u = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+      u.searchParams.set("client_id", clientId);
+      u.searchParams.set("redirect_uri", redirectUri(url));
+      u.searchParams.set("response_type", "code");
+      u.searchParams.set("scope", "https://www.googleapis.com/auth/gmail.send");
+      // consent + offline is what produces a refresh token at all; without
+      // prompt=consent a mailbox that has agreed once is given none
+      u.searchParams.set("access_type", "offline");
+      u.searchParams.set("prompt", "consent");
+      u.searchParams.set("state", st.nonce);
+      return json({ url: u.toString(), redirectUri: redirectUri(url) });
+    }
+
+    // ------------------------------------------------------------ upload
     if (path === "/api/history") {
       return json({ batches: await rpc("upload_history", { p_limit: 25 }) });
     }
@@ -224,283 +506,23 @@ Deno.serve(async (req: Request) => {
       return json(out);
     }
 
+    // ------------------------------------------------------------- reset
+    // Shown before it is done: the preview is the whole point, because this
+    // is the one action in the tool that cannot be undone.
+    if (path === "/api/reset/preview") {
+      return json({ tables: await rpc("data_reset_preview", {}) });
+    }
+
+    if (path === "/api/reset" && req.method === "POST") {
+      const { confirm } = await req.json();
+      const out = await rpc("data_reset", { p_actor: person.id, p_confirm: String(confirm ?? "") });
+      if (out && out.error) return json(out, out.error === "admin_only" ? 403 : 400);
+      return json(out);
+    }
+
     return json({ error: "no_route", path }, 404);
   } catch (e) {
     console.error("[crux]", e);
     return json({ error: "server_error", reason: String((e as Error).message) }, 500);
   }
 });
-
-// =====================================================================
-// The page. One file, no framework, no CDN — it has to work on a laptop
-// in a branch office with a bad line.
-// =====================================================================
-const PAGE = `<!doctype html>
-<html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Crux · Bulk upload</title>
-<style>
-:root{
-  --bg:#f6f7f9; --card:#fff; --ink:#14171c; --mute:#666e7a; --line:#e3e6ea;
-  --accent:#1d4ed8; --ok:#0f7b3d; --okbg:#e9f6ee; --bad:#b42318; --badbg:#fdecea;
-  --warnbg:#fff6e5; --warn:#8a5a00;
-}
-@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
-  --bg:#0f1115; --card:#171a21; --ink:#e9ecf1; --mute:#98a1b0; --line:#262b35;
-  --accent:#6f9bff; --ok:#4ade80; --okbg:#14301f; --bad:#ff8a80; --badbg:#331715;
-  --warnbg:#33280f; --warn:#e8b657;
-}}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);
-  font:15px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-.wrap{max-width:960px;margin:0 auto;padding:24px 16px 80px}
-h1{font-size:21px;margin:0 0 2px;letter-spacing:-.01em}
-.sub{color:var(--mute);font-size:13px;margin:0 0 22px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;
-  padding:20px;margin-bottom:16px}
-label{display:block;font-size:12px;font-weight:600;text-transform:uppercase;
-  letter-spacing:.05em;color:var(--mute);margin:0 0 6px}
-input,select,button{font:inherit}
-input,select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;
-  background:var(--bg);color:var(--ink)}
-input:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px}
-.row{display:flex;gap:12px;flex-wrap:wrap}
-.row>div{flex:1 1 220px;margin-bottom:14px}
-button{padding:10px 16px;border-radius:8px;border:1px solid transparent;
-  background:var(--accent);color:#fff;font-weight:600;cursor:pointer}
-button:disabled{opacity:.45;cursor:not-allowed}
-button.ghost{background:transparent;color:var(--ink);border-color:var(--line);font-weight:500}
-.msg{padding:11px 14px;border-radius:8px;font-size:14px;margin:12px 0}
-.msg.ok{background:var(--okbg);color:var(--ok)}
-.msg.bad{background:var(--badbg);color:var(--bad)}
-.msg.warn{background:var(--warnbg);color:var(--warn)}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--line);
-  vertical-align:top;white-space:nowrap}
-th{color:var(--mute);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
-.scroll{overflow-x:auto;margin:0 -4px}
-.who{display:flex;justify-content:space-between;align-items:center;gap:12px;
-  font-size:13px;color:var(--mute);margin-bottom:16px;flex-wrap:wrap}
-.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;
-  font-weight:600;background:var(--bg);border:1px solid var(--line)}
-.hide{display:none}
-.drop{border:2px dashed var(--line);border-radius:10px;padding:26px;text-align:center;
-  color:var(--mute);cursor:pointer}
-.drop.over{border-color:var(--accent);color:var(--accent)}
-.stats{display:flex;gap:20px;flex-wrap:wrap;margin:14px 0}
-.stat b{display:block;font-size:22px;line-height:1.2}
-.stat span{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute)}
-</style></head><body><div class="wrap">
-
-<h1>Crux · Bulk upload</h1>
-<p class="sub">Validate, preview, then apply. A file with any error applies zero rows.</p>
-
-<div id="loginCard" class="card">
-  <div class="row">
-    <div><label for="em">Work e-mail</label><input id="em" type="email" autocomplete="username"></div>
-    <div><label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password"></div>
-  </div>
-  <button id="go">Sign in</button>
-  <div id="loginMsg"></div>
-</div>
-
-<div id="app" class="hide">
-  <div class="who">
-    <span>Signed in as <b id="who"></b> <span class="pill" id="role"></span></span>
-    <button class="ghost" id="out">Sign out</button>
-  </div>
-
-  <div class="card">
-    <div class="row">
-      <div>
-        <label for="kind">File kind</label>
-        <select id="kind"></select>
-      </div>
-      <div style="flex:0 0 auto;display:flex;align-items:flex-end">
-        <button class="ghost" id="tpl">Download template</button>
-      </div>
-    </div>
-    <div class="drop" id="drop">
-      Drop a CSV here, or click to choose one
-      <input id="file" type="file" accept=".csv,text/csv" class="hide">
-    </div>
-    <div id="upMsg"></div>
-  </div>
-
-  <div id="preview" class="card hide">
-    <b id="pvTitle"></b>
-    <div class="stats" id="pvStats"></div>
-    <div id="pvMsg"></div>
-    <div id="pvErrors"></div>
-    <div id="pvSample"></div>
-    <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
-      <button id="apply">Apply</button>
-      <button class="ghost" id="cancel">Cancel batch</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <b>Recent loads</b>
-    <div id="history" class="scroll"></div>
-  </div>
-</div>
-
-</div><script>
-var API = location.pathname.replace(/\\/$/, "");
-var token = localStorage.getItem("cruxToken") || "";
-var batch = null;
-
-function el(id){ return document.getElementById(id); }
-function esc(s){ return String(s===null||s===undefined?"":s)
-  .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
-function msg(node, kind, text){ node.innerHTML = text
-  ? '<div class="msg '+kind+'">'+esc(text)+'</div>' : ""; }
-
-async function api(path, opts){
-  opts = opts || {};
-  opts.headers = Object.assign({"content-type":"application/json"}, opts.headers||{});
-  if (token) opts.headers["x-crux-token"] = token;
-  var r = await fetch(API + path, opts);
-  var ct = r.headers.get("content-type") || "";
-  if (ct.indexOf("application/json") < 0) return { _raw: await r.text(), _status: r.status };
-  var b = await r.json(); b._status = r.status; return b;
-}
-
-// ------------------------------------------------------------- sign in
-el("go").onclick = async function(){
-  var b = el("go"); b.disabled = true; msg(el("loginMsg"), "", "");
-  try {
-    var out = await api("/api/login", { method:"POST", body: JSON.stringify({
-      email: el("em").value.trim(), password: el("pw").value }) });
-    if (out.error) { msg(el("loginMsg"), "bad", out.reason || out.error); return; }
-    token = out.token; localStorage.setItem("cruxToken", token);
-    el("pw").value = "";
-    start(out.person);
-  } catch(e){ msg(el("loginMsg"), "bad", String(e)); }
-  finally { b.disabled = false; }
-};
-el("pw").addEventListener("keydown", function(e){ if (e.key === "Enter") el("go").click(); });
-
-el("out").onclick = async function(){
-  await api("/api/logout", { method:"POST" });
-  token = ""; localStorage.removeItem("cruxToken");
-  el("app").classList.add("hide"); el("loginCard").classList.remove("hide");
-};
-
-function start(person){
-  el("loginCard").classList.add("hide");
-  el("app").classList.remove("hide");
-  el("who").textContent = person.full_name;
-  el("role").textContent = person.app_role;
-  loadKinds(); loadHistory();
-}
-
-// --------------------------------------------------------------- kinds
-async function loadKinds(){
-  var out = await api("/api/kinds");
-  if (!out.kinds) return;
-  el("kind").innerHTML = out.kinds.map(function(k){
-    return '<option value="'+esc(k.kind)+'">'+esc(k.load_order)+". "+esc(k.kind)+
-      (k.implemented ? "" : "  (no loader yet)")+"</option>";
-  }).join("");
-}
-
-el("tpl").onclick = function(){
-  var kind = el("kind").value;
-  fetch(API + "/api/template?kind=" + encodeURIComponent(kind),
-        { headers: { "x-crux-token": token } })
-    .then(function(r){ return r.blob(); })
-    .then(function(b){
-      var a = document.createElement("a");
-      a.href = URL.createObjectURL(b);
-      a.download = "crux-" + kind.replace(/\\s+/g,"-").toLowerCase() + "-template.csv";
-      document.body.appendChild(a); a.click(); a.remove();
-    });
-};
-
-// -------------------------------------------------------------- upload
-var drop = el("drop"), file = el("file");
-drop.onclick = function(){ file.click(); };
-drop.ondragover = function(e){ e.preventDefault(); drop.classList.add("over"); };
-drop.ondragleave = function(){ drop.classList.remove("over"); };
-drop.ondrop = function(e){
-  e.preventDefault(); drop.classList.remove("over");
-  if (e.dataTransfer.files[0]) send(e.dataTransfer.files[0]);
-};
-file.onchange = function(){ if (file.files[0]) send(file.files[0]); };
-
-async function send(f){
-  msg(el("upMsg"), "warn", "Reading " + f.name + "…");
-  var csv = await f.text();
-  msg(el("upMsg"), "warn", "Validating " + f.name + "…");
-  var out = await api("/api/upload", { method:"POST", body: JSON.stringify({
-    kind: el("kind").value, fileName: f.name, csv: csv }) });
-  file.value = "";
-  if (out.error) { msg(el("upMsg"), "bad", out.reason || out.error); return; }
-  msg(el("upMsg"), "", "");
-  batch = out.batchId;
-  showPreview(out, f.name);
-  loadHistory();
-}
-
-function showPreview(out, name){
-  el("preview").classList.remove("hide");
-  el("pvTitle").textContent = name + " · " + el("kind").value;
-  el("pvStats").innerHTML =
-    '<div class="stat"><b>'+out.rows_total+'</b><span>rows read</span></div>' +
-    '<div class="stat"><b>'+out.rows_ok+'</b><span>would load</span></div>' +
-    '<div class="stat"><b>'+out.rows_error+'</b><span>errors</span></div>';
-  msg(el("pvMsg"), out.rows_error > 0 ? "bad" : "ok", out.note);
-
-  el("pvErrors").innerHTML = !out.errors || !out.errors.length ? "" :
-    '<div class="scroll"><table><tr><th>Line</th><th>Problem</th><th>Row</th></tr>' +
-    out.errors.map(function(e){
-      return "<tr><td>"+e.row_no+"</td><td>"+esc(e.error)+"</td><td>"+
-        esc(JSON.stringify(e.raw))+"</td></tr>"; }).join("") + "</table></div>";
-
-  el("pvSample").innerHTML = !out.sample || !out.sample.length ? "" :
-    '<div class="scroll"><table><tr><th>Line</th><th>Would load</th></tr>' +
-    out.sample.map(function(s){
-      return "<tr><td>"+s.row_no+"</td><td>"+esc(JSON.stringify(s.raw))+"</td></tr>";
-    }).join("") + "</table></div>";
-
-  el("apply").disabled = !out.applicable;
-}
-
-el("apply").onclick = async function(){
-  if (!batch) return;
-  el("apply").disabled = true;
-  var out = await api("/api/apply", { method:"POST", body: JSON.stringify({ id: batch }) });
-  if (out.error) { msg(el("pvMsg"), "bad", out.reason || out.error); el("apply").disabled = false; return; }
-  msg(el("pvMsg"), "ok", "Loaded " + out.applied + " row(s).");
-  el("pvErrors").innerHTML = ""; el("pvSample").innerHTML = "";
-  batch = null; loadHistory();
-};
-
-el("cancel").onclick = async function(){
-  if (!batch) return;
-  await api("/api/cancel", { method:"POST", body: JSON.stringify({ id: batch }) });
-  el("preview").classList.add("hide"); batch = null; loadHistory();
-};
-
-// ------------------------------------------------------------- history
-async function loadHistory(){
-  var out = await api("/api/history");
-  if (!out.batches) return;
-  el("history").innerHTML = !out.batches.length
-    ? '<p class="sub" style="margin:10px 0 0">Nothing loaded yet.</p>'
-    : "<table><tr><th>When</th><th>Kind</th><th>File</th><th>State</th>" +
-      "<th>Rows</th><th>Errors</th><th>By</th></tr>" +
-      out.batches.map(function(b){
-        return "<tr><td>" + esc(new Date(b.uploaded_at).toLocaleString()) +
-          "</td><td>" + esc(b.kind) + "</td><td>" + esc(b.file_name) +
-          "</td><td>" + esc(b.state) + "</td><td>" + esc(b.rows_total) +
-          "</td><td>" + esc(b.rows_error) + "</td><td>" +
-          esc(b.uploaded_by || "") + "</td></tr>"; }).join("") + "</table>";
-}
-
-// resume a session across a reload
-if (token) api("/api/me").then(function(p){
-  if (p && p.id) start(p); else { token=""; localStorage.removeItem("cruxToken"); }
-});
-</script></body></html>`;

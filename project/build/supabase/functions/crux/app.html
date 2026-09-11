@@ -194,15 +194,17 @@ el("out").onclick = async function(){ await crux("/api/logout",{method:"POST"});
 /* --------------------------------------------------------------- shell */
 var TABS = [
   ["today","Today"], ["cases","Escalations"], ["ogl","OGL"], ["matrix","Matrix"],
-  ["pms","Performance"], ["people","People"], ["penalties","Penalties"], ["data","Data setup"]
+  ["pms","Performance"], ["people","People"], ["penalties","Penalties"],
+  ["data","Data setup"], ["mail","Mail"]
 ];
+var ADMIN_TABS = { data:1, mail:1 };
 
 async function start(person){
   me = person;
   el("signin").classList.add("hide");
   el("app").classList.remove("hide");
   el("who").innerHTML = esc(person.full_name) + ' <span class="pill">' + esc(person.app_role) + '</span>';
-  var mine = TABS.filter(function(t){ return t[0] !== "data" || me.app_role === "ADMIN"; });
+  var mine = TABS.filter(function(t){ return !ADMIN_TABS[t[0]] || me.app_role === "ADMIN"; });
   el("nav").innerHTML = mine.map(function(t){
     return '<a href="#'+t[0]+'" data-t="'+t[0]+'">'+esc(t[1])+'</a>'; }).join("");
   window.onhashchange = route; route();
@@ -215,7 +217,7 @@ function route(){
     a.className = a.dataset.t === t ? "on" : ""; });
   el("view").innerHTML = '<p class="mute">Loading...</p>';
   ({today:vToday, cases:vCases, ogl:vOgl, matrix:vMatrix, pms:vPms,
-    people:vPeople, penalties:vPenalties, data:vData}[t])();
+    people:vPeople, penalties:vPenalties, data:vData, mail:vMail}[t])();
 }
 
 /* --------------------------------------------------------------- today */
@@ -327,23 +329,237 @@ async function act(id, code, note){
 
 /* ------------------------------------------------------------------ OGL */
 async function vOgl(){
-  var out = await crux("/api/ogl");
-  var rows = out.assignments || [];
+  var part = (location.hash||"").split("/")[1];
+  if (part) return oglDetail(part);
+
+  var r = await Promise.all([crux("/api/ogl"), crux("/api/ogl/tray")]);
+  var rows = r[0].assignments || [], tray = r[1].segments || [];
+
   el("view").innerHTML = '<h1>OGL assignments</h1>' +
     '<p class="mute">A breached assignment is still in its state. The clock is a separate fact.</p>' +
+    (tray.length ? '<div class="card"><h2>Confirm attribution</h2>' +
+      '<p class="mute">These delays were accepted because nobody reviewed them in time. ' +
+      'The time counts against the deadline; it counts against nobody\'s record until you say whose it was.</p>' +
+      '<div class="scroll"><table><tr><th>Ref</th><th>Allocated to</th><th>Minutes</th><th>Reason given</th><th></th></tr>' +
+      tray.map(function(s){
+        return '<tr><td><b>'+esc(s.ref)+'</b></td><td>'+esc(s.allocated_to||"-")+'</td>' +
+          '<td>'+esc(s.minutes)+'</td><td>'+esc(s.reason_text||"-")+'</td>' +
+          '<td><button class="ghost" onclick="attribute(\'' + esc(s.segment_id) + '\')">Confirm</button></td></tr>';
+      }).join("") + '</table></div><div id="attrForm"></div></div>' : "") +
     '<div class="card">' + (rows.length ? '<div class="scroll"><table>' +
-      '<tr><th>Ref</th><th>State</th><th>SLA</th><th>Due</th><th>Applicant</th><th>Client</th><th>Location</th><th>With</th></tr>' +
+      '<tr><th>Ref</th><th>State</th><th>SLA</th><th>Open request</th><th>Due</th><th>Applicant</th><th>Client</th><th>Location</th><th>With</th></tr>' +
       rows.map(function(a){
         var k = a.sla_status==="BREACHED"?"bad":a.sla_status==="AT_RISK"?"warn":"ok";
-        return '<tr><td><b>'+esc(a.ref)+'</b></td><td><span class="pill">'+esc(a.current_state)+'</span></td>' +
-          '<td>'+(a.sla_status?'<span class="pill '+k+'">'+esc(a.sla_status)+'</span>':'—')+'</td>' +
+        return '<tr class="click" onclick="location.hash=\'#ogl/'+esc(a.id)+'\'">' +
+          '<td><b>'+esc(a.ref)+'</b></td><td><span class="pill">'+esc(a.current_state)+'</span></td>' +
+          '<td>'+(a.sla_status?'<span class="pill '+k+'">'+esc(a.sla_status)+'</span>':'&mdash;')+'</td>' +
+          '<td>'+(a.open_request_type?'<span class="pill warn">'+esc(a.open_request_type)+'</span>':'&mdash;')+'</td>' +
           '<td>'+esc(when(a.due_at))+'</td><td>'+esc(a.applicant_name)+'</td>' +
           '<td>'+esc(a.client)+'</td><td>'+esc(a.location)+'</td><td>'+esc(a.next_action_owner||"-")+'</td></tr>';
       }).join("") + '</table></div>'
       : '<div class="empty">No assignments.</div>') + '</div>';
 }
 
-/* --------------------------------------------------------------- matrix */
+/* One assignment. current_state is the operational position; the SLA status,
+   the open request and the escalation level sit beside it as separate facts,
+   which is the whole design of the module. */
+async function oglDetail(id){
+  var r = await Promise.all([
+    crux("/api/ogl/detail?id=" + encodeURIComponent(id)),
+    crux("/api/ogl/actions?id=" + encodeURIComponent(id))
+  ]);
+  var d = r[0], acts = r[1];
+  if (d.error) {
+    el("view").innerHTML = '<p><a href="#ogl">&larr; All assignments</a></p>' +
+      msg("bad", d.reason || d.error);
+    return;
+  }
+  var a = d.assignment, s = d.sla;
+  var k = s && s.sla_status==="BREACHED"?"bad":(s && s.sla_status==="AT_RISK"?"warn":"ok");
+
+  el("view").innerHTML =
+    '<p><a href="#ogl">&larr; All assignments</a></p>' +
+    '<h1>' + esc(a.ref) + '</h1>' +
+    '<p class="mute">' + esc(d["case"] ? d["case"].applicant_name : "") + ' &middot; ' +
+      esc(d["case"] ? d["case"].client : "") + ' &middot; ' + esc(a.location || "") + '</p>' +
+    '<div class="tiles" style="margin:16px 0">' +
+      '<div class="tile"><b>' + esc(a.current_state) + '</b><span>state</span></div>' +
+      (s ? '<div class="tile"><b class="' + k + '">' + esc(s.sla_status) + '</b><span>SLA</span></div>' +
+           '<div class="tile"><b>' + esc(s.elapsed_minutes) + ' / ' + esc(s.tat_business_minutes) +
+             '</b><span>business minutes used</span></div>' +
+           '<div class="tile"><b>' + esc(s.due_ist) + '</b><span>due (IST)</span></div>'
+         : '<div class="tile"><b>&mdash;</b><span>no clock running</span></div>') +
+      '<div class="tile"><b>' + esc(a.open_request_type || "&mdash;") + '</b><span>open request</span></div>' +
+      '<div class="tile"><b>' + esc((d.escalations||[]).length) + '</b><span>escalations</span></div>' +
+    '</div>' +
+
+    '<div class="card"><h2>What you can do</h2>' +
+      ((acts.actions||[]).length
+        ? '<div class="row" style="flex-wrap:wrap;gap:8px">' + acts.actions.map(function(x){
+            if (x.kind === "transition")
+              return '<button class="ghost" onclick="oglMove(\'' + esc(id) + '\',\'' + esc(x.to) + '\')">' + esc(x.label) + '</button>';
+            if (x.kind === "request")
+              return '<button onclick="oglAsk(\'' + esc(id) + '\',\'' + esc(x.type) + '\')">' + esc(x.label) + '</button>';
+            return '<button onclick="oglAnswer(\'' + esc(x.request) + '\',\'' + esc(x.type) + '\')">' + esc(x.label) + '</button>';
+          }).join("") + '</div>'
+        : '<div class="empty">Nothing is yours to do on this one right now.</div>') +
+      '<div id="oglForm"></div><div id="oglMsg"></div></div>' +
+
+    (s && s.attribution_pending ? msg("warn",
+      "Some of this assignment's time is not attributed yet. No strike can be generated until it is.") : "") +
+
+    '<div class="card"><h2>Requests</h2>' + ((d.requests||[]).length
+      ? '<div class="scroll"><table><tr><th>Raised</th><th>Kind</th><th>Reason</th><th>By</th>' +
+        '<th>Sub-TAT</th><th>Pause</th><th>Outcome</th></tr>' +
+        d.requests.map(function(q){
+          return '<tr><td>'+esc(when(q.raised_at))+'</td><td><span class="pill">'+esc(q.request_type)+'</span></td>' +
+            '<td>'+esc(q.reason||"-")+(q.remarks?'<br><span class="mute">'+esc(q.remarks)+'</span>':"")+'</td>' +
+            '<td>'+esc(q.raised_by_name||"-")+'</td>' +
+            '<td>'+(q.sub_tat_due_at ? esc(when(q.sub_tat_due_at)) + (q.sub_tat_breached ? ' <span class="pill bad">missed</span>' : "") : "&mdash;")+'</td>' +
+            '<td>'+(q.pause_granted ? esc(q.pause_minutes_credited) + ' min' : "none")+'</td>' +
+            '<td>'+(q.resolution ? '<span class="pill">'+esc(q.resolution)+'</span>' : '<span class="pill warn">open</span>')+'</td></tr>';
+        }).join("") + '</table></div>' : '<div class="empty">None.</div>') + '</div>' +
+
+    '<div class="card"><h2>The clock, segment by segment</h2>' +
+      '<p class="mute">Elapsed and exposure are added up from these. Nothing is stored twice.</p>' +
+      ((d.segments||[]).length
+      ? '<div class="scroll"><table><tr><th>#</th><th>State</th><th>Whose time</th><th>Counts to SLA</th>' +
+        '<th>Counts to strike</th><th>Minutes</th><th>Why</th></tr>' +
+        d.segments.map(function(g){
+          return '<tr><td>'+esc(g.seq_no)+'</td><td>'+esc(g.segment_state)+'</td>' +
+            '<td><span class="pill'+(g.attribution==="PENDING_REVIEW"?" warn":"")+'">'+esc(g.attribution)+'</span></td>' +
+            '<td>'+(g.counts_to_sla?"yes":"no")+'</td><td>'+(g.counts_to_strike?"yes":"no")+'</td>' +
+            '<td>'+esc(g.business_minutes==null?"running":g.business_minutes)+'</td>' +
+            '<td>'+esc(g.reason_text||"-")+'</td></tr>';
+        }).join("") + '</table></div>' : '<div class="empty">No clock.</div>') + '</div>' +
+
+    ((d.escalations||[]).length ? '<div class="card"><h2>Escalations</h2><div class="scroll"><table>' +
+      '<tr><th>Raised</th><th>Level</th><th>Because</th><th>Reached</th><th>Routed by</th></tr>' +
+      d.escalations.map(function(e){
+        return '<tr><td>'+esc(when(e.raised_at))+'</td><td>'+esc(e.escalation_level)+'</td>' +
+          '<td>'+esc(e.trigger_code)+'</td><td>'+esc(e.to||"-")+'</td>' +
+          '<td>'+(e.fallback_used?'<span class="pill warn">hierarchy walk</span>':'the matrix')+'</td></tr>' +
+          (e.fallback_used ? '<tr><td colspan="5" class="mute">'+esc(e.fallback_reason)+'</td></tr>' : "");
+      }).join("") + '</table></div></div>' : "") +
+
+    ((d.strikes||[]).length ? '<div class="card"><h2>Strikes</h2><div class="scroll"><table>' +
+      '<tr><th>When</th><th>Because</th><th>Minutes attributed</th><th>Status</th></tr>' +
+      d.strikes.map(function(x){
+        return '<tr><td>'+esc(when(x.occurred_at))+'</td><td>'+esc(x.trigger_code)+'</td>' +
+          '<td>'+esc(x.attributable_minutes)+'</td><td><span class="pill'+(x.status==="WAIVED"?"":" bad")+'">'+
+          esc(x.status)+'</span>'+(x.waived_reason?'<br><span class="mute">'+esc(x.waived_reason)+'</span>':"")+'</td></tr>';
+      }).join("") + '</table></div></div>' : "") +
+
+    '<div class="card"><h2>Everything that happened</h2><div class="scroll"><table>' +
+      '<tr><th>When</th><th>What</th><th>By</th></tr>' +
+      (d.events||[]).map(function(v){
+        return '<tr><td>'+esc(when(v.at))+'</td><td>'+esc(v.type.replace(/_/g," ").toLowerCase()) +
+          (v["from"] && v.to ? ' <span class="mute">'+esc(v["from"])+' &rarr; '+esc(v.to)+'</span>' : "") + '</td>' +
+          '<td>'+esc(v.by || (v.system ? "the system" : "-"))+'</td></tr>';
+      }).join("") + '</table></div></div>';
+}
+
+function oglReload(){ el("view").innerHTML = '<p class="mute">Loading...</p>'; route(); }
+
+async function oglMove(id, to){
+  var reason = (to === "REOPENED" || to === "CANCELLED")
+    ? prompt("Why? This is the first thing anyone will ask.") : null;
+  if ((to === "REOPENED" || to === "CANCELLED") && !reason) return;
+  var out = await crux("/api/ogl/transition", { method:"POST", body:{ id:id, to:to, reason:reason } });
+  if (out.error) { el("oglMsg").innerHTML = msg("bad", (out.reason||out.error) + (out.hint ? " " + out.hint : "")); return; }
+  oglReload();
+}
+
+/* Raising a request. For an RFI the pause arithmetic is fetched the moment a
+   reason is chosen and shown in full - the three conditions and the numbers
+   behind them - so the decision is visible before anything is submitted. */
+async function oglAsk(id, type){
+  var rs = await crux("/api/ogl/reasons?context=" + type);
+  var list = rs.reasons || [];
+  el("oglForm").innerHTML =
+    '<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:16px">' +
+    '<h3 style="font-size:14px;margin:0 0 10px">' + esc(type) + '</h3>' +
+    '<div class="row"><div><label>Reason</label><select id="rsn">' +
+      '<option value="">Choose one</option>' +
+      list.map(function(x){ return '<option value="'+esc(x.id)+'">'+esc(x.label)+'</option>'; }).join("") +
+    '</select></div></div>' +
+    '<div id="pausePanel"></div>' +
+    '<div class="row"><div><label>What happened</label>' +
+      '<textarea id="rmk" rows="2" placeholder="A sentence is enough."></textarea></div></div>' +
+    (type === "DELAY" ? '<div class="row"><div><label>When will it be done?</label>' +
+      '<input id="exp" type="datetime-local"></div></div>' : "") +
+    '<button id="sendReq">Submit</button> ' +
+    '<button class="ghost" onclick="el(\'oglForm\').innerHTML=\'\'">Cancel</button></div>';
+
+  if (type === "RFI") {
+    el("rsn").onchange = async function(){
+      if (!el("rsn").value) { el("pausePanel").innerHTML = ""; return; }
+      var p = await crux("/api/ogl/pause-preview", { method:"POST",
+        body:{ id:id, reason: el("rsn").value } });
+      el("pausePanel").innerHTML = '<div class="card" style="margin:12px 0;background:var(--bg)">' +
+        '<b>' + (p.eligible ? "The clock will stop." : "The clock will keep running.") + '</b>' +
+        '<ul style="margin:8px 0 0;padding-left:18px">' +
+        (p.conditions||[]).map(function(c){
+          return '<li>' + (c.pass ? "&#10003; " : "&#10007; ") + esc(c.test) +
+                 ' <span class="mute">&mdash; ' + esc(c.detail) + '</span></li>'; }).join("") +
+        '</ul><p class="mute" style="margin:10px 0 0">' + esc(p.plain || p.reason || "") + '</p></div>';
+    };
+  }
+
+  el("sendReq").onclick = async function(){
+    el("sendReq").disabled = true;
+    var body = { id:id, type:type, reason: el("rsn").value, remarks: el("rmk").value };
+    if (type === "DELAY" && el("exp").value) body.expected = new Date(el("exp").value).toISOString();
+    var out = await crux("/api/ogl/raise", { method:"POST", body:body });
+    el("sendReq").disabled = false;
+    if (out.error) { el("oglMsg").innerHTML = msg("bad", out.reason || out.error); return; }
+    oglReload();
+  };
+}
+
+async function oglAnswer(request, type){
+  var opts = type === "RFI" ? [["ANSWERED","Answer it"],["REJECTED_INVALID","Not a valid request"]]
+           : type === "DELAY" ? [["ACCEPTED","Accept the delay"],["DENIED","Do not accept it"]]
+           : [["RELEASED","Release the hold"]];
+  el("oglForm").innerHTML =
+    '<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:16px">' +
+    '<div class="row"><div><label>Your answer</label><select id="res">' +
+      opts.map(function(o){ return '<option value="'+o[0]+'">'+esc(o[1])+'</option>'; }).join("") +
+    '</select></div></div>' +
+    '<div class="row"><div><label>Remarks</label><textarea id="rrm" rows="2"></textarea></div></div>' +
+    '<button id="sendRes">Submit</button> ' +
+    '<button class="ghost" onclick="el(\'oglForm\').innerHTML=\'\'">Cancel</button></div>';
+  el("sendRes").onclick = async function(){
+    el("sendRes").disabled = true;
+    var out = await crux("/api/ogl/resolve", { method:"POST",
+      body:{ request:request, resolution: el("res").value, remarks: el("rrm").value } });
+    el("sendRes").disabled = false;
+    if (out.error) { el("oglMsg").innerHTML = msg("bad", out.reason || out.error); return; }
+    oglReload();
+  };
+}
+
+async function attribute(segment){
+  var rs = await crux("/api/ogl/reasons?context=ATTRIBUTION");
+  el("attrForm").innerHTML =
+    '<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:14px">' +
+    '<div class="row"><div><label>Whose time was it?</label><select id="arsn">' +
+      (rs.reasons||[]).map(function(x){ return '<option value="'+esc(x.id)+'">'+esc(x.label)+'</option>'; }).join("") +
+    '</select></div></div>' +
+    '<div class="row"><div><label>Why</label><textarea id="armk" rows="2"></textarea></div></div>' +
+    '<button id="sendAttr">Confirm</button> ' +
+    '<button class="ghost" onclick="el(\'attrForm\').innerHTML=\'\'">Cancel</button>' +
+    '<div id="attrMsg"></div></div>';
+  el("sendAttr").onclick = async function(){
+    el("sendAttr").disabled = true;
+    var out = await crux("/api/ogl/attribute", { method:"POST",
+      body:{ segment:segment, reason: el("arsn").value, remarks: el("armk").value } });
+    el("sendAttr").disabled = false;
+    if (out.error) { el("attrMsg").innerHTML = msg("bad", out.reason || out.error); return; }
+    oglReload();
+  };
+}
+
 async function vMatrix(){
   var part = (location.hash||"").split("/")[1];
   if (part) return matrixBranch(part);
@@ -590,6 +806,152 @@ async function resetPanel(){
       : msg("ok", out.deleted + " rows removed. " + out.kept);
     el("doReset").disabled = false;
     if (!out.error) setTimeout(vData, 1600);
+  };
+}
+
+/* ------------------------------------------------------------------ mail */
+/* The one screen where a secret goes in. Nothing here ever reads one back:
+   the status says whether a key is set, never what it is. */
+async function vMail(){
+  var m = await crux("/api/mail");
+  var providers = [["","Not set"],["resend","Resend"],["sendgrid","SendGrid"],
+                   ["brevo","Brevo"],["postmark","Postmark"],["gmail_oauth","Gmail (your own mailbox)"]];
+
+  el("view").innerHTML = '<h1>Mail</h1>' +
+    '<p class="mute">Everything the tool needs to tell somebody goes into the outbox. ' +
+    'This is how it gets out of the building.</p>' +
+
+    '<div class="tiles" style="margin:16px 0">' +
+      '<div class="tile"><b>' + (m.ready ? "Ready" : "Not sending") + '</b><span>status</span></div>' +
+      '<div class="tile"><b>' + esc(m.provider || "&mdash;") + '</b><span>provider</span></div>' +
+      '<div class="tile"><b>' + esc(m.queued) + '</b><span>waiting</span></div>' +
+      '<div class="tile"><b>' + esc(m.deferred) + '</b><span>deferred</span></div>' +
+      '<div class="tile"><b>' + esc(m.sent) + '</b><span>sent</span></div>' +
+      '<div class="tile"><b>' + esc(m.abandoned) + '</b><span>given up on</span></div>' +
+      '<div class="tile"><b>' + esc(m.sentToday) + ' / ' + esc(m.cap) + '</b><span>today</span></div>' +
+    '</div>' +
+
+    (m.lastError ? msg("bad", "Last failure: " + m.lastError) : "") +
+    (!m.provider ? msg("warn", "No provider is set, so nothing is being sent. " +
+      "The queue is intact and waiting - nothing is being lost.") : "") +
+
+    '<div class="card"><h2>Three ways, and what each one needs</h2>' +
+      '<p class="mute">You do not administer the Google Workspace this sits in, so the ' +
+      'first two need nobody\'s permission but yours.</p>' +
+      '<div class="scroll"><table><tr><th>Route</th><th>What it needs</th></tr>' +
+      '<tr><td><b>A transactional provider</b><br><span class="mute">Resend, Brevo, SendGrid, Postmark</span></td>' +
+        '<td>An account, and two or three DNS records on a domain you control - SPF, DKIM, ' +
+        'and usually DMARC. No Workspace console. This is the route that scales and the one ' +
+        'whose failures you can read.</td></tr>' +
+      '<tr><td><b>Gmail, your own mailbox</b></td>' +
+        '<td>The OAuth client you already own, with the <code>gmail.send</code> scope added, and ' +
+        'this address listed as an authorised redirect. You consent for your own mailbox; ' +
+        'no administrator is involved. Google\'s own sending limits apply.</td></tr>' +
+      '<tr><td><b>SMTP or an app password</b></td>' +
+        '<td><b>Not possible here.</b> This tool runs as an edge function, which may make an ' +
+        'HTTPS request and nothing else. There is no socket to port 587 from inside it, so an ' +
+        'app password has nowhere to go. Saying so now is cheaper than finding out later.</td></tr>' +
+      '</table></div></div>' +
+
+    '<div class="card"><h2>Settings</h2>' +
+      '<div class="row"><div><label>Provider</label><select id="mp">' +
+        providers.map(function(p){ return '<option value="'+p[0]+'"'+(m.provider===p[0]?" selected":"")+'>'+esc(p[1])+'</option>'; }).join("") +
+      '</select></div>' +
+      '<div><label>Daily cap</label><input id="mcap" value="'+esc(m.cap)+'"></div></div>' +
+      '<div class="row"><div><label>From address</label>' +
+        '<input id="mfrom" value="'+esc(m.from||"")+'" placeholder="alerts@yourdomain.com"></div>' +
+        '<div><label>From name</label><input id="mname" value="'+esc(m.fromName||"")+'"></div></div>' +
+      '<div class="row"><div><label>Reply-to (optional)</label>' +
+        '<input id="mrep" value="'+esc(m.replyTo||"")+'"></div></div>' +
+
+      '<div id="keyBox"></div>' +
+
+      '<div style="margin-top:14px"><button id="msave">Save</button> ' +
+        '<button class="ghost" id="mtest">Send me a test</button> ' +
+        '<button class="ghost" id="mdrain">Send what is waiting</button> ' +
+        '<button class="ghost danger" id="mforget">Forget the keys</button></div>' +
+      '<div id="mmsg"></div></div>' +
+
+    '<div class="card"><h2>Recent messages</h2>' +
+      ((m.recent||[]).length ? '<div class="scroll"><table>' +
+        '<tr><th>When</th><th>Kind</th><th>To</th><th>Subject</th><th>State</th><th>Tries</th><th>Last error</th></tr>' +
+        m.recent.map(function(x){
+          var k = x.state==="SENT"?"ok":x.state==="ABANDONED"?"bad":"warn";
+          return '<tr><td>'+esc(when(x.created_at))+'</td><td>'+esc(x.template_key)+'</td>' +
+            '<td>'+esc(x.recipient)+'</td><td>'+esc(x.subject)+'</td>' +
+            '<td><span class="pill '+k+'">'+esc(x.state)+'</span></td><td>'+esc(x.attempts)+'</td>' +
+            '<td class="mute">'+esc(x.last_error||"")+'</td></tr>';
+        }).join("") + '</table></div>' : '<div class="empty">Nothing has been queued yet.</div>') + '</div>';
+
+  function keyBox(){
+    var p = el("mp").value;
+    if (p === "gmail_oauth") {
+      el("keyBox").innerHTML =
+        '<div class="row"><div><label>OAuth client id</label>' +
+          '<input id="moid" value="'+esc(m.oauthClientId||"")+'"></div></div>' +
+        '<div class="row"><div><label>OAuth client secret</label>' +
+          '<input id="mosec" type="password" placeholder="'+(m.oauthSet?"already set - leave blank to keep it":"paste it once")+'"></div></div>' +
+        '<p class="mute">Add <code>' + esc(location.origin) + '/functions/v1/crux/api/mail/oauth/callback</code> ' +
+        'to the authorised redirect URIs on that client first, and add the ' +
+        '<code>gmail.send</code> scope. Then save, and connect.</p>' +
+        '<button class="ghost" id="mconnect">Connect Gmail</button>';
+      el("mconnect").onclick = async function(){
+        var out = await crux("/api/mail/oauth/start", { method:"POST", body:{} });
+        if (out.error) { el("mmsg").innerHTML = msg("bad", out.reason || out.error); return; }
+        window.open(out.url, "_blank", "noopener");
+        el("mmsg").innerHTML = msg("warn", "A Google tab has opened. Consent there, then come back and send a test.");
+      };
+    } else if (p) {
+      el("keyBox").innerHTML = '<div class="row"><div><label>API key</label>' +
+        '<input id="mkey" type="password" placeholder="'+(m.keySet?"already set - leave blank to keep it":"paste it once")+'"></div></div>' +
+        '<p class="mute">The key is stored in the database and read only by the sender. ' +
+        'Nothing in this screen can show it to you again.</p>';
+    } else {
+      el("keyBox").innerHTML = "";
+    }
+  }
+  el("mp").onchange = keyBox; keyBox();
+
+  el("msave").onclick = async function(){
+    el("msave").disabled = true;
+    var body = { provider: el("mp").value, from: el("mfrom").value,
+      fromName: el("mname").value, replyTo: el("mrep").value, cap: el("mcap").value };
+    if (el("mkey")) body.apiKey = el("mkey").value;
+    if (el("moid")) body.oauthClientId = el("moid").value;
+    if (el("mosec")) body.oauthClientSecret = el("mosec").value;
+    var out = await crux("/api/mail/configure", { method:"POST", body:body });
+    el("msave").disabled = false;
+    if (out.error) { el("mmsg").innerHTML = msg("bad", out.reason || out.error); return; }
+    el("mmsg").innerHTML = msg("ok", "Saved.");
+    setTimeout(vMail, 800);
+  };
+
+  el("mtest").onclick = async function(){
+    el("mtest").disabled = true;
+    el("mmsg").innerHTML = msg("warn","Queuing and sending...");
+    var out = await crux("/api/mail/test", { method:"POST", body:{} });
+    el("mtest").disabled = false;
+    if (out.error) { el("mmsg").innerHTML = msg("bad", out.reason || out.error); return; }
+    var d = out.drain || {};
+    el("mmsg").innerHTML = d.sent ? msg("ok", "Sent to " + out.to + ". Check that inbox.")
+      : msg("bad", "Queued for " + out.to + ", but not sent: " +
+          (d.reason || (d.errors||[]).join("; ") || d.held || d.error || "no answer from the sender."));
+    setTimeout(vMail, 1500);
+  };
+
+  el("mdrain").onclick = async function(){
+    var out = await crux("/api/mail/drain", { method:"POST", body:{} });
+    el("mmsg").innerHTML = out.sent
+      ? msg("ok", out.sent + " sent, " + (out.failed||0) + " failed.")
+      : msg("warn", out.reason || out.note || out.held || "Nothing was waiting.");
+    setTimeout(vMail, 1200);
+  };
+
+  el("mforget").onclick = async function(){
+    if (!confirm("Clear the API key, the OAuth secret and the Gmail grant? Sending stops until you set them again.")) return;
+    var out = await crux("/api/mail/forget", { method:"POST", body:{} });
+    el("mmsg").innerHTML = out.error ? msg("bad", out.reason||out.error) : msg("ok","Forgotten.");
+    setTimeout(vMail, 900);
   };
 }
 
