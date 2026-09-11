@@ -4,20 +4,33 @@ This repository holds the rebuild of the Crux India operations tool that
 currently runs on Google Apps Script over a 26-tab spreadsheet (1,413 branches,
 55 users).
 
-## Bulk upload is live
+## The tool is live
 
 **https://oxpwqfbtbxlvuqpztbwg.supabase.co/functions/v1/crux**
 
-Open it, sign in, load a CSV. Validate → preview → apply, and a file with any
-error applies zero rows.
+Sign in with your Crux Google account, or with a password. Eight screens:
+Today, Escalations, OGL, Matrix, Performance, People, Penalties, and Data setup
+for administrators.
 
-It runs as a Supabase Edge Function, inside the same network as the database,
-so there is no server to keep alive and nothing to deploy before using it. It
-authenticates people itself; the service key stays inside the function and
-never reaches the browser. Five failed sign-ins from one address or one IP
-in fifteen minutes locks that door for fifteen minutes.
+It runs as Supabase Edge Functions, inside the same network as the database, so
+there is no server to keep alive. Sign-in happens in the function itself; the
+service key never reaches the browser. Five failed attempts from one address or
+one IP in fifteen minutes locks that door for fifteen minutes.
 
-**Eleven file kinds, all of them implemented**, in load order:
+The page itself lives in the `app_page` table, not in the function, so changing
+a screen is an `UPDATE` rather than a redeploy.
+
+### Signing in with Google
+
+`auth_gate()` refuses any address that is not an active `@cruxindia.co.in`
+person already on the people master. Sign-in matches a person; it never creates
+one. The credential is verified *by Google* rather than decoded here — a token
+this process merely reads is a token anyone can forge.
+
+### Loading data
+
+Data setup carries the uploader. **Eleven file kinds, all implemented**, in load
+order:
 
 | | Kind | Loads |
 |---|---|---|
@@ -53,7 +66,10 @@ all.
 | Dummy dataset — 17 people, 5 clients, 16 branches | Loaded through the uploader | **Yes** |
 | Indian holiday calendar 2026–27 | 26 days, 6 confirmed | **Yes** |
 | The rest of the API — cases, matrix, PMS, people, penalties | Edge function `api` | **Yes** |
-| Front end | `project/*.dc.html` | No — prototypes |
+| Front end — eight screens | Edge function `crux` | **Yes** |
+| Scheduled jobs — auto-close, SLA sweep | `pg_cron`, every 15 min | **Yes** |
+| Google sign-in | Configured | **Yes** |
+| Sending e-mail | — | No — needs mail credentials |
 
 Nothing needs a host any more. The Express app in `project/build/api` is still
 the reference implementation, but its route files now run inside Supabase as
@@ -67,18 +83,26 @@ Google Workspace SSO is the intended route: `auth_gate()` refuses any address
 that is not an active `@cruxindia.co.in` person already on the people master.
 Sign-in matches a person, it never creates one.
 
-Until the Workspace OAuth client is configured, a seeded sample administrator
-(`sample.md@example.invalid`) exists so the tool can be used. Its password is
-**not published here** — the upload URL is public, and that account is an
-administrator, so a password in this file would be a password in everybody's
-hands. It was handed over separately.
-
-Clear it before real data goes in:
+A seeded sample administrator (`sample.md@example.invalid`) exists so the tool
+could be used before SSO was configured. Its password is **not published here** —
+the URL is public and that account is an administrator. Clear it once a real
+person can sign in:
 
 ```sql
 update person set password_hash = null, password_salt = null
  where work_email = 'sample.md@example.invalid';
 ```
+
+## Emptying the tool
+
+**Data setup → Empty the tool.** It shows you exactly which tables and how many
+rows would go, then asks you to type `DELETE ALL DATA`.
+
+It is deliberately not a purge of "rows that look like demo data" — once real
+data is loaded through the same uploader it carries the same marks, and a purge
+that guesses would one day take the real thing. It empties the operational and
+master tables and keeps three things: configuration, the audit trail, and the
+account of whoever runs it along with the chair they sit in.
 
 ---
 
@@ -113,9 +137,10 @@ export DATABASE_URL='postgresql://postgres.oxpwqfbtbxlvuqpztbwg:<DB-PASSWORD>@aw
 npm start          # :3000, or $PORT
 ```
 
-`npm run worker` runs the outbox and scheduled jobs. That worker is the one
-piece with nowhere to live yet: edge functions answer requests, they do not run
-a loop, so scheduled sends still need either a machine or a cron trigger.
+`npm run worker` runs the outbox. Scheduled DB work no longer needs it:
+`pg_cron` calls `crux_tick()` every fifteen minutes for auto-close and the SLA
+sweep. Sending e-mail is the one thing still without a home — it needs mail
+credentials, not a machine.
 
 ---
 
@@ -177,11 +202,11 @@ deadline, until somebody fixes it.
 
 ## Before go-live
 
-1. Configure the Google Workspace OAuth client.
+1. ~~Configure the Google Workspace OAuth client.~~ Done.
 2. Load people, chairs and coverage by bulk upload, in load order.
 3. Load the full holiday calendar and the rate card.
 4. `sample_purge()`, and clear the sample administrator's password.
-5. Point the front end at the API, and give the outbox worker a schedule.
+5. Get mail credentials so the outbox can drain.
 
 ---
 
@@ -189,7 +214,7 @@ deadline, until somebody fixes it.
 
 ```
 project/build/schema.sql            base schema — 103 tables
-project/build/schema-patch-v3..v14  applied in order after it
+project/build/schema-patch-v3..v16  applied in order after it
 project/build/supabase/             RLS, auth gate, storage buckets
 project/build/supabase/functions/   the two live edge functions
 project/build/api/                  Express API, no ORM

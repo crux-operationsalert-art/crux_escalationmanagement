@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Crux</title>
+<style>
+:root{
+  --bg:#f5f6f8; --card:#fff; --ink:#14171c; --mute:#667085; --line:#e4e7ec;
+  --accent:#1d4ed8; --accent-soft:#eff4ff;
+  --ok:#0f7b3d; --okbg:#e9f6ee; --bad:#b42318; --badbg:#fdecea;
+  --warn:#8a5a00; --warnbg:#fff6e5;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+  --bg:#0e1015; --card:#171a21; --ink:#e9ecf1; --mute:#98a1b0; --line:#262b35;
+  --accent:#7aa2ff; --accent-soft:#18203a;
+  --ok:#4ade80; --okbg:#13301e; --bad:#ff8a80; --badbg:#331715;
+  --warn:#e8b657; --warnbg:#33280f;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+h1{font-size:20px;margin:0 0 2px;letter-spacing:-.01em}
+h2{font-size:16px;margin:0 0 12px;letter-spacing:-.01em}
+.mute{color:var(--mute);font-size:13px}
+.hide{display:none!important}
+
+/* ---------------------------------------------------------------- shell */
+header{background:var(--card);border-bottom:1px solid var(--line);
+  position:sticky;top:0;z-index:5}
+.bar{max-width:1100px;margin:0 auto;padding:10px 16px;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.brand{font-weight:700;letter-spacing:-.02em;font-size:17px}
+nav{display:flex;gap:2px;flex-wrap:wrap;flex:1}
+nav a{padding:6px 11px;border-radius:7px;text-decoration:none;color:var(--mute);
+  font-size:14px;font-weight:500;white-space:nowrap}
+nav a:hover{background:var(--bg);color:var(--ink)}
+nav a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.who{font-size:13px;color:var(--mute);display:flex;align-items:center;gap:10px}
+main{max-width:1100px;margin:0 auto;padding:22px 16px 90px}
+
+/* ----------------------------------------------------------- components */
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:20px;margin-bottom:16px}
+label{display:block;font-size:12px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.05em;color:var(--mute);margin:0 0 6px}
+input,select,textarea,button{font:inherit}
+input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--line);
+  border-radius:8px;background:var(--bg);color:var(--ink)}
+textarea{min-height:80px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.row>div{flex:1 1 210px;margin-bottom:14px}
+button{padding:9px 15px;border-radius:8px;border:1px solid transparent;
+  background:var(--accent);color:#fff;font-weight:600;cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.ghost{background:transparent;color:var(--ink);border-color:var(--line);font-weight:500}
+button.danger{background:var(--bad)}
+button.sm{padding:5px 10px;font-size:13px}
+.msg{padding:11px 14px;border-radius:8px;font-size:14px;margin:12px 0}
+.msg.ok{background:var(--okbg);color:var(--ok)}
+.msg.bad{background:var(--badbg);color:var(--bad)}
+.msg.warn{background:var(--warnbg);color:var(--warn)}
+.empty{padding:26px;text-align:center;color:var(--mute);font-size:14px;
+  border:1px dashed var(--line);border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-size:11px;text-transform:uppercase;letter-spacing:.05em;
+  font-weight:600;white-space:nowrap}
+tr.click{cursor:pointer}
+tr.click:hover td{background:var(--bg)}
+.scroll{overflow-x:auto}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;
+  font-weight:700;letter-spacing:.02em;border:1px solid var(--line);background:var(--bg)}
+.pill.ok{background:var(--okbg);color:var(--ok);border-color:transparent}
+.pill.bad{background:var(--badbg);color:var(--bad);border-color:transparent}
+.pill.warn{background:var(--warnbg);color:var(--warn);border-color:transparent}
+.tiles{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.tile b{display:block;font-size:26px;line-height:1.15;letter-spacing:-.02em}
+.tile span{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute)}
+.drop{border:2px dashed var(--line);border-radius:10px;padding:24px;text-align:center;
+  color:var(--mute);cursor:pointer}
+.drop.over{border-color:var(--accent);color:var(--accent)}
+.tree{list-style:none;margin:0;padding-left:18px;border-left:1px solid var(--line)}
+.tree>li{padding:4px 0}
+.tree .node{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.tree .t{font-weight:600}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
+
+/* ------------------------------------------------------------- sign in */
+#signin{max-width:420px;margin:8vh auto}
+#gbtn{margin:14px 0}
+.or{display:flex;align-items:center;gap:10px;color:var(--mute);font-size:12px;margin:16px 0}
+.or:before,.or:after{content:"";flex:1;height:1px;background:var(--line)}
+</style></head><body>
+
+<!-- ============================================================ sign in -->
+<div id="signin">
+  <div class="card">
+    <h1>Crux</h1>
+    <p class="mute">Escalations, compliance and performance.</p>
+    <div id="gbtn"></div>
+    <p class="mute" id="ghint"></p>
+    <div class="or">or sign in with a password</div>
+    <div><label for="em">Work e-mail</label><input id="em" type="email" autocomplete="username"></div>
+    <div style="margin-top:12px"><label for="pw">Password</label>
+      <input id="pw" type="password" autocomplete="current-password"></div>
+    <div style="margin-top:14px"><button id="go">Sign in</button></div>
+    <div id="loginMsg"></div>
+  </div>
+</div>
+
+<!-- ================================================================ app -->
+<div id="app" class="hide">
+<header><div class="bar">
+  <span class="brand">Crux</span>
+  <nav id="nav"></nav>
+  <span class="who"><span id="who"></span><button class="ghost sm" id="out">Sign out</button></span>
+</div></header>
+<main id="view"></main>
+</div>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+var CRUX = location.origin + "/functions/v1/crux";
+var API  = location.origin + "/functions/v1/api";
+var token = localStorage.getItem("cruxToken") || "";
+var me = null, scope = null;
+
+function el(id){ return document.getElementById(id); }
+function esc(s){ return String(s===null||s===undefined?"":s)
+  .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function msg(k,t){ return t ? '<div class="msg '+k+'">'+esc(t)+'</div>' : ""; }
+function when(s){ if(!s) return ""; var d=new Date(s);
+  return isNaN(d) ? String(s) : d.toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"}); }
+function day(s){ if(!s) return ""; var d=new Date(s);
+  return isNaN(d) ? String(s) : d.toLocaleDateString("en-IN",{dateStyle:"medium"}); }
+function money(n){ return n==null?"":"₹"+Number(n).toLocaleString("en-IN"); }
+
+async function call(base, path, opts){
+  opts = opts || {};
+  opts.headers = Object.assign({"content-type":"application/json"}, opts.headers||{});
+  if (token) opts.headers["x-crux-token"] = token;
+  if (opts.body && typeof opts.body !== "string") opts.body = JSON.stringify(opts.body);
+  var r = await fetch(base + path, opts);
+  var ct = r.headers.get("content-type")||"";
+  var b = ct.indexOf("json")>=0 ? await r.json() : { _text: await r.text() };
+  b._status = r.status;
+  if (r.status === 401) { signOut(); }
+  return b;
+}
+var api  = function(p,o){ return call(API,  p, o); };
+var crux = function(p,o){ return call(CRUX, p, o); };
+
+/* ------------------------------------------------------------- sign in */
+async function boot(){
+  var cfg = await fetch(CRUX + "/api/config").then(function(r){return r.json()}).catch(function(){return{}});
+  if (cfg.googleClientId && window.google && google.accounts) {
+    google.accounts.id.initialize({
+      client_id: cfg.googleClientId,
+      callback: async function(resp){
+        var out = await crux("/api/google", { method:"POST", body:{ credential: resp.credential } });
+        if (out.error) { el("loginMsg").innerHTML = msg("bad", out.reason || out.error); return; }
+        token = out.token; localStorage.setItem("cruxToken", token); start(out.person);
+      }
+    });
+    google.accounts.id.renderButton(el("gbtn"), { theme:"outline", size:"large", width:340 });
+    el("ghint").textContent = "Use your " + (cfg.workspaceDomain||"work") + " account.";
+  } else {
+    el("ghint").textContent = "Google sign-in is still loading, or is not configured yet.";
+  }
+  if (token) { var p = await crux("/api/me"); if (p && p.id) return start(p); }
+}
+
+el("go").onclick = async function(){
+  var b = el("go"); b.disabled = true; el("loginMsg").innerHTML = "";
+  try {
+    var out = await crux("/api/login", { method:"POST",
+      body:{ email: el("em").value.trim(), password: el("pw").value } });
+    if (out.error) { el("loginMsg").innerHTML = msg("bad", out.reason || out.error); return; }
+    token = out.token; localStorage.setItem("cruxToken", token); el("pw").value = "";
+    start(out.person);
+  } catch(e){ el("loginMsg").innerHTML = msg("bad", String(e)); }
+  finally { b.disabled = false; }
+};
+el("pw").addEventListener("keydown", function(e){ if (e.key==="Enter") el("go").click(); });
+
+function signOut(){
+  token=""; localStorage.removeItem("cruxToken"); me=null;
+  el("app").classList.add("hide"); el("signin").classList.remove("hide");
+}
+el("out").onclick = async function(){ await crux("/api/logout",{method:"POST"}); signOut(); };
+
+/* --------------------------------------------------------------- shell */
+var TABS = [
+  ["today","Today"], ["cases","Escalations"], ["ogl","OGL"], ["matrix","Matrix"],
+  ["pms","Performance"], ["people","People"], ["penalties","Penalties"], ["data","Data setup"]
+];
+
+async function start(person){
+  me = person;
+  el("signin").classList.add("hide");
+  el("app").classList.remove("hide");
+  el("who").innerHTML = esc(person.full_name) + ' <span class="pill">' + esc(person.app_role) + '</span>';
+  var mine = TABS.filter(function(t){ return t[0] !== "data" || me.app_role === "ADMIN"; });
+  el("nav").innerHTML = mine.map(function(t){
+    return '<a href="#'+t[0]+'" data-t="'+t[0]+'">'+esc(t[1])+'</a>'; }).join("");
+  window.onhashchange = route; route();
+}
+
+function route(){
+  var t = (location.hash||"#today").slice(1).split("/")[0];
+  if (!TABS.some(function(x){return x[0]===t})) t = "today";
+  Array.prototype.forEach.call(el("nav").children, function(a){
+    a.className = a.dataset.t === t ? "on" : ""; });
+  el("view").innerHTML = '<p class="mute">Loading...</p>';
+  ({today:vToday, cases:vCases, ogl:vOgl, matrix:vMatrix, pms:vPms,
+    people:vPeople, penalties:vPenalties, data:vData}[t])();
+}
+
+/* --------------------------------------------------------------- today */
+async function vToday(){
+  var r = await Promise.all([
+    api("/people/me"), api("/cases"), crux("/api/ogl"), api("/matrix/incomplete"), api("/pms/cycle/current")
+  ]);
+  var meR = r[0], cases = r[1], ogl = r[2], mx = r[3], pms = r[4];
+  scope = meR;
+  var open = (cases.cases||[]).filter(function(c){ return c.status!=="CLOSED"; }).length;
+  var risky = (ogl.assignments||[]).filter(function(a){
+    return a.sla_status==="AT_RISK" || a.sla_status==="BREACHED"; }).length;
+
+  el("view").innerHTML =
+    '<h1>Today</h1><p class="mute">' +
+      esc(meR.primaryChair ? meR.primaryChair.title : "No chair") + '</p>' +
+    '<div class="tiles" style="margin:18px 0">' +
+      tile(open, "escalations open") +
+      tile(risky, "OGL at risk or breached") +
+      tile((mx.branches||[]).length, "branches missing matrix levels") +
+      tile(pms.score && pms.score.final != null ? Number(pms.score.final).toFixed(1) : "-", "your score") +
+    '</div>' +
+    '<div class="card"><h2>Your appraisal cycle</h2>' + pmsSummary(pms) + '</div>' +
+    (cases.empty ? '<div class="card"><h2>Escalations</h2>' + msg("warn", cases.empty) + '</div>' : "");
+}
+function tile(v,l){ return '<div class="tile"><b>'+esc(v)+'</b><span>'+esc(l)+'</span></div>'; }
+
+/* ---------------------------------------------------------- escalations */
+async function vCases(){
+  var part = (location.hash||"").split("/")[1];
+  if (part) return caseDetail(part);
+  var out = await api("/cases");
+  var rows = out.cases || [];
+  el("view").innerHTML = '<h1>Escalations</h1>' +
+    '<div style="margin:12px 0"><button id="newCase">Raise an escalation</button></div>' +
+    (out.empty ? msg("warn", out.empty) : "") +
+    '<div class="card">' + (rows.length ? '<div class="scroll"><table>' +
+      '<tr><th>Ref</th><th>Status</th><th>Client</th><th>Branch</th><th>Category</th><th>Last activity</th></tr>' +
+      rows.map(function(c){
+        return '<tr class="click" onclick="location.hash=\'#cases/'+esc(c.id)+'\'">' +
+          '<td><b>'+esc(c.ref)+'</b></td><td>'+statusPill(c.status)+'</td>' +
+          '<td>'+esc(c.client)+'</td><td>'+esc(c.branch||"-")+'</td>' +
+          '<td>'+esc(c.category)+'</td><td>'+esc(when(c.last_activity_at))+'</td></tr>';
+      }).join("") + '</table></div>'
+      : '<div class="empty">Nothing open.</div>') + '</div>';
+  el("newCase").onclick = raiseCaseForm;
+}
+function statusPill(s){
+  var k = s==="CLOSED"||s==="RESOLVED" ? "ok" : s==="BLOCKED" ? "bad" : "warn";
+  return '<span class="pill '+k+'">'+esc(s)+'</span>';
+}
+async function raiseCaseForm(){
+  var refs = await crux("/api/refs");
+  el("view").innerHTML = '<h1>Raise an escalation</h1><div class="card">' +
+    '<div class="row"><div><label>Client</label><select id="cl">' +
+      (refs.clients||[]).map(function(c){ return '<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>'; }).join("") +
+    '</select></div><div><label>Branch</label><select id="br"><option value="">-</option>' +
+      (refs.branches||[]).map(function(b){ return '<option value="'+esc(b.id)+'" data-c="'+esc(b.client_id)+'">'+esc(b.name)+'</option>'; }).join("") +
+    '</select></div><div><label>Category</label><select id="cat">' +
+      (refs.categories||[]).map(function(c){ return '<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>'; }).join("") +
+    '</select></div></div>' +
+    '<div><label>What happened</label><textarea id="desc" placeholder="The facts, as the responder will read them."></textarea></div>' +
+    '<div style="margin-top:14px;display:flex;gap:10px"><button id="save">Raise</button>' +
+    '<button class="ghost" onclick="route()">Cancel</button></div><div id="m"></div></div>';
+  el("save").onclick = async function(){
+    var out = await api("/cases", { method:"POST", body:{
+      clientId: el("cl").value, branchId: el("br").value || null,
+      categoryId: el("cat").value, description: el("desc").value, kind:"ESCALATION" } });
+    el("m").innerHTML = out.error ? msg("bad", out.reason || out.error)
+      : msg("ok", "Raised as " + out.ref + ". First chase " + when(out.next_chase_at) + ".");
+    if (!out.error) setTimeout(function(){ location.hash = "#cases"; route(); }, 1200);
+  };
+}
+async function caseDetail(id){
+  var out = await api("/cases/" + id);
+  if (out.error) return el("view").innerHTML = '<h1>Escalation</h1>' + msg("bad", out.reason || out.error);
+  var c = out.case;
+  el("view").innerHTML = '<h1>' + esc(c.ref) + ' ' + statusPill(c.status) + '</h1>' +
+    '<p class="mute">Raised ' + esc(when(c.created_at)) + '</p>' +
+    '<div class="card"><h2>Description</h2><p>' + esc(c.description || "-") + '</p></div>' +
+    '<div class="card"><h2>What you can do</h2>' +
+      ((out.actions||[]).length
+        ? (out.actions.map(function(a){
+            return '<button class="ghost" style="margin:0 8px 8px 0" data-a="'+esc(a.code)+'" data-n="'+(a.needs_note?1:0)+'">'+esc(a.label)+'</button>';
+          }).join("") + '<div id="note" class="hide" style="margin-top:10px"><label>Note</label><textarea id="nt"></textarea><div style="margin-top:10px"><button id="doIt">Confirm</button></div></div>')
+        : '<p class="mute">Your part on this case carries no actions in its current state.</p>') +
+      '<div id="m"></div></div>' +
+    '<div class="card"><h2>History</h2><div class="scroll"><table><tr><th>When</th><th>What</th><th>Note</th></tr>' +
+      (out.events||[]).map(function(e){
+        return '<tr><td>'+esc(when(e.at))+'</td><td>'+esc(e.kind)+'</td><td>'+esc(e.note||"")+'</td></tr>';
+      }).join("") + '</table></div></div>';
+
+  var chosen = null;
+  Array.prototype.forEach.call(el("view").querySelectorAll("[data-a]"), function(b){
+    b.onclick = function(){
+      chosen = b.dataset.a;
+      el("note").classList.toggle("hide", b.dataset.n !== "1");
+      if (b.dataset.n !== "1") act(id, chosen, null);
+    };
+  });
+  if (el("doIt")) el("doIt").onclick = function(){ act(id, chosen, el("nt").value); };
+}
+async function act(id, code, note){
+  var out = await api("/cases/" + id + "/action", { method:"POST", body:{ code: code, note: note } });
+  el("m").innerHTML = out.error ? msg("bad", out.reason || out.error)
+    : msg("ok", out.ref + " is now " + out.status + ".");
+  if (!out.error) setTimeout(function(){ caseDetail(id); }, 900);
+}
+
+/* ------------------------------------------------------------------ OGL */
+async function vOgl(){
+  var out = await crux("/api/ogl");
+  var rows = out.assignments || [];
+  el("view").innerHTML = '<h1>OGL assignments</h1>' +
+    '<p class="mute">A breached assignment is still in its state. The clock is a separate fact.</p>' +
+    '<div class="card">' + (rows.length ? '<div class="scroll"><table>' +
+      '<tr><th>Ref</th><th>State</th><th>SLA</th><th>Due</th><th>Applicant</th><th>Client</th><th>Location</th><th>With</th></tr>' +
+      rows.map(function(a){
+        var k = a.sla_status==="BREACHED"?"bad":a.sla_status==="AT_RISK"?"warn":"ok";
+        return '<tr><td><b>'+esc(a.ref)+'</b></td><td><span class="pill">'+esc(a.current_state)+'</span></td>' +
+          '<td>'+(a.sla_status?'<span class="pill '+k+'">'+esc(a.sla_status)+'</span>':'—')+'</td>' +
+          '<td>'+esc(when(a.due_at))+'</td><td>'+esc(a.applicant_name)+'</td>' +
+          '<td>'+esc(a.client)+'</td><td>'+esc(a.location)+'</td><td>'+esc(a.next_action_owner||"-")+'</td></tr>';
+      }).join("") + '</table></div>'
+      : '<div class="empty">No assignments.</div>') + '</div>';
+}
+
+/* --------------------------------------------------------------- matrix */
+async function vMatrix(){
+  var part = (location.hash||"").split("/")[1];
+  if (part) return matrixBranch(part);
+  var out = await api("/matrix/incomplete");
+  var rows = out.branches || [];
+  el("view").innerHTML = '<h1>Escalation matrix</h1>' +
+    '<p class="mute">Five levels per branch. Completeness is computed, never stored.</p>' +
+    (out.empty ? msg("warn", out.empty) : "") +
+    '<div class="card"><h2>Branches still missing levels</h2>' +
+      (rows.length ? '<div class="scroll"><table><tr><th>Branch</th><th>Client</th><th>Complete</th><th>Missing</th></tr>' +
+        rows.map(function(b){
+          return '<tr class="click" onclick="location.hash=\'#matrix/'+esc(b.id)+'\'">' +
+            '<td><b>'+esc(b.name)+'</b> <span class="mute">'+esc(b.code)+'</span></td>' +
+            '<td>'+esc(b.client)+'</td><td>'+esc(b.complete_levels)+' of 5</td>' +
+            '<td><span class="pill bad">'+esc(b.missing)+'</span></td></tr>';
+        }).join("") + '</table></div>'
+        : '<div class="empty">Every branch in your coverage has all five levels.</div>') + '</div>';
+}
+async function matrixBranch(id){
+  var out = await api("/matrix/branch/" + id);
+  if (out.error) return el("view").innerHTML = '<h1>Branch matrix</h1>' + msg("bad", out.reason || out.error);
+  el("view").innerHTML = '<h1>Branch matrix</h1>' +
+    '<p class="mute">' + esc(out.completeLevels) + ' of 5 complete' +
+      (out.dispatchEligible ? ' - <span class="pill ok">dispatch eligible</span>' : '') + '</p>' +
+    '<div class="card"><div class="scroll"><table>' +
+    '<tr><th>Level</th><th>Name</th><th>Mobile</th><th>E-mail</th><th>Source</th><th></th></tr>' +
+    [1,2,3,4,5].map(function(lv){
+      var r = (out.levels||[]).filter(function(x){ return Number(x.level)===lv; })[0] || {};
+      return '<tr><td><b>'+lv+'</b> <span class="mute">'+esc(r.level_name||"")+'</span></td>' +
+        '<td><input id="n'+lv+'" value="'+esc(r.name||"")+'"></td>' +
+        '<td><input id="m'+lv+'" value="'+esc(r.mobile||"")+'"></td>' +
+        '<td><input id="e'+lv+'" value="'+esc(r.email||"")+'"></td>' +
+        '<td>'+(r.inherited?'<span class="pill">inherited</span>':'')+'</td>' +
+        '<td><button class="sm" data-lv="'+lv+'">Save</button></td></tr>';
+    }).join("") + '</table></div><div id="m"></div></div>' +
+    '<button class="ghost" onclick="location.hash=\'#matrix\'">Back</button>';
+  Array.prototype.forEach.call(el("view").querySelectorAll("[data-lv]"), function(b){
+    b.onclick = async function(){
+      var lv = b.dataset.lv;
+      var out2 = await api("/matrix/branch/" + id + "/level/" + lv, { method:"PUT", body:{
+        name: el("n"+lv).value, mobile: el("m"+lv).value, email: el("e"+lv).value } });
+      el("m").innerHTML = out2.error ? msg("bad", out2.reason || out2.error)
+        : msg("ok", "Saved. " + out2.completeLevels + " of 5 complete.");
+    };
+  });
+}
+
+/* ---------------------------------------------------------- performance */
+function pmsSummary(p){
+  if (!p || p.cycle === null) return '<div class="empty">' + esc(p && p.empty || "No cycle is open.") + '</div>';
+  var s = p.score || {};
+  return (p.blocked ? msg("warn", p.blocked) : "") +
+    (p.unscored ? msg("warn", p.unscored) : "") +
+    '<div class="tiles">' +
+      tile(s.attribute != null ? Number(s.attribute).toFixed(1) : "-", "attributes") +
+      tile(s.kpi != null ? Number(s.kpi).toFixed(1) : "-", "KPI") +
+      tile(s.final != null ? Number(s.final).toFixed(1) : "-", "final") +
+    '</div>' +
+    ((p.ledger||[]).length ? '<h2 style="margin-top:18px">Movements</h2><div class="scroll"><table>' +
+      '<tr><th>When</th><th>Cause</th><th>Half</th><th>Points</th><th>Reason</th><th></th></tr>' +
+      p.ledger.map(function(l){
+        return '<tr><td>'+esc(when(l.at))+'</td><td>'+esc(l.source_kind)+'</td><td>'+esc(l.half)+'</td>' +
+          '<td>'+esc(l.points)+'</td><td>'+esc(l.reason)+'</td>' +
+          '<td>'+(l.applied?'':'<span class="pill bad">over cap</span>')+'</td></tr>';
+      }).join("") + '</table></div>' : "");
+}
+async function vPms(){
+  var p = await api("/pms/cycle/current");
+  var today = new Date().toISOString().slice(0,10);
+  el("view").innerHTML = '<h1>Performance</h1>' +
+    '<div class="card"><h2>Your cycle</h2>' + pmsSummary(p) + '</div>' +
+    '<div class="card"><h2>File today\'s numbers</h2>' +
+      '<p class="mute">One filing per day, carrying every figure. The day closes at 23:59.</p>' +
+      '<div class="row"><div><label>Date</label><input id="cd" type="date" value="'+today+'"></div></div>' +
+      '<div><label>Figures</label><textarea id="vals" placeholder=\'{"Field verifications completed": 42}\'>{}</textarea></div>' +
+      '<div style="margin-top:12px"><button id="fileIt">File</button></div><div id="dm"></div></div>' +
+    '<div class="card"><h2>Raise against someone</h2>' +
+      '<p class="mute">This moves their score. Raise it when the outcome is decided, not when it is alleged.</p>' +
+      '<div class="row"><div><label>Person</label><select id="ab"></select></div>' +
+      '<div><label>Kind</label><select id="kd">' +
+        ["ESCALATION","WARNING","APPRECIATION","ASSISTANCE"].map(function(k){
+          return '<option>'+k+'</option>'; }).join("") + '</select></div></div>' +
+      '<div><label>Body</label><textarea id="bd"></textarea></div>' +
+      '<div style="margin-top:12px"><button id="raiseIt">Raise</button></div><div id="rm"></div></div>';
+
+  var team = await api("/people/team");
+  el("ab").innerHTML = (team.team||[]).filter(function(t){ return t.person_id; })
+    .map(function(t){ return '<option value="'+esc(t.person_id)+'">'+esc(t.full_name)+' - '+esc(t.title)+'</option>'; }).join("")
+    || '<option value="">Nobody reports to you</option>';
+
+  el("fileIt").onclick = async function(){
+    var v; try { v = JSON.parse(el("vals").value || "{}"); }
+    catch(e){ el("dm").innerHTML = msg("bad","That is not valid JSON."); return; }
+    var out = await api("/pms/daily", { method:"POST", body:{ countDate: el("cd").value, values: v } });
+    el("dm").innerHTML = out.error ? msg("bad", out.reason || out.error) : msg("ok","Filed for " + day(out.count_date) + ".");
+  };
+  el("raiseIt").onclick = async function(){
+    var out = await api("/pms/raise", { method:"POST", body:{
+      kind: el("kd").value, aboutPersonId: el("ab").value, body: el("bd").value } });
+    el("rm").innerHTML = out.error ? msg("bad", out.reason || out.error)
+      : msg("ok", "Raised as " + out.ref + ". " + (out.movements||[]).length + " movement(s) recorded.");
+  };
+}
+
+/* --------------------------------------------------------------- people */
+async function vPeople(){
+  var r = await Promise.all([api("/people/org"), api("/people/team")]);
+  var chairs = r[0].chairs || [], team = r[1].team || [];
+  var byParent = {};
+  chairs.forEach(function(c){ (byParent[c.parent_id||"root"] = byParent[c.parent_id||"root"] || []).push(c); });
+  function branch(key){
+    var kids = byParent[key] || [];
+    if (!kids.length) return "";
+    return '<ul class="tree">' + kids.map(function(c){
+      var st = c.vacant ? '<span class="pill bad">vacant</span>'
+             : c.overdue_days > 0 ? '<span class="pill warn">'+c.overdue_days+'d overdue</span>' : '';
+      return '<li><div class="node"><span class="t">'+esc(c.title)+'</span>' +
+        '<span class="mute">'+esc(c.full_name || "-")+'</span>'+st+'</div>' + branch(c.id) + '</li>';
+    }).join("") + '</ul>';
+  }
+  el("view").innerHTML = '<h1>People</h1>' +
+    '<div class="card"><h2>Your team</h2>' +
+      (team.length ? '<div class="scroll"><table><tr><th>Chair</th><th>Who</th><th>State</th></tr>' +
+        team.map(function(t){
+          return '<tr><td>'+esc(t.title)+'</td><td>'+esc(t.full_name||"-")+'</td>' +
+            '<td>'+esc(t.state||"")+'</td></tr>'; }).join("") + '</table></div>'
+        : '<div class="empty">Nobody reports to your chair.</div>') + '</div>' +
+    '<div class="card"><h2>The structure</h2>' +
+      (chairs.length ? branch("root") : '<div class="empty">No chairs loaded yet.</div>') + '</div>';
+}
+
+/* ------------------------------------------------------------ penalties */
+async function vPenalties(){
+  var r = await Promise.all([api("/penalties/rules"), api("/penalties/ledger")]);
+  var rules = r[0].rules || [], led = r[1].ledger || [];
+  el("view").innerHTML = '<h1>Penalties</h1>' +
+    '<div class="card"><h2>The ledger</h2>' +
+      (led.length ? '<div class="scroll"><table>' +
+        '<tr><th>Period</th><th>Who</th><th>Rule</th><th>Amount</th><th>Evidence</th><th>Recovered by</th></tr>' +
+        led.map(function(l){
+          return '<tr><td>'+esc(l.period)+'</td><td>'+esc(l.full_name)+'</td>' +
+            '<td>'+esc(l.what)+'</td><td>'+esc(money(l.amount))+'</td>' +
+            '<td class="mute">'+esc(l.evidence)+'</td><td>'+esc(l.recovered_by)+'</td></tr>';
+        }).join("") + '</table></div>' : '<div class="empty">Nothing has been raised.</div>') + '</div>' +
+    '<div class="card"><h2>The rules</h2><div class="scroll"><table>' +
+      '<tr><th>Code</th><th>What</th><th>In plain words</th><th>Cutoff</th><th>Amount</th><th></th></tr>' +
+      rules.map(function(x){
+        return '<tr><td><code>'+esc(x.code)+'</code></td><td>'+esc(x.what)+'</td>' +
+          '<td class="mute">'+esc(x.plain_language)+'</td><td>'+esc(x.cutoff_spec||"")+'</td>' +
+          '<td>'+esc(money(x.amount))+'</td>' +
+          '<td>'+(x.active?'<span class="pill ok">active</span>':'<span class="pill">off</span>')+'</td></tr>';
+      }).join("") + '</table></div></div>';
+}
+
+/* ----------------------------------------------------------- data setup */
+async function vData(){
+  var kinds = await crux("/api/kinds");
+  var hist = await crux("/api/history");
+  el("view").innerHTML = '<h1>Data setup</h1>' +
+    '<div class="card"><h2>Load a file</h2>' +
+      '<p class="mute">Validate, preview, then apply. A file with any error applies zero rows.</p>' +
+      '<div class="row"><div><label>File kind</label><select id="kind">' +
+        (kinds.kinds||[]).map(function(k){
+          return '<option value="'+esc(k.kind)+'">'+esc(k.load_order)+". "+esc(k.kind)+'</option>'; }).join("") +
+      '</select></div><div style="flex:0 0 auto;display:flex;align-items:flex-end">' +
+        '<button class="ghost" id="tpl">Download template</button></div></div>' +
+      '<div class="drop" id="drop">Drop a CSV here, or click to choose one' +
+        '<input id="file" type="file" accept=".csv,text/csv" class="hide"></div>' +
+      '<div id="upMsg"></div><div id="preview"></div></div>' +
+    '<div class="card"><h2>Recent loads</h2>' +
+      ((hist.batches||[]).length ? '<div class="scroll"><table>' +
+        '<tr><th>When</th><th>Kind</th><th>File</th><th>State</th><th>Rows</th><th>Errors</th></tr>' +
+        hist.batches.map(function(b){
+          return '<tr><td>'+esc(when(b.uploaded_at))+'</td><td>'+esc(b.kind)+'</td>' +
+            '<td>'+esc(b.file_name)+'</td><td>'+esc(b.state)+'</td>' +
+            '<td>'+esc(b.rows_total)+'</td><td>'+esc(b.rows_error)+'</td></tr>';
+        }).join("") + '</table></div>' : '<div class="empty">Nothing loaded yet.</div>') + '</div>' +
+    '<div class="card"><h2>Empty the tool</h2>' +
+      '<p class="mute">Removes every person, client, branch, case and filing — the demo data and anything else. ' +
+      'Keeps your configuration, the audit trail, your own account and the chair you sit in.</p>' +
+      '<div id="resetPreview"><button class="ghost" id="showReset">Show me what would go</button></div></div>';
+
+  el("tpl").onclick = function(){
+    var k = el("kind").value;
+    fetch(CRUX + "/api/template?kind=" + encodeURIComponent(k), { headers:{ "x-crux-token": token } })
+      .then(function(r){ return r.blob(); }).then(function(b){
+        var a = document.createElement("a"); a.href = URL.createObjectURL(b);
+        a.download = "crux-" + k.replace(/\s+/g,"-").toLowerCase() + "-template.csv";
+        document.body.appendChild(a); a.click(); a.remove();
+      });
+  };
+  var drop = el("drop"), file = el("file");
+  drop.onclick = function(){ file.click(); };
+  drop.ondragover = function(e){ e.preventDefault(); drop.classList.add("over"); };
+  drop.ondragleave = function(){ drop.classList.remove("over"); };
+  drop.ondrop = function(e){ e.preventDefault(); drop.classList.remove("over");
+    if (e.dataTransfer.files[0]) send(e.dataTransfer.files[0]); };
+  file.onchange = function(){ if (file.files[0]) send(file.files[0]); };
+  el("showReset").onclick = resetPanel;
+}
+
+async function send(f){
+  el("upMsg").innerHTML = msg("warn", "Validating " + f.name + "...");
+  var csv = await f.text();
+  var out = await crux("/api/upload", { method:"POST",
+    body:{ kind: el("kind").value, fileName: f.name, csv: csv } });
+  el("file").value = "";
+  if (out.error) { el("upMsg").innerHTML = msg("bad", out.reason || out.error); return; }
+  el("upMsg").innerHTML = "";
+  el("preview").innerHTML =
+    '<div class="tiles" style="margin:14px 0">' + tile(out.rows_total,"rows read") +
+      tile(out.rows_ok,"would load") + tile(out.rows_error,"errors") + '</div>' +
+    msg(out.rows_error ? "bad" : "ok", out.note) +
+    ((out.errors||[]).length ? '<div class="scroll"><table><tr><th>Line</th><th>Problem</th></tr>' +
+      out.errors.map(function(e){ return '<tr><td>'+esc(e.row_no)+'</td><td>'+esc(e.error)+'</td></tr>'; }).join("") +
+      '</table></div>' : "") +
+    '<div style="margin-top:14px"><button id="apply"'+(out.applicable?"":" disabled")+'>Apply</button></div>' +
+    '<div id="am"></div>';
+  if (el("apply")) el("apply").onclick = async function(){
+    el("apply").disabled = true;
+    var a = await crux("/api/apply", { method:"POST", body:{ id: out.batchId } });
+    el("am").innerHTML = a.error ? msg("bad", a.reason || a.error) : msg("ok","Loaded " + a.applied + " row(s).");
+    if (!a.error) setTimeout(vData, 1200);
+  };
+}
+
+async function resetPanel(){
+  var p = await crux("/api/reset/preview");
+  var rows = p.tables || [];
+  el("resetPreview").innerHTML = (rows.length
+    ? '<div class="scroll"><table><tr><th>Table</th><th>Rows that would go</th></tr>' +
+      rows.map(function(t){ return '<tr><td>'+esc(t.table_name)+'</td><td>'+esc(t.rows)+'</td></tr>'; }).join("") +
+      '</table></div>'
+    : '<div class="empty">There is nothing to remove.</div>') +
+    (rows.length ? '<p class="mute" style="margin-top:14px">Type <code>DELETE ALL DATA</code> to confirm. ' +
+      'This cannot be undone.</p>' +
+      '<div class="row"><div><input id="confirm" placeholder="DELETE ALL DATA"></div>' +
+      '<div style="flex:0 0 auto"><button class="danger" id="doReset">Empty the tool</button></div></div>' : "") +
+    '<div id="rm2"></div>';
+  if (el("doReset")) el("doReset").onclick = async function(){
+    el("doReset").disabled = true;
+    var out = await crux("/api/reset", { method:"POST", body:{ confirm: el("confirm").value } });
+    el("rm2").innerHTML = out.error ? msg("bad", (out.reason||out.error) + (out.hint ? " " + out.hint : ""))
+      : msg("ok", out.deleted + " rows removed. " + out.kept);
+    el("doReset").disabled = false;
+    if (!out.error) setTimeout(vData, 1600);
+  };
+}
+
+boot();
+</script></body></html>
