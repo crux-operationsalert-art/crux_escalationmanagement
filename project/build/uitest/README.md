@@ -20,6 +20,23 @@ The stub is deliberately thin. It is not a second implementation of the API —
 it returns the shapes the views actually read, so that a rename on either side
 shows up as an empty column in a screenshot rather than a surprise in Pune.
 
+## Why the page is not served by the edge function
+
+Supabase rewrites any `text/html` leaving `*.supabase.co` to `text/plain`, adds
+`x-content-type-options: nosniff` and a `default-src 'none'; sandbox` CSP. The
+browser then shows the source instead of running it. That is deliberate — the
+domain is not meant to host pages — and it cannot be turned off without a
+custom domain.
+
+So the page is served from GitHub Pages (`docs/app.html`) and calls Supabase as
+a JSON API. `cross-origin.mjs` is the test that matters for this: it serves the
+page on one origin and the API on another, exactly as Pages talks to Supabase,
+and fails if the CORS preflight does not let the sign-in POST through.
+
+    node pageserve.mjs &   # the page on :8899
+    node stub.mjs &        # the API on :8787
+    node cross-origin.mjs
+
 ## Installing the page
 
 Do not edit `app_page.html` with SQL string operations. Install it whole:

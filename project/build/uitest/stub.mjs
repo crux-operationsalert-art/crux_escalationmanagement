@@ -1,6 +1,6 @@
 import http from 'node:http';
 import fs from 'node:fs';
-const page = fs.readFileSync(process.argv[2] || '../supabase/functions/crux/app.html', 'utf8');
+const page = fs.readFileSync(process.argv[2] || '../../../docs/app.html', 'utf8');
 
 const P = (id,n)=>({id, full_name:n, app_role:'ADMIN', department:'Operations', chair_title:'Head — Operations'});
 const OGL_A = (ref,st,sla)=>({id:'a-'+ref, ref, applicant_name:'R. Kulkarni',
@@ -41,13 +41,20 @@ const ROUTES = {
   '/penalties': {penalties:[]},
 };
 
+// the same CORS the real function sends
+const CORS = {
+  'access-control-allow-origin':'*',
+  'access-control-allow-headers':'content-type, x-crux-token',
+  'access-control-allow-methods':'GET,POST,OPTIONS',
+};
 const srv = http.createServer((req,res)=>{
+  if (req.method === 'OPTIONS') { res.writeHead(200, CORS); return res.end('ok'); }
   const u = new URL(req.url,'http://x');
   let path = u.pathname;
   for (const pre of ['/functions/v1/crux','/functions/v1/api']) if (path.startsWith(pre)) path = path.slice(pre.length) || '/';
   if (path === '/' || path === '') { res.writeHead(200,{'content-type':'text/html; charset=utf-8'}); return res.end(page); }
   const body = ROUTES[path];
-  res.writeHead(body?200:404,{'content-type':'application/json','access-control-allow-origin':'*'});
+  res.writeHead(body?200:404,{'content-type':'application/json', ...CORS});
   res.end(JSON.stringify(body || {error:'not_found', path}));
 });
 srv.listen(8787, ()=>console.log('stub on 8787'));
