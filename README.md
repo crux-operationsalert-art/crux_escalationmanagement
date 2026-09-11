@@ -30,7 +30,7 @@ in fifteen minutes locks that door for fifteen minutes.
 | 7 | Collections | billed and collected per client, zone and month |
 | 8 | KPI targets | monthly targets per person and KPI |
 | 9 | Past performance | MTD, revenue and collections history |
-| 10 | Opening balances | live escalations and claims at cutover |
+| 10 | Opening balances | live escalations, OGL assignments and claims at cutover |
 | 11 | Holidays | the festival calendar (load any time) |
 
 Each has a **Download template** button giving the exact headers, one example
@@ -115,6 +115,33 @@ inbox by accident. Delete it when your own data is ready — `sample_purge()`
 clears the seeded sample rows, and the dummy rows above carry
 `source_ref = 'bulk upload'`.
 
+## OGL — ops-to-ops verification
+
+`ogl_assignment` used to be refused by the Opening balances loader because
+there was nothing to load it into. There is now: a case with its parties and
+verification points, an assignment with fourteen states, and an SLA clock
+measured in business minutes.
+
+The rule the module is built around: **`current_state` is the operational
+position and nothing else.** SLA status, escalation level, priority bucket and
+open request type are orthogonal attributes. A breached assignment is still
+`IN_PROGRESS` and still shows its operator the correct next action — collapsing
+those into one status column is where the old system's workflow went wrong.
+
+`ogl_transition()` is the only thing that writes `current_state`. The spec
+enforces that with a column grant; `service_role` bypasses a column grant, so
+it is a trigger here — a direct `UPDATE` is refused whoever you are. A cutover
+row is the one exception, and it arrives by `INSERT`, seated in the state it
+was already in.
+
+The clock counts business minutes against a working window, skipping weekends
+and **confirmed** holidays only. A naive timestamp in an upload is read as
+Asia/Kolkata, not UTC — a time typed in a Pune office is a Pune time.
+
+Built but not yet driven by any endpoint: the conditional-pause arithmetic on
+RFIs, delay auto-accept, the escalation sweep, and strike generation. Their
+tables exist; the logic does not, and the module does not pretend otherwise.
+
 ## Holidays
 
 26 days for 2026 and 2027. The three gazetted national days — Republic Day,
@@ -141,7 +168,7 @@ deadline, until somebody fixes it.
 
 ```
 project/build/schema.sql            base schema — 103 tables
-project/build/schema-patch-v3..v11  applied in order after it
+project/build/schema-patch-v3..v13  applied in order after it
 project/build/supabase/             RLS, auth gate, storage buckets
 project/build/supabase/functions/   the live edge function
 project/build/api/                  Express API, no ORM
