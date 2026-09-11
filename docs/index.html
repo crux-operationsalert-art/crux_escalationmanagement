@@ -6,37 +6,46 @@
 <meta name="description" content="The Crux India operations tool: escalations, OGL verification assignments, the branch matrix, appraisals and penalties.">
 <style>
 :root{
-  --bg:#f6f7f9; --card:#fff; --ink:#14171c; --mute:#5d6672; --line:#e3e6ea;
-  --accent:#1d4ed8; --accent-ink:#fff; --soft:#eef2ff; --ok:#0f7b3d; --warn:#8a5a00;
+  --paper:#f4f2ee; --white:#fff; --panel:#faf9f6;
+  --ink:#14161a; --body:#3d434d; --mute:#5c6470;
+  --line:#d8d5cd; --line2:#eeece6;
+  --blue:#3a5a80; --blue-dark:#243b55;
+  --terra:#b4562f; --terra-ink:#a03f18; --terra-bg:#fdf6f3;
+  --serif:Georgia,serif;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
-  --bg:#0f1115; --card:#171a21; --ink:#e9ecf1; --mute:#98a1b0; --line:#262b35;
-  --accent:#6f9bff; --accent-ink:#0b0e13; --soft:#18203a; --ok:#4ade80; --warn:#e8b657;
-}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);
-  font:16px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-.wrap{max-width:760px;margin:0 auto;padding:56px 20px 96px}
-h1{font-size:30px;line-height:1.2;letter-spacing:-.02em;margin:0 0 8px}
-.sub{color:var(--mute);margin:0 0 32px;font-size:17px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;
-  padding:24px;margin:0 0 20px}
-h2{font-size:16px;margin:0 0 12px;letter-spacing:-.01em}
-h3{font-size:14px;margin:20px 0 6px;color:var(--mute);
-  text-transform:uppercase;letter-spacing:.06em}
-a{color:var(--accent)}
-.go{display:inline-block;background:var(--accent);color:var(--accent-ink);
-  text-decoration:none;font-weight:600;padding:14px 26px;border-radius:10px;font-size:17px}
-.go:hover{opacity:.9}
-.url{display:block;margin-top:14px;font-size:13px;color:var(--mute);word-break:break-all}
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);
+  font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;
+  font-size:14px;line-height:1.65}
+.wrap{max-width:760px;margin:0 auto;padding:clamp(28px,6vw,56px) clamp(16px,4vw,20px) 96px}
+h1{font-family:var(--serif);font-weight:400;font-size:clamp(24px,4.4vw,34px);
+  line-height:1.2;letter-spacing:-.01em;margin:0 0 8px}
+.sub{color:var(--mute);margin:0 0 32px;font-size:15px;max-width:70ch}
+.card{background:var(--white);border:1px solid var(--line);padding:0;margin:0 0 20px}
+.card>*{padding-left:20px;padding-right:20px}
+.card>*:first-child{padding-top:18px}
+.card>*:last-child{padding-bottom:18px}
+h2{font-family:var(--serif);font-weight:400;font-size:19px;margin:0 0 12px}
+h3{font-size:11px;margin:20px 0 6px;color:var(--mute);font-weight:600;
+  text-transform:uppercase;letter-spacing:.08em}
+a{color:var(--blue);text-decoration:none}
+a:hover{color:var(--blue-dark);text-decoration:underline}
+.go{display:inline-block;background:var(--terra);color:#fff;border:1px solid var(--terra);
+  text-decoration:none;padding:14px 26px;font-size:15px;min-height:48px}
+.go:hover{background:#94441f;border-color:#94441f;color:#fff;text-decoration:none}
+.url{display:block;margin-top:14px;font-size:12.5px;color:var(--mute);word-break:break-all}
 ol,ul{margin:0;padding-left:22px}
 li{margin:0 0 8px}
-table{width:100%;border-collapse:collapse;font-size:14px}
-th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
-th{color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line2);vertical-align:top}
+th{color:var(--mute);font-weight:600;font-size:11px;text-transform:uppercase;
+  letter-spacing:.06em;background:var(--panel)}
 tr:last-child td{border-bottom:0}
-code{background:var(--soft);padding:2px 6px;border-radius:5px;font-size:13px}
-.note{background:var(--soft);border-radius:10px;padding:14px 16px;font-size:14px;margin-top:16px}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+  background:var(--panel);padding:2px 6px;border:1px solid var(--line2)}
+.note{background:var(--terra-bg);border:1px solid #e6cfc4;padding:14px 16px;
+  font-size:13px;margin-top:16px;color:var(--body)}
 .foot{color:var(--mute);font-size:13px;margin-top:36px}
 @media (max-width:520px){ h1{font-size:24px} .wrap{padding:36px 16px 72px} }
 </style>
