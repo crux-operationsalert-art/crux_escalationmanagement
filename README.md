@@ -52,11 +52,12 @@ all.
 | PMS appraisal cascade and scoring | Database functions | **Yes** |
 | Dummy dataset — 17 people, 5 clients, 16 branches | Loaded through the uploader | **Yes** |
 | Indian holiday calendar 2026–27 | 26 days, 6 confirmed | **Yes** |
-| Express API — cases, matrix, PMS, people, penalties | `project/build/api` | No — code only, needs a host |
+| The rest of the API — cases, matrix, PMS, people, penalties | Edge function `api` | **Yes** |
 | Front end | `project/*.dc.html` | No — prototypes |
 
-The edge function covers upload and sign-in. Everything else in the Express API
-still needs a machine to run on; see *Running the full API* below.
+Nothing needs a host any more. The Express app in `project/build/api` is still
+the reference implementation, but its route files now run inside Supabase as
+well; see *The API* below.
 
 ---
 
@@ -81,20 +82,40 @@ update person set password_hash = null, password_salt = null
 
 ---
 
-## Running the full API
+## The API
 
-The Express API carries the rest of the application — cases, the escalation
-matrix, PMS, people and penalties. It needs a host:
+**https://oxpwqfbtbxlvuqpztbwg.supabase.co/functions/v1/api**
+
+```
+/api/cases        raise, read, act on escalations
+/api/matrix       the branch escalation matrix and its chase list
+/api/pms          cycle, adjustments, raisables, daily filing, disputes
+/api/people       org chart, team, the hiring chain, notes
+/api/penalties    rules, instances, the ledger
+/api/sample       what placeholder data is loaded, seed, purge
+```
+
+Sign in at the upload service and send its token as `x-crux-token` — one
+session, both doors, and revoking it in one revokes it in the other.
+
+These are the *same route files* as `project/build/api/routes`. A shim supplies
+Router, req/res and a db module with the same `q`/`one`/`many`/`tx` contract, so
+the routes were carried across rather than rewritten — a rewrite would mean
+re-deriving every decision they encode, and that is where the mistakes come
+from. `tx` still carries the actor, so an audit row still cannot commit without
+the change it describes.
+
+The Express app still runs if you want it on your own machine:
 
 ```bash
-cd project/build/api
-npm install
+cd project/build/api && npm install
 export DATABASE_URL='postgresql://postgres.oxpwqfbtbxlvuqpztbwg:<DB-PASSWORD>@aws-0-ap-south-1.pooler.supabase.com:5432/postgres'
 npm start          # :3000, or $PORT
 ```
 
-`npm run worker` runs the outbox and scheduled jobs in a second process.
-`CORS_ORIGINS` must list the origin the front end is served from.
+`npm run worker` runs the outbox and scheduled jobs. That worker is the one
+piece with nowhere to live yet: edge functions answer requests, they do not run
+a loop, so scheduled sends still need either a machine or a cron trigger.
 
 ---
 
@@ -160,7 +181,7 @@ deadline, until somebody fixes it.
 2. Load people, chairs and coverage by bulk upload, in load order.
 3. Load the full holiday calendar and the rate card.
 4. `sample_purge()`, and clear the sample administrator's password.
-5. Deploy the Express API and point the front end at it.
+5. Point the front end at the API, and give the outbox worker a schedule.
 
 ---
 
@@ -168,9 +189,9 @@ deadline, until somebody fixes it.
 
 ```
 project/build/schema.sql            base schema — 103 tables
-project/build/schema-patch-v3..v13  applied in order after it
+project/build/schema-patch-v3..v14  applied in order after it
 project/build/supabase/             RLS, auth gate, storage buckets
-project/build/supabase/functions/   the live edge function
+project/build/supabase/functions/   the two live edge functions
 project/build/api/                  Express API, no ORM
 project/build/migration/            Sheets → Postgres migration SQL
 project/*.dc.html                   design prototypes
