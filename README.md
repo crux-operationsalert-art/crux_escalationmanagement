@@ -6,18 +6,41 @@ currently runs on Google Apps Script over a 26-tab spreadsheet (1,413 branches,
 
 ## The tool is live
 
-**https://oxpwqfbtbxlvuqpztbwg.supabase.co/functions/v1/crux**
+**https://crux-operationsalert-art.github.io/crux_escalationmanagement/**
 
-A signpost page for sharing lives in `docs/` and is served by GitHub Pages at
-**https://crux-operationsalert-art.github.io/crux_escalationmanagement/** once
-Pages is switched on: *Settings → Pages → Deploy from a branch → `main` →
-`/docs` → Save*. That page holds no data; it explains what Crux is and points
-at the address above, which is where sign-in happens and where the OAuth client
-already trusts the origin.
+That is the address to share. The page itself is `docs/app.html`, served by
+GitHub Pages; `docs/index.html` in front of it explains what Crux is.
 
-Sign in with your Crux Google account, or with a password. Nine screens:
-Today, Escalations, OGL, Matrix, Performance, People, Penalties, and — for
-administrators — Data setup and Mail.
+### Why the page is not served by the edge function
+
+The obvious address would be the function itself,
+`https://oxpwqfbtbxlvuqpztbwg.supabase.co/functions/v1/crux`, and for a while
+that is what this README said. It does not work. Supabase rewrites any
+`text/html` leaving `*.supabase.co` to `text/plain` and adds
+`x-content-type-options: nosniff` and a `default-src 'none'; sandbox` CSP, so
+the browser shows the source of the page instead of running it. It is a
+deliberate restriction — the domain is not meant to host pages — and lifting it
+needs a custom domain on the Supabase side.
+
+So the page is served from Pages and calls the function as a JSON API. Both
+`crux` and `api` run with `verify_jwt` off and send
+`access-control-allow-origin: *`, which is what makes that work. The API base
+is set at the top of `app.html`; pass `?api=` to point a copy somewhere else.
+
+### Google sign-in and the origin
+
+Google only draws its button on an origin listed on the client id, and it fails
+silently when the origin is not listed. The page notices and says so, and the
+password form underneath keeps working. To get the Google button back, someone
+with access to the Google Cloud console has to add
+
+    https://crux-operationsalert-art.github.io
+
+to **Authorised JavaScript origins** on the OAuth client. Until that happens,
+everyone signs in with a password.
+
+Nine screens: Today, Escalations, OGL, Matrix, Performance, People, Penalties,
+and — for administrators — Data setup and Mail.
 
 It runs as Supabase Edge Functions, inside the same network as the database, so
 there is no server to keep alive. Sign-in happens in the function itself; the
