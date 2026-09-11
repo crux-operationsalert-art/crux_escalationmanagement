@@ -79,6 +79,8 @@ redeploy.
 | The rest of the API — cases, matrix, PMS, people, penalties | Edge function `api` | **Yes** |
 | Front end — nine screens | Edge function `crux` | **Yes** |
 | OGL engine — pause, auto-accept, escalation, strikes | Database functions | **Yes** |
+| OGL workflow — raise, triage, report, complete, review | Database functions | **Yes** |
+| Evidence — photographs and PDFs on an assignment | Private buckets, signed URLs | **Yes** |
 | Scheduled jobs — auto-close, SLA, sub-TAT, escalation, strikes | `pg_cron`, every 15 min | **Yes** |
 | Google sign-in | Configured | **Yes** |
 | Mail — outbox, sender, four providers + Gmail | Edge function `mail`, every minute | **Yes** |
@@ -281,6 +283,15 @@ the report went out (Force1, e-mail, WhatsApp, the client portal, by hand), to
 whom, and with what reference. That reference is what makes *was it actually
 sent?* answerable in three months without relying on anyone's memory.
 
+**Evidence.** Photographs and PDFs attach to the assignment and, where it
+matters, to the individual point. The browser never holds a key: it asks for a
+URL good for one file, in one place, for a few minutes, and puts the bytes
+there itself. The storage key is computed server-side and cannot be supplied —
+a caller who names their own path can name somebody else's. Buckets are
+private, carry their own MIME allow-list and size limit, and the read links
+the screen shows expire after fifteen minutes. An attachment is removed, never
+deleted; the row stays and says who took it down.
+
 A move to `COMPLETED` while any point has no finding on it is refused — by the
 trigger, not by the function, so it holds for every caller including one
 nobody has written yet. Accepting the report closes the case's points as well
@@ -404,7 +415,7 @@ deadline, until somebody fixes it.
 
 ```
 project/build/schema.sql            base schema — 103 tables
-project/build/schema-patch-v3..v20  applied in order after it
+project/build/schema-patch-v3..v22  applied in order after it
 project/build/supabase/             RLS, auth gate, storage buckets
 project/build/supabase/functions/   the three live edge functions
   crux/   the front door: the page, sign-in, upload, OGL, mail settings

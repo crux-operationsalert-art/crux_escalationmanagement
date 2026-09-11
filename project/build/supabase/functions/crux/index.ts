@@ -97,6 +97,35 @@ async function drainNow() {
   try { return JSON.parse(t); } catch { return { error: "sender_unreachable", raw: t.slice(0, 300) }; }
 }
 
+// ----------------------------------------------------------- storage
+// The browser never gets a key. It gets a URL that is good for one file,
+// in one place, for a few minutes, and then stops working.
+async function signUpload(bucket: string, key: string) {
+  const r = await fetch(SUPABASE_URL + "/storage/v1/object/upload/sign/" +
+      bucket + "/" + key, {
+    method: "POST",
+    headers: { authorization: "Bearer " + SERVICE_KEY, apikey: SERVICE_KEY,
+               "content-type": "application/json" },
+    body: "{}",
+  });
+  const t = await r.text();
+  if (!r.ok) throw new Error("sign upload: " + r.status + " " + t.slice(0, 200));
+  const j = JSON.parse(t);
+  return SUPABASE_URL + "/storage/v1" + j.url;
+}
+
+async function signDownload(bucket: string, key: string, seconds = 900) {
+  const r = await fetch(SUPABASE_URL + "/storage/v1/object/sign/" + bucket + "/" + key, {
+    method: "POST",
+    headers: { authorization: "Bearer " + SERVICE_KEY, apikey: SERVICE_KEY,
+               "content-type": "application/json" },
+    body: JSON.stringify({ expiresIn: seconds }),
+  });
+  if (!r.ok) return null;
+  const j = await r.json();
+  return SUPABASE_URL + "/storage/v1" + j.signedURL;
+}
+
 // ------------------------------------------------------------------ CSV
 // Minimal RFC4180: quoted fields, embedded commas, doubled quotes, CRLF.
 function parseCsv(text: string): string[][] {
@@ -458,6 +487,45 @@ Deno.serve(async (req: Request) => {
       const out = await rpc("ogl_review_accept", {
         p_assignment: b.id, p_actor: person.id, p_remarks: b.remarks ?? null });
       if (out && out.error) return json(out, 409);
+      return json(out);
+    }
+
+    // ------------------------------------------------------- evidence
+    // A field verification without a photograph is one person's word.
+    if (path === "/api/ogl/attach/begin" && req.method === "POST") {
+      const b = await req.json();
+      const out = await rpc("ogl_attach_begin", {
+        p_assignment: b.id, p_actor: person.id, p_file_name: b.fileName,
+        p_doc_kind: b.kind ?? "EVIDENCE", p_requirement: b.requirement ?? null });
+      if (out && out.error) return json(out, out.error === "not_yours" ? 403 : 400);
+      return json({ ...out, uploadUrl: await signUpload(out.bucket, out.key) });
+    }
+
+    if (path === "/api/ogl/attach/done" && req.method === "POST") {
+      const b = await req.json();
+      const out = await rpc("ogl_attach_done", {
+        p_assignment: b.id, p_actor: person.id, p_key: b.key, p_file_name: b.fileName,
+        p_mime: b.mime ?? null, p_bytes: b.bytes ?? null,
+        p_doc_kind: b.kind ?? "EVIDENCE", p_requirement: b.requirement ?? null,
+        p_caption: b.caption ?? null });
+      if (out && out.error) return json(out, 409);
+      return json(out, 201);
+    }
+
+    if (path === "/api/ogl/attachments") {
+      const id = url.searchParams.get("id");
+      if (!id) return json({ error: "missing_id" }, 400);
+      const out = await rpc("ogl_attachments", { p_assignment: id, p_person: person.id });
+      if (out && out.error) return json(out, 403);
+      // a link the browser can open, and only for as long as it is looking
+      for (const t of out.attachments ?? []) t.url = await signDownload(t.bucket, t.key);
+      return json(out);
+    }
+
+    if (path === "/api/ogl/attach/remove" && req.method === "POST") {
+      const b = await req.json();
+      const out = await rpc("ogl_attach_remove", { p_attachment: b.id, p_actor: person.id });
+      if (out && out.error) return json(out, 403);
       return json(out);
     }
 

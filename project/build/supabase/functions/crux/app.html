@@ -718,6 +718,12 @@ async function oglDetail(id){
         : '<div class="empty">Nothing is yours to do on this one right now.</div>') +
       '<div id="oglForm"></div><div id="oglMsg"></div></div>' +
 
+    '<div class="card"><h2>Evidence</h2>' +
+      '<p class="mute">A field verification without a photograph is one person\'s word. ' +
+      'Photographs and PDFs only; the file goes straight to storage and the link below ' +
+      'is good for fifteen minutes at a time.</p>' +
+      '<div id="evi">Loading...</div></div>' +
+
     (s && s.attribution_pending ? msg("warn",
       "Some of this assignment's time is not attributed yet. No strike can be generated until it is.") : "") +
 
@@ -770,6 +776,65 @@ async function oglDetail(id){
           (v["from"] && v.to ? ' <span class="mute">'+esc(v["from"])+' &rarr; '+esc(v.to)+'</span>' : "") + '</td>' +
           '<td>'+esc(v.by || (v.system ? "the system" : "-"))+'</td></tr>';
       }).join("") + '</table></div></div>';
+
+  oglEvidence(id);
+}
+
+/* The browser never holds a key. It asks for a URL that is good for one
+   file, in one place, for a few minutes, and puts the bytes there itself. */
+async function oglEvidence(id){
+  var out = await crux("/api/ogl/attachments?id=" + encodeURIComponent(id));
+  var list = out.attachments || [];
+  el("evi").innerHTML =
+    (list.length ? '<div class="scroll"><table>' +
+      '<tr><th>File</th><th>Point</th><th>Note</th><th>By</th><th>When</th><th></th></tr>' +
+      list.map(function(t){
+        return '<tr><td><a href="'+esc(t.url||"#")+'" target="_blank" rel="noopener">' +
+            esc(t.file_name)+'</a>'+(t.bytes?' <span class="mute">'+Math.round(t.bytes/1024)+' KB</span>':'')+'</td>' +
+          '<td>'+esc(t.point||"-")+'</td><td>'+esc(t.caption||"")+'</td>' +
+          '<td>'+esc(t.by||"-")+'</td><td>'+esc(when(t.at))+'</td>' +
+          '<td><button class="ghost danger" onclick="oglUnattach(\'' + esc(t.id) + '\',\'' + esc(id) + '\')">Remove</button></td></tr>';
+      }).join("") + '</table></div>'
+      : '<div class="empty">Nothing attached yet.</div>') +
+    '<div class="row" style="margin-top:14px">' +
+      '<div><label>Add a file</label><input id="evFile" type="file" accept=".jpg,.jpeg,.png,.heic,.pdf"></div>' +
+      '<div><label>Note (optional)</label><input id="evCap" placeholder="what it shows"></div></div>' +
+    '<div id="evMsg"></div>';
+
+  el("evFile").onchange = async function(){
+    var f = el("evFile").files[0];
+    if (!f) return;
+    el("evMsg").innerHTML = msg("warn","Preparing " + f.name + "...");
+    var b = await crux("/api/ogl/attach/begin", { method:"POST",
+      body:{ id:id, fileName: f.name } });
+    if (b.error) { el("evMsg").innerHTML = msg("bad", b.reason || b.error); return; }
+    if (f.size > b.max_bytes) {
+      el("evMsg").innerHTML = msg("bad", "That file is " + Math.round(f.size/1048576) +
+        " MB. The limit here is " + Math.round(b.max_bytes/1048576) + " MB.");
+      return;
+    }
+    el("evMsg").innerHTML = msg("warn","Uploading...");
+    var put = await fetch(b.uploadUrl, { method:"PUT",
+      headers:{ "content-type": f.type || b.mime }, body: f });
+    if (!put.ok) {
+      el("evMsg").innerHTML = msg("bad","Storage refused the file: " + put.status + " " +
+        (await put.text()).slice(0,200));
+      return;
+    }
+    var d = await crux("/api/ogl/attach/done", { method:"POST",
+      body:{ id:id, key: b.key, fileName: f.name, mime: f.type || b.mime,
+             bytes: f.size, caption: el("evCap").value } });
+    if (d.error) { el("evMsg").innerHTML = msg("bad", d.reason || d.error); return; }
+    el("evMsg").innerHTML = "";
+    oglEvidence(id);
+  };
+}
+
+async function oglUnattach(attachment, id){
+  if (!confirm("Remove it? The record of it having been there stays.")) return;
+  var out = await crux("/api/ogl/attach/remove", { method:"POST", body:{ id: attachment } });
+  if (out.error) { el("evMsg").innerHTML = msg("bad", out.reason || out.error); return; }
+  oglEvidence(id);
 }
 
 function oglReload(){ el("view").innerHTML = '<p class="mute">Loading...</p>'; route(); }
