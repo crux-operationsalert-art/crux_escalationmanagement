@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Crux — escalation, compliance and performance management</title>
+<meta name="description" content="The Crux India operations tool: escalations, OGL verification assignments, the branch matrix, appraisals and penalties.">
+<style>
+:root{
+  --bg:#f6f7f9; --card:#fff; --ink:#14171c; --mute:#5d6672; --line:#e3e6ea;
+  --accent:#1d4ed8; --accent-ink:#fff; --soft:#eef2ff; --ok:#0f7b3d; --warn:#8a5a00;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+  --bg:#0f1115; --card:#171a21; --ink:#e9ecf1; --mute:#98a1b0; --line:#262b35;
+  --accent:#6f9bff; --accent-ink:#0b0e13; --soft:#18203a; --ok:#4ade80; --warn:#e8b657;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:56px 20px 96px}
+h1{font-size:30px;line-height:1.2;letter-spacing:-.02em;margin:0 0 8px}
+.sub{color:var(--mute);margin:0 0 32px;font-size:17px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:24px;margin:0 0 20px}
+h2{font-size:16px;margin:0 0 12px;letter-spacing:-.01em}
+h3{font-size:14px;margin:20px 0 6px;color:var(--mute);
+  text-transform:uppercase;letter-spacing:.06em}
+a{color:var(--accent)}
+.go{display:inline-block;background:var(--accent);color:var(--accent-ink);
+  text-decoration:none;font-weight:600;padding:14px 26px;border-radius:10px;font-size:17px}
+.go:hover{opacity:.9}
+.url{display:block;margin-top:14px;font-size:13px;color:var(--mute);word-break:break-all}
+ol,ul{margin:0;padding-left:22px}
+li{margin:0 0 8px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mute);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+tr:last-child td{border-bottom:0}
+code{background:var(--soft);padding:2px 6px;border-radius:5px;font-size:13px}
+.note{background:var(--soft);border-radius:10px;padding:14px 16px;font-size:14px;margin-top:16px}
+.foot{color:var(--mute);font-size:13px;margin-top:36px}
+@media (max-width:520px){ h1{font-size:24px} .wrap{padding:36px 16px 72px} }
+</style>
+</head><body>
+<div class="wrap">
+
+<h1>Crux</h1>
+<p class="sub">Escalation, compliance and performance management for Crux India.</p>
+
+<div class="card">
+  <a class="go" href="https://oxpwqfbtbxlvuqpztbwg.supabase.co/functions/v1/crux">Open Crux &rarr;</a>
+  <span class="url">https://oxpwqfbtbxlvuqpztbwg.supabase.co/functions/v1/crux</span>
+  <div class="note">
+    Sign in with your <b>@cruxindia.co.in</b> Google account. Sign-in matches a person
+    who is already on the people master &mdash; it never creates one. If it refuses you,
+    you have not been loaded yet; ask an administrator.
+  </div>
+</div>
+
+<div class="card">
+  <h2>What is in it</h2>
+  <table>
+    <tr><th>Screen</th><th>What it is for</th></tr>
+    <tr><td><b>Today</b></td><td>What is open, what is at risk, and your own appraisal position.</td></tr>
+    <tr><td><b>Escalations</b></td><td>Raise one, act on one, and see where each stands.</td></tr>
+    <tr><td><b>OGL</b></td><td>Ops-to-ops verification: raise an assignment, allocate it, record what was found, complete it with evidence, review it.</td></tr>
+    <tr><td><b>Matrix</b></td><td>The branch escalation matrix and the list of branches still missing levels.</td></tr>
+    <tr><td><b>Performance</b></td><td>The appraisal cycle, the cascade, adjustments and disputes.</td></tr>
+    <tr><td><b>People</b></td><td>The org chart by chair, your team, and the hiring chain.</td></tr>
+    <tr><td><b>Penalties</b></td><td>Rules, instances and the ledger.</td></tr>
+    <tr><td><b>Data setup</b></td><td>Administrators only. Bulk upload in thirteen file kinds, and a way to empty the tool.</td></tr>
+    <tr><td><b>Mail</b></td><td>Administrators only. Which provider sends, and what is waiting to go.</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h2>Before it is useful</h2>
+  <p style="margin-top:0;color:var(--mute)">
+    The software is finished. What it knows is not, yet. In this order:
+  </p>
+  <ol>
+    <li><b>Set up mail.</b> Mail &rarr; choose a provider, paste its key, send yourself a
+      test. Until this is done the tool works and tells nobody.</li>
+    <li><b>Empty the tool.</b> Data setup &rarr; Empty the tool. It shows you exactly what
+      would go before it goes, and asks you to type the words.</li>
+    <li><b>Load the masters</b>, in load order: Chairs, People, Geography, Clients and
+      branches, Assignments, Rates.</li>
+    <li><b>Load SLA rules.</b> Without them every assignment takes the default of 1,440
+      business minutes and every deadline in the tool is a guess.</li>
+    <li><b>Load the escalation matrix.</b> Optional &mdash; escalation falls back to the
+      reporting line and says so &mdash; but every fallback raises an alert.</li>
+    <li><b>Confirm the festival dates</b> for the year against the gazette. An unconfirmed
+      holiday shows on the calendar and shortens no deadline until somebody fixes it.</li>
+  </ol>
+  <p style="margin-bottom:0">
+    Every file kind has a <b>Download template</b> button giving the exact headers, one
+    example row, and the rule for every column.
+  </p>
+</div>
+
+<div class="card">
+  <h2>How it is built</h2>
+  <p style="margin-top:0">
+    Postgres on Supabase in ap-south-1, with row-level security forced on every table.
+    Three edge functions &mdash; the front door, the ported API, and the mail sender &mdash;
+    so there is no server to keep alive. Scheduled work runs inside the database:
+    auto-close, the SLA sweep, sub-TATs, escalation and strikes every fifteen minutes,
+    and the outbox drains every minute when there is something in it.
+  </p>
+  <p style="margin-bottom:0">
+    Source, schema and the decisions behind them:
+    <a href="https://github.com/crux-operationsalert-art/crux_escalationmanagement">github.com/crux-operationsalert-art/crux_escalationmanagement</a>
+  </p>
+</div>
+
+<p class="foot">
+  This page is a signpost. The tool itself runs at the address above &mdash; nothing on
+  this page holds any of your data.
+</p>
+
+</div></body></html>
