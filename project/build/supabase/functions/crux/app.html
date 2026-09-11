@@ -1,124 +1,309 @@
 <!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Crux</title>
+<title>Crux — operating tool</title>
 <style>
+/* ================================================================== tokens
+   Design language taken from "Crux App v2" — warm paper, ink, Georgia
+   headings, one blue for navigation and one terracotta for action.       */
 :root{
-  --bg:#f5f6f8; --card:#fff; --ink:#14171c; --mute:#667085; --line:#e4e7ec;
-  --accent:#1d4ed8; --accent-soft:#eff4ff;
-  --ok:#0f7b3d; --okbg:#e9f6ee; --bad:#b42318; --badbg:#fdecea;
-  --warn:#8a5a00; --warnbg:#fff6e5;
+  --paper:#f4f2ee;   --white:#fff;      --panel:#faf9f6;  --panel2:#fdfdfb;
+  --ink:#14161a;     --body:#3d434d;    --mute:#5c6470;
+  --line:#d8d5cd;    --line2:#eeece6;   --line3:#f0eee9;  --field:#cfcbc1;
+  --blue:#3a5a80;    --blue-dark:#243b55; --blue-press:#2c4665;
+  --terra:#b4562f;   --terra-ink:#a03f18; --terra-bg:#fdf6f3; --terra-line:#e6cfc4;
+  --terra-press:#94441f;
+  --gold:#8a6d1f;    --gold-ink:#7a5f18;
+  --green:#2f6b46;
+  --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  --serif:Georgia,serif;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
-  --bg:#0e1015; --card:#171a21; --ink:#e9ecf1; --mute:#98a1b0; --line:#262b35;
-  --accent:#7aa2ff; --accent-soft:#18203a;
-  --ok:#4ade80; --okbg:#13301e; --bad:#ff8a80; --badbg:#331715;
-  --warn:#e8b657; --warnbg:#33280f;
-}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);
-  font:15px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-a{color:var(--accent)}
-h1{font-size:20px;margin:0 0 2px;letter-spacing:-.01em}
-h2{font-size:16px;margin:0 0 12px;letter-spacing:-.01em}
-.mute{color:var(--mute);font-size:13px}
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);
+  font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;
+  font-size:13.5px;line-height:1.6}
+a{color:var(--blue);text-decoration:none}
+a:hover{color:var(--blue-dark);text-decoration:underline}
+input,select,textarea,button{font-family:inherit}
+input:focus,select:focus,textarea:focus,button:focus-visible,a:focus-visible{
+  outline:2px solid var(--blue);outline-offset:-1px}
+@keyframes shine{0%{background-position:0% 0}100%{background-position:220% 0}}
+
+h1{font-family:var(--serif);font-weight:400;font-size:clamp(21px,3.4vw,30px);
+  margin:0;letter-spacing:-.01em}
+h2{font-family:var(--serif);font-weight:400;font-size:18px;margin:0 0 12px}
+h3{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);
+  font-weight:600;margin:0}
+p{margin:0 0 10px}
+.mute{color:var(--mute);font-size:12.5px;line-height:1.55}
+.lede{font-size:13px;color:var(--mute);margin-top:5px;max-width:78ch;line-height:1.5}
 .hide{display:none!important}
+code,.mono{font-family:var(--mono);font-size:12.5px}
 
-/* ---------------------------------------------------------------- shell */
-header{background:var(--card);border-bottom:1px solid var(--line);
-  position:sticky;top:0;z-index:5}
-.bar{max-width:1100px;margin:0 auto;padding:10px 16px;
-  display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-.brand{font-weight:700;letter-spacing:-.02em;font-size:17px}
-nav{display:flex;gap:2px;flex-wrap:wrap;flex:1}
-nav a{padding:6px 11px;border-radius:7px;text-decoration:none;color:var(--mute);
-  font-size:14px;font-weight:500;white-space:nowrap}
-nav a:hover{background:var(--bg);color:var(--ink)}
-nav a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
-.who{font-size:13px;color:var(--mute);display:flex;align-items:center;gap:10px}
-main{max-width:1100px;margin:0 auto;padding:22px 16px 90px}
+/* =================================================================== shell */
+header{background:var(--white);border-bottom:1px solid var(--line);
+  position:sticky;top:0;z-index:30}
+.bar{max-width:1280px;margin:0 auto;padding:10px clamp(12px,3vw,24px);
+  display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between}
+.brandwrap{display:flex;align-items:baseline;gap:10px;min-width:0}
+.brand{font-family:var(--serif);font-size:17px}
+.dept{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.barright{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.who{text-align:right;line-height:1.3;min-width:0}
+.who .nm{display:block;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who .ch{display:block;font-size:11px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* ----------------------------------------------------------- components */
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;
-  padding:20px;margin-bottom:16px}
-label{display:block;font-size:12px;font-weight:600;text-transform:uppercase;
-  letter-spacing:.05em;color:var(--mute);margin:0 0 6px}
-input,select,textarea,button{font:inherit}
-input,select,textarea{width:100%;padding:9px 12px;border:1px solid var(--line);
-  border-radius:8px;background:var(--bg);color:var(--ink)}
-textarea{min-height:80px;resize:vertical}
-input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
+nav{max-width:1280px;margin:0 auto;padding:0 clamp(12px,3vw,24px);
+  display:flex;flex-wrap:wrap;align-items:center;gap:0 4px;border-top:1px solid var(--line2)}
+.navgroup{display:flex;flex-wrap:wrap;align-items:center;gap:0 2px}
+.navlabel{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);
+  padding:0 8px 0 10px;border-left:1px solid var(--line2)}
+.navgroup:first-child .navlabel{border-left:none;padding-left:0}
+nav a{appearance:none;background:none;border:none;padding:10px 12px 8px;font-size:13.5px;
+  cursor:pointer;min-height:44px;color:var(--ink);text-decoration:none;display:block}
+nav a:hover{background:var(--panel);color:var(--ink);text-decoration:none}
+nav a .rule{height:2px;background:transparent;margin-top:7px}
+nav a.on .rule{background:var(--blue)}
+nav a .badge{margin-left:6px;font-size:11px;background:var(--terra);color:#fff;
+  padding:1px 6px;border-radius:9px}
+
+main{flex:1;max-width:1280px;width:100%;margin:0 auto;
+  padding:clamp(14px,3vw,26px) clamp(12px,3vw,24px) 96px}
+.page-head{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;
+  justify-content:space-between;margin-bottom:16px}
+
+/* ============================================================== components */
+.card{background:var(--white);border:1px solid var(--line);margin-bottom:16px}
+.card>h2,.card>.cardhead{padding:11px 15px;border-bottom:1px solid #e2e0da;
+  background:var(--panel);margin:0;font-family:inherit;font-size:11px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--mute);font-weight:600}
+.card>*:not(h2):not(.cardhead):not(table):not(.scroll):not(.rowline){
+  padding-left:15px;padding-right:15px}
+.card>h2+*,.card>.cardhead+*{padding-top:14px}
+.card>*:not(h2):not(.cardhead):not(table):not(.scroll):not(.rowline):first-child{padding-top:14px}
+.card>*:not(table):not(.scroll):last-child{padding-bottom:14px}
+.card>.scroll:last-child,.card>table:last-child{margin-bottom:0}
+.card>table tr:last-child td{border-bottom:none}
+.card.action{border-color:var(--terra)}
+.card.action>h2,.card.action>.cardhead{background:var(--terra-bg);color:var(--terra-ink)}
+.rowline{padding:12px 15px;border-bottom:1px solid var(--line3)}
+.rowline:last-child{border-bottom:none}
+
+label{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--mute);margin:0 0 5px}
+input,select,textarea{width:100%;padding:11px 10px;border:1px solid var(--field);
+  background:var(--white);color:var(--ink);font-size:13.5px;line-height:1.5;min-height:44px;
+  border-radius:0}
+textarea{min-height:66px;resize:vertical}
 .row{display:flex;gap:12px;flex-wrap:wrap}
 .row>div{flex:1 1 210px;margin-bottom:14px}
-button{padding:9px 15px;border-radius:8px;border:1px solid transparent;
-  background:var(--accent);color:#fff;font-weight:600;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+
+button{appearance:none;border:1px solid var(--terra);background:var(--terra);color:#fff;
+  font-size:13.5px;padding:12px 20px;cursor:pointer;min-height:46px;border-radius:0}
+button:hover{background:var(--terra-press);border-color:var(--terra-press)}
 button:disabled{opacity:.45;cursor:not-allowed}
-button.ghost{background:transparent;color:var(--ink);border-color:var(--line);font-weight:500}
-button.danger{background:var(--bad)}
-button.sm{padding:5px 10px;font-size:13px}
-.msg{padding:11px 14px;border-radius:8px;font-size:14px;margin:12px 0}
-.msg.ok{background:var(--okbg);color:var(--ok)}
-.msg.bad{background:var(--badbg);color:var(--bad)}
-.msg.warn{background:var(--warnbg);color:var(--warn)}
-.empty{padding:26px;text-align:center;color:var(--mute);font-size:14px;
-  border:1px dashed var(--line);border-radius:10px}
-table{width:100%;border-collapse:collapse;font-size:13.5px}
-th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
-th{color:var(--mute);font-size:11px;text-transform:uppercase;letter-spacing:.05em;
-  font-weight:600;white-space:nowrap}
-tr.click{cursor:pointer}
-tr.click:hover td{background:var(--bg)}
+button:disabled:hover{background:var(--terra);border-color:var(--terra)}
+button.ghost{border:1px solid var(--line);background:var(--white);color:var(--ink);font-weight:400}
+button.ghost:hover{border-color:var(--blue);color:var(--blue);background:var(--white)}
+button.go{border-color:var(--blue);background:var(--blue);color:#fff}
+button.go:hover{background:var(--blue-press);border-color:var(--blue-press)}
+button.danger{border-color:var(--terra-ink);background:var(--terra-ink)}
+button.danger:hover{background:#83320f;border-color:#83320f}
+button.sm{padding:9px 14px;font-size:12.5px;min-height:44px}
+td button,.rowline button{border:1px solid var(--blue);background:var(--white);
+  color:var(--blue);font-size:12.5px;padding:10px 14px;min-height:44px;white-space:nowrap}
+td button:hover,.rowline button:hover{background:var(--blue);color:#fff}
+td button.ghost,.rowline button.ghost{border-color:var(--line);color:var(--ink)}
+td button.ghost:hover,.rowline button.ghost:hover{background:var(--white);border-color:var(--blue);color:var(--blue)}
+td button.danger,.rowline button.danger{border-color:var(--terra-ink);background:var(--terra-ink);color:#fff}
+button.link{border:none;background:none;color:var(--blue);text-decoration:underline;
+  padding:8px 0;min-height:44px;font-size:12.5px}
+button.link:hover{background:none;color:var(--blue-dark)}
+
+.msg{padding:11px 14px;font-size:12.5px;line-height:1.55;margin:12px 0;border:1px solid}
+.msg.ok{background:#f1f6f2;color:var(--green);border-color:#c8ded1}
+.msg.bad{background:var(--terra-bg);color:var(--terra-ink);border-color:var(--terra-line)}
+.msg.warn{background:#fdfaf0;color:var(--gold-ink);border-color:#e3d9b8}
+.empty{padding:26px 15px;color:var(--mute);font-size:13px;line-height:1.6;max-width:70ch}
+
 .scroll{overflow-x:auto}
-.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;
-  font-weight:700;letter-spacing:.02em;border:1px solid var(--line);background:var(--bg)}
-.pill.ok{background:var(--okbg);color:var(--ok);border-color:transparent}
-.pill.bad{background:var(--badbg);color:var(--bad);border-color:transparent}
-.pill.warn{background:var(--warnbg);color:var(--warn);border-color:transparent}
-.tiles{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
-.tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
-.tile b{display:block;font-size:26px;line-height:1.15;letter-spacing:-.02em}
-.tile span{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute)}
-.drop{border:2px dashed var(--line);border-radius:10px;padding:24px;text-align:center;
-  color:var(--mute);cursor:pointer}
-.drop.over{border-color:var(--accent);color:var(--accent)}
-.tree{list-style:none;margin:0;padding-left:18px;border-left:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{text-align:left;padding:11px 15px;border-bottom:1px solid var(--line3);vertical-align:top}
+th{color:var(--mute);font-size:11px;text-transform:uppercase;letter-spacing:.06em;
+  font-weight:600;white-space:nowrap;background:var(--panel);border-bottom:1px solid #e2e0da}
+tr.click{cursor:pointer}
+tr.click:hover td{background:var(--panel)}
+td.num{text-align:right;font-family:var(--mono);white-space:nowrap}
+
+.pill{display:inline-block;font-size:11px;border:1px solid var(--line);padding:4px 8px;
+  color:var(--body);background:none;white-space:nowrap}
+.pill.ok{border-color:#9dc4ae;color:var(--green)}
+.pill.bad{border-color:var(--terra);color:var(--terra-ink)}
+.pill.warn{border-color:var(--gold);color:var(--gold-ink)}
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+
+.tiles{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  margin-bottom:16px}
+.tile{background:var(--white);border:1px solid var(--line);padding:14px 16px;
+  display:flex;flex-direction:column;gap:5px;min-height:98px}
+.tile b{font-family:var(--serif);font-weight:400;font-size:clamp(24px,3.4vw,32px);line-height:1}
+.tile span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);
+  font-weight:600;order:-1}
+.counters{display:flex;gap:8px;flex-wrap:wrap}
+.counter{background:var(--white);border:1px solid var(--line);padding:9px 15px;min-width:96px}
+.counter b{display:block;font-family:var(--serif);font-weight:400;font-size:20px}
+.counter span{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+
+.askbar{background:var(--ink);color:#fff;padding:14px 16px;margin-bottom:16px;
+  display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:space-between;align-items:center}
+.askline{font-family:var(--serif);font-size:clamp(15px,2.2vw,19px);min-width:0}
+button.onink{border:1px solid rgba(255,255,255,.5);background:none;color:#fff;font-size:13px;
+  padding:10px 16px;min-height:44px;white-space:nowrap}
+button.onink:hover{background:#fff;color:var(--ink);border-color:#fff}
+.drop{border:1px dashed var(--field);padding:24px;text-align:center;color:var(--mute);
+  cursor:pointer;background:var(--panel2)}
+.drop.over{border-color:var(--blue);color:var(--blue);background:var(--white)}
+.tree{list-style:none;margin:0;padding-left:18px;border-left:1px solid var(--line2)}
 .tree>li{padding:4px 0}
 .tree .node{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
 .tree .t{font-weight:600}
-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
 
-/* ------------------------------------------------------------- sign in */
-#signin{max-width:420px;margin:8vh auto}
-#gbtn{margin:14px 0}
-.or{display:flex;align-items:center;gap:10px;color:var(--mute);font-size:12px;margin:16px 0}
-.or:before,.or:after{content:"";flex:1;height:1px;background:var(--line)}
+/* ================================================================= sign in */
+#signin{flex:1;display:flex;align-items:center;justify-content:center;
+  padding:clamp(16px,5vw,48px)}
+.signcard{width:100%;max-width:940px;display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:0;
+  border:1px solid var(--line);background:var(--white);
+  box-shadow:0 10px 40px rgba(20,22,26,.09)}
+.signdark{background:var(--ink);color:#e8e5dd;padding:clamp(22px,4vw,34px);
+  display:flex;flex-direction:column;justify-content:space-between;gap:24px}
+.signdark .bw{font-family:var(--serif);font-size:24px}
+.signdark .co{font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:#9a978f;margin-top:5px}
+.signdark .quote{font-family:var(--serif);font-size:clamp(17px,2.4vw,21px);line-height:1.45;
+  color:var(--paper);margin-top:24px}
+.signdark .by{font-size:12px;color:#9a978f;margin-top:9px}
+.signdark h4{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#e0a184;
+  font-weight:600;margin:0}
+.signdark .facts{display:grid;gap:7px;margin-top:11px}
+.signdark .fact{display:flex;gap:10px;align-items:baseline;padding:8px 11px;
+  background:rgba(224,161,132,.09);border-left:2px solid #e0a184}
+.signdark .fact b{font-family:var(--serif);font-weight:400;font-size:15px;color:#e0a184}
+.signdark .fact .l1{font-size:13.5px;color:var(--paper);font-weight:600}
+.signdark .fact .l2{display:block;font-size:11.5px;color:#9a978f;margin-top:2px}
+.signlight{padding:clamp(22px,4vw,34px);display:flex;flex-direction:column;gap:16px}
+.signlight h2{font-family:var(--serif);font-size:21px;margin:0}
+.signlight .lead{font-size:13px;line-height:1.6;color:var(--body);margin-top:7px}
+.signlight label{margin-top:2px}
+#gbtn{min-height:44px}
+.or{display:flex;align-items:center;gap:10px;color:var(--mute);font-size:11px;
+  letter-spacing:.06em;text-transform:uppercase;margin:2px 0}
+.or:before,.or:after{content:"";flex:1;height:1px;background:var(--line2)}
+
+/* ================================================================== mobile */
+#mobbar{display:none;position:fixed;left:0;right:0;bottom:0;z-index:46;background:var(--white);
+  border-top:1px solid var(--line);box-shadow:0 -2px 12px rgba(20,22,26,.07)}
+#mobbar a{flex:1 1 0;min-width:0;border:0;background:none;padding:9px 4px 8px;cursor:pointer;
+  min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:5px;font-size:12px;color:var(--mute);text-decoration:none;text-align:center}
+#mobbar a.on{color:var(--terra-ink);font-weight:600}
+#mobbar a .badge{font-size:11px;background:var(--terra);color:#fff;padding:1px 6px;border-radius:8px}
+#mobsheet{display:none;position:fixed;left:0;right:0;top:0;bottom:64px;background:var(--white);
+  z-index:45;overflow-y:auto;border-bottom:1px solid var(--line)}
+#mobsheet .sh{padding:14px 16px;border-bottom:1px solid var(--line2);background:var(--panel)}
+#mobsheet .sh b{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+#mobsheet .sh p{font-size:12.5px;color:var(--mute);margin:4px 0 0;line-height:1.5}
+#mobsheet .grp{border-bottom:1px solid var(--line2)}
+#mobsheet .grp>b{display:block;padding:11px 16px 5px;font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--mute)}
+#mobsheet a{display:flex;width:100%;text-align:left;align-items:center;
+  justify-content:space-between;gap:10px;border-top:1px solid #f4f2ed;background:var(--white);
+  padding:15px 16px;min-height:52px;font-size:14.5px;color:var(--ink);text-decoration:none}
+#mobsheet a .badge{font-size:11px;background:var(--terra);color:#fff;padding:2px 8px;border-radius:9px}
+@media (max-width:720px){
+  nav{display:none}
+  #mobbar{display:flex}
+  body.sheet-open{overflow:hidden}
+  body.sheet-open #mobsheet{display:block}
+  .bar{padding:9px 14px}
+  .signcard{box-shadow:none}
+}
 </style></head><body>
 
-<!-- ============================================================ sign in -->
-<div id="signin">
-  <div class="card">
-    <h1>Crux</h1>
-    <p class="mute">Escalations, compliance and performance.</p>
-    <div id="gbtn"></div>
-    <p class="mute" id="ghint"></p>
-    <div class="or">or sign in with a password</div>
-    <div><label for="em">Work e-mail</label><input id="em" type="email" autocomplete="username"></div>
-    <div style="margin-top:12px"><label for="pw">Password</label>
-      <input id="pw" type="password" autocomplete="current-password"></div>
-    <div style="margin-top:14px"><button id="go">Sign in</button></div>
-    <div id="loginMsg"></div>
+<!-- ============================================================== sign in -->
+<div id="signin" style="min-height:100vh">
+  <div class="signcard">
+
+    <div class="signdark">
+      <div>
+        <div class="bw">Crux</div>
+        <div class="co">Risk Management Pvt Ltd</div>
+        <div class="quote">Nothing here is decided by opinion. Every clock, every
+          escalation and every strike is worked out from the rule that was in force
+          on the day.</div>
+        <div class="by">How this tool behaves</div>
+      </div>
+      <div>
+        <h4>What the tool holds</h4>
+        <div class="facts" id="signfacts">
+          <div class="fact"><b>1</b><span><span class="l1">One clock</span>
+            <span class="l2">Business minutes only — weekends and confirmed holidays do not count</span></span></div>
+          <div class="fact"><b>2</b><span><span class="l1">One record</span>
+            <span class="l2">Escalations, on-ground verification, penalties and appraisal on the same case</span></span></div>
+          <div class="fact"><b>3</b><span><span class="l1">One rule</span>
+            <span class="l2">Every strike and every escalation is derived, never typed in by hand</span></span></div>
+        </div>
+        <div class="by" id="signnote">Sign in to see your own desk.</div>
+      </div>
+    </div>
+
+    <div class="signlight">
+      <div>
+        <h2>Sign in</h2>
+        <div class="lead">Escalations, on-ground verification, compliance and
+          performance — one record, one clock.</div>
+      </div>
+      <div id="gbtn"></div>
+      <div class="mute" id="ghint"></div>
+      <div class="or">or sign in with a password</div>
+      <div><label for="em">Work e-mail</label>
+        <input id="em" type="email" autocomplete="username" placeholder="yourname@cruxindia.co.in"></div>
+      <div><label for="pw">Password</label>
+        <input id="pw" type="password" autocomplete="current-password"></div>
+      <div><button id="go" class="go" style="width:100%">Sign in</button></div>
+      <div id="loginMsg"></div>
+    </div>
+
   </div>
 </div>
 
-<!-- ================================================================ app -->
-<div id="app" class="hide">
-<header><div class="bar">
-  <span class="brand">Crux</span>
+<!-- ================================================================== app -->
+<div id="app" class="hide" style="min-height:100vh;display:flex;flex-direction:column">
+<header>
+  <div class="bar">
+    <div class="brandwrap">
+      <span class="brand">Crux</span>
+      <span class="dept" id="dept"></span>
+    </div>
+    <div class="barright">
+      <span class="who"><span class="nm" id="who"></span><span class="ch" id="whochair"></span></span>
+      <button class="ghost sm" id="out">Sign out</button>
+    </div>
+  </div>
   <nav id="nav"></nav>
-  <span class="who"><span id="who"></span><button class="ghost sm" id="out">Sign out</button></span>
-</div></header>
+</header>
 <main id="view"></main>
 </div>
+
+<div id="mobsheet">
+  <div class="sh"><b>Everywhere else</b>
+    <p>The four in the bar are what you do daily. Everything your chair can reach is here.</p></div>
+  <div id="mobmore"></div>
+  <div style="padding:16px"><button class="ghost" id="mobout" style="width:100%">Sign out</button></div>
+</div>
+<div id="mobbar"></div>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
@@ -188,36 +373,119 @@ el("pw").addEventListener("keydown", function(e){ if (e.key==="Enter") el("go").
 function signOut(){
   token=""; localStorage.removeItem("cruxToken"); me=null;
   el("app").classList.add("hide"); el("signin").classList.remove("hide");
+  document.body.classList.remove("sheet-open"); badges={};
 }
-el("out").onclick = async function(){ await crux("/api/logout",{method:"POST"}); signOut(); };
+async function doSignOut(){ await crux("/api/logout",{method:"POST"}).catch(function(){}); signOut(); }
+el("out").onclick = doSignOut;
+el("mobout").onclick = doSignOut;
 
-/* --------------------------------------------------------------- shell */
-var TABS = [
-  ["today","Today"], ["cases","Escalations"], ["ogl","OGL"], ["matrix","Matrix"],
-  ["pms","Performance"], ["people","People"], ["penalties","Penalties"],
-  ["data","Data setup"], ["mail","Mail"]
+/* --------------------------------------------------------------- shell
+   Nav is grouped the way the v2 design groups it: what you work on, what
+   you are measured by, and what an administrator keeps.                 */
+var NAV = [
+  { label:"",           items:[ ["today","Today"] ] },
+  { label:"Work",       items:[ ["ogl","OGL"], ["cases","Escalations"], ["matrix","Matrix"] ] },
+  { label:"Standing",   items:[ ["pms","Performance"], ["penalties","Penalties"],
+                                ["people","People"] ] },
+  { label:"Keep",       items:[ ["data","Data setup"], ["mail","Mail"] ] }
 ];
 var ADMIN_TABS = { data:1, mail:1 };
+var MOB_BAR = ["today","ogl","cases","more"];
+var TABS = [];
+NAV.forEach(function(g){ g.items.forEach(function(t){ TABS.push(t); }); });
+var LABEL = {}; TABS.forEach(function(t){ LABEL[t[0]] = t[1]; });
+var badges = {};
+
+function allowed(key){ return !ADMIN_TABS[key] || (me && me.app_role === "ADMIN"); }
+function badgeHtml(key, cls){
+  var n = badges[key];
+  return n ? '<span class="'+(cls||"badge")+'">'+esc(n)+'</span>' : "";
+}
+
+function paintNav(){
+  var cur = currentTab();
+
+  el("nav").innerHTML = NAV.map(function(g){
+    var items = g.items.filter(function(t){ return allowed(t[0]); });
+    if (!items.length) return "";
+    return '<div class="navgroup">' +
+      (g.label ? '<span class="navlabel">'+esc(g.label)+'</span>' : "") +
+      items.map(function(t){
+        return '<a href="#'+t[0]+'" data-t="'+t[0]+'"'+(t[0]===cur?' class="on"':'')+'>' +
+          '<span>'+esc(t[1])+'</span>'+badgeHtml(t[0]) +
+          '<div class="rule"></div></a>';
+      }).join("") + '</div>';
+  }).join("");
+
+  el("mobbar").innerHTML = MOB_BAR.map(function(k){
+    if (k === "more")
+      return '<a href="#" data-more="1"><span>More</span></a>';
+    if (!allowed(k)) return "";
+    return '<a href="#'+k+'"'+(k===cur?' class="on"':'')+'>' +
+      '<span>'+esc(LABEL[k]||k)+'</span>'+badgeHtml(k)+'</a>';
+  }).join("");
+  var more = el("mobbar").querySelector('[data-more]');
+  if (more) more.onclick = function(e){
+    e.preventDefault(); document.body.classList.toggle("sheet-open"); };
+
+  el("mobmore").innerHTML = NAV.map(function(g){
+    var items = g.items.filter(function(t){
+      return allowed(t[0]) && MOB_BAR.indexOf(t[0]) < 0; });
+    if (!items.length) return "";
+    return '<div class="grp">' + (g.label ? '<b>'+esc(g.label)+'</b>' : "") +
+      items.map(function(t){
+        return '<a href="#'+t[0]+'"><span>'+esc(t[1])+'</span>'+badgeHtml(t[0])+'</a>';
+      }).join("") + '</div>';
+  }).join("");
+  Array.prototype.forEach.call(el("mobmore").querySelectorAll("a"), function(a){
+    a.addEventListener("click", function(){ document.body.classList.remove("sheet-open"); });
+  });
+}
 
 async function start(person){
   me = person;
   el("signin").classList.add("hide");
   el("app").classList.remove("hide");
-  el("who").innerHTML = esc(person.full_name) + ' <span class="pill">' + esc(person.app_role) + '</span>';
-  var mine = TABS.filter(function(t){ return !ADMIN_TABS[t[0]] || me.app_role === "ADMIN"; });
-  el("nav").innerHTML = mine.map(function(t){
-    return '<a href="#'+t[0]+'" data-t="'+t[0]+'">'+esc(t[1])+'</a>'; }).join("");
-  window.onhashchange = route; route();
+  el("who").textContent = person.full_name || "";
+  el("whochair").textContent = person.chair_title || person.app_role || "";
+  el("dept").textContent = person.department || person.app_role || "";
+  paintNav();
+  window.onhashchange = route;
+  route();
+  refreshBadges();
+}
+
+function currentTab(){
+  var t = (location.hash||"#today").slice(1).split("/")[0];
+  if (!TABS.some(function(x){ return x[0]===t && allowed(t); })) t = "today";
+  return t;
 }
 
 function route(){
-  var t = (location.hash||"#today").slice(1).split("/")[0];
-  if (!TABS.some(function(x){return x[0]===t})) t = "today";
-  Array.prototype.forEach.call(el("nav").children, function(a){
-    a.className = a.dataset.t === t ? "on" : ""; });
-  el("view").innerHTML = '<p class="mute">Loading...</p>';
+  document.body.classList.remove("sheet-open");
+  var t = currentTab();
+  paintNav();
+  el("view").innerHTML = '<p class="mute">Loading…</p>';
   ({today:vToday, cases:vCases, ogl:vOgl, matrix:vMatrix, pms:vPms,
     people:vPeople, penalties:vPenalties, data:vData, mail:vMail}[t])();
+}
+
+/* Counts that sit on the tabs. Anything that fails is simply not shown —
+   a badge is a convenience, never a reason for the page to break.        */
+async function refreshBadges(){
+  try {
+    var o = await crux("/api/ogl");
+    var list = o.assignments || [];
+    var n = list.filter(function(a){
+      return a.sla_status === "AT_RISK" || a.sla_status === "BREACHED"; }).length;
+    if (n) badges.ogl = n;
+  } catch(e){}
+  try {
+    var c = await api("/cases");
+    var n2 = (c.cases||[]).filter(function(x){ return x.status !== "CLOSED"; }).length;
+    if (n2) badges.cases = n2;
+  } catch(e){}
+  paintNav();
 }
 
 /* --------------------------------------------------------------- today */
@@ -231,18 +499,28 @@ async function vToday(){
   var risky = (ogl.assignments||[]).filter(function(a){
     return a.sla_status==="AT_RISK" || a.sla_status==="BREACHED"; }).length;
 
+  var owed = open + risky + (mx.branches||[]).length;
+  var ask = owed
+    ? owed + (owed === 1 ? " thing is" : " things are") + " waiting on your chair."
+    : "Nothing is waiting on your chair right now.";
+
   el("view").innerHTML =
-    '<h1>Today</h1><p class="mute">' +
-      esc(meR.primaryChair ? meR.primaryChair.title : "No chair") + '</p>' +
-    '<div class="tiles" style="margin:18px 0">' +
+    '<div class="page-head">' +
+      '<div><h1>Today</h1><div class="lede">' +
+        esc(meR.primaryChair ? meR.primaryChair.title : "No chair held") + '</div></div>' +
+    '</div>' +
+    '<div class="tiles">' +
       tile(open, "escalations open") +
       tile(risky, "OGL at risk or breached") +
       tile((mx.branches||[]).length, "branches missing matrix levels") +
       tile(pms.score && pms.score.final != null ? Number(pms.score.final).toFixed(1) : "-", "your score") +
     '</div>' +
+    '<div class="askbar"><div class="askline">' + esc(ask) + '</div>' +
+      '<button class="onink" onclick="location.hash=\'#ogl\'">See what is owed</button></div>' +
     '<div class="card"><h2>Your appraisal cycle</h2>' + pmsSummary(pms) + '</div>' +
     (cases.empty ? '<div class="card"><h2>Escalations</h2>' + msg("warn", cases.empty) + '</div>' : "");
 }
+
 function tile(v,l){ return '<div class="tile"><b>'+esc(v)+'</b><span>'+esc(l)+'</span></div>'; }
 
 /* ---------------------------------------------------------- escalations */
@@ -1115,7 +1393,7 @@ async function vData(){
             '<td>'+esc(b.file_name)+'</td><td>'+esc(b.state)+'</td>' +
             '<td>'+esc(b.rows_total)+'</td><td>'+esc(b.rows_error)+'</td></tr>';
         }).join("") + '</table></div>' : '<div class="empty">Nothing loaded yet.</div>') + '</div>' +
-    '<div class="card"><h2>Empty the tool</h2>' +
+    '<div class="card action"><h2>Empty the tool</h2>' +
       '<p class="mute">Removes every person, client, branch, case and filing — the demo data and anything else. ' +
       'Keeps your configuration, the audit trail, your own account and the chair you sit in.</p>' +
       '<div id="resetPreview"><button class="ghost" id="showReset">Show me what would go</button></div></div>';
