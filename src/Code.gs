@@ -1,0 +1,436 @@
+/**
+ * CRUX ESCALATION MATRIX — Main Entrypoint
+ * ========================================
+ * Company: Crux Risk Management Pvt Ltd
+ * Runtime: Google Apps Script (V8), Asia/Kolkata
+ *
+ * This file contains:
+ *  - Web-app doGet router (serves single-page HTML shell)
+ *  - Top-level RPC dispatcher (called from client-side google.script.run)
+ *  - Bootstrap / setup helpers
+ *
+ * Server-side files (all share global namespace in Apps Script):
+ *   Code.gs       - this file, entrypoint & RPC surface
+ *   Sheets.gs     - low-level sheet accessors / CRUD
+ *   Auth.gs       - role-based access control
+ *   Clients.gs    - client / branch / matrix domain logic
+ *   Import.gs     - bulk import (validate → preview → commit)
+ *   Email.gs      - email engine + templates + logging + retry
+ *   Scheduler.gs  - reminder / dispatch scheduler (idempotent)
+ *   Escalation.gs - escalation logging & raising
+ *   Utils.gs      - helpers (id, date, holiday, hash, dedupe)
+ *
+ * All privileged operations verify the caller's role server-side.
+ * Never trust anything from the browser.
+ */
+
+/** Web-app entrypoint. Serves the SPA shell — or the read-only portal. */
+function doGet(e) {
+  var params = (e && e.parameter) || {};
+  if (params.view === 'portal') return renderPortal_(params);
+  var tpl = HtmlService.createTemplateFromFile('Index');
+
+  // A `t` parameter is a SINGLE-USE INVITE CODE, not a standing credential.
+  // Exchange it here, once, for a server-side session; the code is burned in the
+  // process. The browser is handed only the session id, which it keeps in
+  // sessionStorage and strips from the address bar, so the credential never
+  // lives in browser history, a bookmark, a screenshot or a Referer header.
+  //
+  // This is the P0 fix. Previously `t` WAS the identity on every request, so
+  // anyone who obtained the URL became its owner permanently - and when the URL
+  // belonged to an administrator, they became an administrator.
+  //
+  // NOTE ON THE DEPLOYMENT MODE: this web app stays `ANYONE_ANONYMOUS` on
+  // purpose. The same doGet also serves the read-only client portal
+  // (?view=portal), which is sent to client contacts who have no Google account
+  // at all - requiring a Google sign-in would break every one of those links.
+  // Anonymous reach is therefore contained in code rather than by the manifest:
+  // an unidentified visitor resolves to an inert guest (whoAmI_), gets the login
+  // card, and every RPC except auth.me is refused server-side.
+  var sessionId = '';
+  var signInError = '';
+  var inviteCode = String(params.t || '').trim();
+
+  // A Crux Workspace sign-in always wins, and needs no code. Checking this first
+  // means an administrator following an old link is identified by Google rather
+  // than being refused by the invite path, and their code is not spent for
+  // nothing.
+  var googleIdentity = '';
+  try { googleIdentity = (Session.getActiveUser().getEmail() || '').trim(); } catch (eId) {}
+
+  if (inviteCode && !googleIdentity) {
+    try {
+      var ex = exchangeInviteCode_(inviteCode, clientMetaFromRequest_(e));
+      if (ex) sessionId = ex.sessionId;
+      else signInError = 'That sign-in link has already been used or has expired. ' +
+                         'Please ask your administrator for a new one.';
+    } catch (err) {
+      signInError = (err && err.isFriendly) ? err.message
+                  : 'That sign-in link could not be used.';
+    }
+  }
+
+  var boot = sanitizeForClient_(getBootstrap_(sessionId, clientMetaFromRequest_(e)));
+  // Deep links: ?route=clients&tab=Matrix&action=raise
+  // and ?preview=LOCATION_HEAD to see the app as an ordinary user sees it.
+  // preview only changes what the BROWSER draws - every RPC is still authorised
+  // server-side against the real signed-in role, so it grants nothing.
+  boot.sessionId = sessionId;
+  boot.signInError = signInError;
+  boot.deepLink = {
+    route:  String(params.route  || ''),
+    tab:    String(params.tab    || ''),
+    action: String(params.action || ''),
+    preview: String(params.preview || '').toUpperCase()
+  };
+  tpl.bootstrap = JSON.stringify(boot);
+  return tpl.evaluate()
+    .setTitle('Crux — Client Escalation Matrix')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+/**
+ * Client hints available to a doGet. Apps Script does not expose headers, so this
+ * is deliberately thin - the session binding it feeds is a speed bump layered on
+ * top of expiry and the administrator ceiling, never the primary control.
+ */
+function clientMetaFromRequest_(e) {
+  var p = (e && e.parameter) || {};
+  return { ua: String(p.ua || ''), lang: String(p.lang || ''), tz: String(p.tz || '') };
+}
+
+/** Renders the tokenised read-only client portal view. */
+function renderPortal_(params) {
+  var body = '';
+  try {
+    var data = getPortalPayload_(params.c, params.t);
+    body = renderPortalHtml_(data);
+  } catch (err) {
+    body = '<div class="portal-brand">Access</div>' +
+      '<div class="portal-title">Link unavailable</div>' +
+      '<p class="portal-sub">' + (err && err.message ? String(err.message) : 'This link is not valid.') + '</p>' +
+      '<p class="portal-footer">If you believe this is an error, please contact your Crux relationship manager.</p>';
+  }
+  var tpl = HtmlService.createTemplateFromFile('Portal');
+  tpl.body = body;
+  return tpl.evaluate()
+    .setTitle('Escalation Matrix')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
+
+function renderPortalHtml_(d) {
+  var matrixRows = d.matrix.map(function(m) {
+    return '<tr>' +
+      '<td style="border:1px solid #d0d7de;padding:8px 12px;font-family:Georgia,serif;color:#b25a00">' + m.Level + '</td>' +
+      '<td style="border:1px solid #d0d7de;padding:8px 12px"><b>' + escHtml_(m.LevelName) + '</b></td>' +
+      '<td style="border:1px solid #d0d7de;padding:8px 12px">' + escHtml_(m.ContactName || '—') + '</td>' +
+      '<td style="border:1px solid #d0d7de;padding:8px 12px">' + escHtml_(m.Mobile || '—') + '</td>' +
+      '<td style="border:1px solid #d0d7de;padding:8px 12px">' + escHtml_(m.Email || '—') + '</td>' +
+      '</tr>';
+  }).join('');
+  var branchRows = d.branches.map(function(b) {
+    return '<tr>' +
+      '<td style="border:1px solid #d0d7de;padding:6px 10px;font-family:ui-monospace,monospace;font-size:12px">' + escHtml_(b.BranchCode || '—') + '</td>' +
+      '<td style="border:1px solid #d0d7de;padding:6px 10px"><b>' + escHtml_(b.BranchName || '—') + '</b><br><span style="color:#5b6473;font-size:12px">' + escHtml_(b.Address || '') + '</span></td>' +
+      '<td style="border:1px solid #d0d7de;padding:6px 10px">' + escHtml_(b.CruxPOCName || '—') + '<br><span style="color:#5b6473;font-size:12px">' + escHtml_(b.CruxPOCMobile || '') + ' · ' + escHtml_(b.CruxPOCEmail || '') + '</span></td>' +
+      '</tr>';
+  }).join('');
+  return '<div class="portal-brand">' + escHtml_(d.company) + '</div>' +
+    '<h1 class="portal-title">' + escHtml_(d.client.ClientName) + '</h1>' +
+    '<div class="portal-sub">Client Escalation Matrix' + (d.client.ClientCode ? ' · <span class="mono">' + escHtml_(d.client.ClientCode) + '</span>' : '') + '</div>' +
+    '<table style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif;font-size:14px">' +
+      '<thead style="background:#f6f8fa"><tr>' +
+        '<th style="border:1px solid #d0d7de;padding:8px 12px;text-align:left">#</th>' +
+        '<th style="border:1px solid #d0d7de;padding:8px 12px;text-align:left">Level</th>' +
+        '<th style="border:1px solid #d0d7de;padding:8px 12px;text-align:left">Name</th>' +
+        '<th style="border:1px solid #d0d7de;padding:8px 12px;text-align:left">Mobile</th>' +
+        '<th style="border:1px solid #d0d7de;padding:8px 12px;text-align:left">Email</th>' +
+      '</tr></thead><tbody>' + matrixRows + '</tbody>' +
+    '</table>' +
+    (branchRows ? '<h3 style="margin-top:22px;font-family:Georgia,serif;font-weight:500">Branch directory</h3>' +
+      '<table style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif;font-size:13px">' +
+        '<thead style="background:#f6f8fa"><tr><th style="border:1px solid #d0d7de;padding:6px 10px;text-align:left">Code</th><th style="border:1px solid #d0d7de;padding:6px 10px;text-align:left">Branch</th><th style="border:1px solid #d0d7de;padding:6px 10px;text-align:left">Crux Point of Contact</th></tr></thead><tbody>' +
+        branchRows + '</tbody></table>' : '') +
+    '<div class="portal-footer">Last updated ' + escHtml_(d.client.UpdatedAt || '—') + ' · generated ' + escHtml_(d.generatedAt) + '. This is a live, read-only view — bookmark this page to always see the current matrix.</div>';
+}
+
+/** Include another HTML file (used by templating). */
+function include(name) {
+  return HtmlService.createHtmlOutputFromFile(name).getContent();
+}
+
+/** Bootstrap payload passed to the SPA on first load. */
+function getBootstrap_(sessionId, meta) {
+  ensureSpreadsheet_();
+  // Identity is resolved from the Google sign-in, or from the session just
+  // minted by doGet. Never from a raw URL token - see whoAmI_.
+  var me = whoAmI_(sessionId, meta);
+  return {
+    user: me,
+    app: {
+      name: getSetting_('APP_NAME', 'Crux Escalation Matrix'),
+      company: getSetting_('COMPANY_NAME', 'Crux Risk Management Pvt Ltd'),
+      timezone: getSetting_('APP_TIMEZONE', 'Asia/Kolkata'),
+      dateFormat: getSetting_('DATE_FORMAT', 'dd-MMM-yyyy'),
+      testMode: getBoolSetting_('DRY_RUN', 'false'),
+      version: '1.0.0'
+    },
+    nav: navForRole_(me.role, userRow_(me)),
+    scheduledJobs: nextScheduledJobs_()
+  };
+}
+
+/* =========================================================================
+ * RPC — every entry-point here is callable from the browser via
+ * google.script.run.rpc(...). We keep a single dispatcher so we can enforce
+ * auth centrally and log every call.
+ * ========================================================================= */
+
+/**
+ * @param {string} action      e.g. "clients.list"
+ * @param {object} payload     JSON-safe args
+ */
+function rpc(action, payload) {
+  var t0 = Date.now();
+  try {
+    // The client returns its SESSION ID on every call (__s). Without it a
+    // colleague on a personal Gmail account would be identified on first load
+    // and anonymous for every action afterwards, because Google reveals no
+    // identity for them under executeAs: USER_DEPLOYING.
+    //
+    // __t is accepted no longer: an invite code is exchanged once, in doGet, and
+    // must never authenticate an RPC. Anything arriving in __t is ignored.
+    var me = whoAmI_(payload && payload.__s, payload && payload.__m);
+    if (!me.active && action !== 'auth.me' && action !== 'auth.requestAccess') {
+      // Distinguish "no account at all" from "waiting for approval" so the person
+      // is told something true and an administrator can act on it.
+      if (me.unknown || !me.email) {
+        throw AuthError_('You do not have access to this tool. ' +
+          'Please ask your administrator to create your profile and send you an invitation.');
+      }
+      throw AuthError_('Your account is not yet approved. Please contact Admin.');
+    }
+    var handler = RPC_ROUTES[action];
+    if (!handler) throw new Error('Unknown action: ' + action);
+    // Enforce role at the route level.
+    if (handler.roles && handler.roles.indexOf(me.role) === -1 && me.role !== 'ADMIN') {
+      throw AuthError_('You are not authorised to perform this action.');
+    }
+    var out = handler.fn(payload || {}, me);
+    // google.script.run cannot serialise Date objects and returns undefined
+    // to the client if it hits one. Sanitise every response before returning.
+    return { ok: true, data: sanitizeForClient_(out) };
+  } catch (err) {
+    var friendly = (err && err.isFriendly) ? err.message :
+                   'Unable to complete the request. Please try again.';
+    try {
+      logAudit_({
+        user: (Session.getActiveUser() || {}).getEmail && Session.getActiveUser().getEmail() || 'unknown',
+        action: 'RPC_ERROR',
+        entity: action,
+        entityId: '',
+        oldValue: '',
+        newValue: JSON.stringify({ err: String(err && err.stack || err), payload: safePayload_(payload) })
+      });
+    } catch (auditErr) { /* audit must never mask the original error */ }
+    return { ok: false, error: friendly };
+  } finally {
+    if (Date.now() - t0 > 4000) console.warn('slow rpc', action, Date.now() - t0);
+  }
+}
+
+/**
+ * Convert values that google.script.run refuses to serialise (Date, functions,
+ * undefined) into safe primitives, recursively. Idempotent for already-safe data.
+ */
+function sanitizeForClient_(v) {
+  if (v === null || v === undefined) return v === undefined ? null : v;
+  if (v instanceof Date) return Utilities.formatDate(v, getTz_(), "yyyy-MM-dd'T'HH:mm:ssXXX");
+  if (typeof v === 'function') return null;
+  if (Array.isArray(v)) return v.map(sanitizeForClient_);
+  if (typeof v === 'object') {
+    var out = {};
+    Object.keys(v).forEach(function(k) { out[k] = sanitizeForClient_(v[k]); });
+    return out;
+  }
+  return v;
+}
+
+/** RPC registry. `roles` is inclusive-OR; ADMIN always passes. */
+var RPC_ROUTES = {
+  // Auth
+  'auth.me':              { roles: null, fn: function(p, me) { return me; } },
+  'auth.requestAccess':   { roles: null, fn: function(p, me) { return requestAccess_(p, me); } },
+  // Sign-out must work for a guest too, so no role gate.
+  'auth.signOut':         { roles: null, fn: function(p, me) { return endMySession_(p, me); } },
+  'admin.sessions.list':  { roles: ['ADMIN'], fn: function(p, me) { return listSessions_(p, me); } },
+  'admin.sessions.revoke':{ roles: ['ADMIN'], fn: function(p, me) { return adminRevokeSession_(p, me); } },
+  // Team management. Every handler re-checks the reporting chain server-side,
+  // so a role alone is not enough - you must actually manage that person.
+  'signature.get':        { roles: ['ADMIN'], fn: function(p, me) { return signaturePreview_(p, me); } },
+  'signature.saveLogo':   { roles: ['ADMIN'], fn: function(p, me) { return saveSignatureLogo_(p, me); } },
+  'signature.removeLogo': { roles: ['ADMIN'], fn: function(p, me) { return removeSignatureLogo_(p, me); } },
+  'team.list':            { roles: null, fn: function(p, me) { return teamList_(p, me); } },
+  'team.upsert':          { roles: null, fn: function(p, me) { return teamUpsertMember_(p, me); } },
+  'team.setStatus':       { roles: null, fn: function(p, me) { return teamSetStatus_(p, me); } },
+  'team.warn':            { roles: null, fn: function(p, me) { return teamWarn_(p, me); } },
+  'team.pipStart':        { roles: null, fn: function(p, me) { return teamStartPip_(p, me); } },
+  'team.pipClose':        { roles: null, fn: function(p, me) { return teamClosePip_(p, me); } },
+  'team.appreciate':      { roles: null, fn: function(p, me) { return teamAppreciate_(p, me); } },
+  'people.history':       { roles: null, fn: function(p, me) { return peopleHistory_(p, me); } },
+  'windows.mine':         { roles: null, fn: function(p, me) { return myWindows_(p, me); } },
+  'kpis.get':             { roles: null, fn: function(p, me) { return getKpis_(p, me); } },
+  'kpis.set':             { roles: null, fn: function(p, me) { return setKpis_(p, me); } },
+  'score.get':            { roles: null, fn: function(p, me) { return getScore_(p, me); } },
+  'score.save':           { roles: null, fn: function(p, me) { return saveScore_(p, me); } },
+  'score.decide':         { roles: null, fn: function(p, me) { return decideScore_(p, me); } },
+  'score.hrClose':        { roles: null, fn: function(p, me) { return hrCloseScore_(p, me); } },
+  'windows.status':       { roles: null, fn: function(p, me) { return windowStatus_(p, me); } },
+  'windows.reopen':       { roles: ['ADMIN'], fn: function(p, me) { return grantWindowOverride_(p, me); } },
+  'team.setTarget':       { roles: null, fn: function(p, me) { return teamSetTarget_(p, me); } },
+  'team.removeTarget':    { roles: null, fn: function(p, me) { return teamRemoveTarget_(p, me); } },
+  // Any signed-in user may list people, so every form can offer a picker.
+  'users.invite':         { roles: ['ADMIN'], fn: function(p, me) { return inviteUser_(p, me); } },
+  'users.revokeInvite':   { roles: ['ADMIN'], fn: function(p, me) { return revokeInvite_(p, me); } },
+  'users.pickList':       { roles: null, fn: function(p, me) { return userPickList_(p, me); } },
+  'profile.get':          { roles: null, fn: function(p, me) { return getProfile_(p, me); } },
+  'profile.save':         { roles: null, fn: function(p, me) { return saveProfile_(p, me); } },
+  'auth.orgChart':        { roles: null, fn: function() { return { departments: ORG_DEPARTMENTS, designations: ORG_DESIGNATIONS }; } },
+
+  // Dashboard
+  'dashboard.summary':    { roles: ['ADMIN','LOCATION_HEAD','VIEWER','MANAGER'], fn: function(p, me) { return dashboardSummary_(me); } },
+
+  // Clients / Branches / Matrix
+  'clients.list':         { roles: ['ADMIN','LOCATION_HEAD','VIEWER','MANAGER'], fn: function(p, me) { return listClients_(p, me); } },
+  'clients.get':          { roles: ['ADMIN','LOCATION_HEAD','VIEWER','MANAGER'], fn: function(p, me) { return getClient_(p.id, me); } },
+  'clients.upsert':       { roles: ['ADMIN'],                                    fn: function(p, me) { return upsertClient_(p, me); } },
+  'clients.setStatus':    { roles: ['ADMIN'],                                    fn: function(p, me) { return setClientStatus_(p, me); } },
+  'branches.list':        { roles: ['ADMIN','LOCATION_HEAD','VIEWER','MANAGER'], fn: function(p, me) { return listBranches_(p, me); } },
+  'branches.upsert':      { roles: ['ADMIN','LOCATION_HEAD','MANAGER'],          fn: function(p, me) { assertMatrixAccess_(me); return upsertBranch_(p, me); } },
+  'branches.setStatus':   { roles: ['ADMIN','MANAGER'],                           fn: function(p, me) { return setBranchStatus_(p, me); } },
+  'matrix.get':           { roles: ['ADMIN','LOCATION_HEAD','VIEWER','MANAGER'], fn: function(p, me) { assertMatrixAccess_(me); return getMatrix_(p.clientId, me, p.branchId, p.location); } },
+  'matrix.save':          { roles: ['ADMIN','LOCATION_HEAD','MANAGER'],          fn: function(p, me) { assertMatrixAccess_(me); return saveMatrix_(p, me); } },
+
+  // Bulk import
+  'import.validate':      { roles: ['ADMIN','LOCATION_HEAD','MANAGER'],          fn: function(p, me) { return validateImport_(p, me); } },
+  'import.commit':        { roles: ['ADMIN','LOCATION_HEAD','MANAGER'],          fn: function(p, me) { return commitImport_(p, me); } },
+
+  // Escalations
+  'escalations.list':     { roles: ['ADMIN','LOCATION_HEAD','VIEWER','MANAGER'], fn: function(p, me) { return listEscalations_(p, me); } },
+  'escalations.log':      { roles: ['ADMIN','LOCATION_HEAD','MANAGER'],          fn: function(p, me) { return logEscalationCase_(p, me); } },
+  'escalations.raise':    { roles: ['ADMIN','LOCATION_HEAD','MANAGER'],          fn: function(p, me) { return raiseEscalationCase_(p, me); } },
+  'escalations.update':   { roles: ['ADMIN','LOCATION_HEAD','MANAGER'],          fn: function(p, me) { return updateEscalationCase_(p, me); } },
+  // Complaint MIS + exceptions. Granting is ADMIN / LOCATION_HEAD only — MANAGER
+  // can work a complaint but cannot excuse one.
+  // Type-ahead source for "Person / team concerned". Read-only.
+  'directory.suggest':    { roles: ['ADMIN','MANAGER','LOCATION_HEAD','VIEWER'], fn: function(p, me) { return directorySuggest_(p, me); } },
+  'ai.draftNote':          { roles: null, fn: function(p, me) { return aiDraftNote_(p, me); } },
+  'escalations.misExport': { roles: null, fn: function(p, me) { return misExport_(p, me); } },
+  'escalations.mis':      { roles: ['ADMIN','LOCATION_HEAD','MANAGER','VIEWER'], fn: function(p, me) { return escalationMIS_(p, me); } },
+  'escalations.exception.grant':  { roles: ['ADMIN','LOCATION_HEAD'], fn: function(p, me) { return grantEscalationException_(p, me); } },
+  'escalations.exception.revoke': { roles: ['ADMIN','LOCATION_HEAD'], fn: function(p, me) { return revokeEscalationException_(p, me); } },
+
+  // Admin
+  'admin.users.list':     { roles: ['ADMIN'], fn: function(p, me) { return listUsers_(); } },
+  'admin.users.upsert':   { roles: ['ADMIN'], fn: function(p, me) { return upsertUser_(p, me); } },
+  'admin.settings.get':   { roles: ['ADMIN'], fn: function(p, me) { return getAllSettings_(); } },
+  'admin.settings.save':  { roles: ['ADMIN'], fn: function(p, me) { return saveSettings_(p, me); } },
+  'admin.templates.get':  { roles: ['ADMIN'], fn: function(p, me) { return getTemplates_(); } },
+  'admin.templates.save': { roles: ['ADMIN'], fn: function(p, me) { return saveTemplates_(p, me); } },
+  'admin.holidays.list':  { roles: ['ADMIN'], fn: function(p, me) { return listHolidays_(); } },
+  'admin.holidays.save':  { roles: ['ADMIN'], fn: function(p, me) { return saveHolidays_(p, me); } },
+  // Non-admins may reach these by deep link, so the handlers scope by caller
+  // rather than relying on the menu being hidden.
+  'admin.logs.email':     { roles: ['ADMIN','MANAGER','LOCATION_HEAD','VIEWER'], fn: function(p, me) { return queryEmailLog_(p, me); } },
+  'admin.logs.audit':     { roles: ['ADMIN'],                                     fn: function(p, me) { return queryAuditLog_(p, me); } },
+  'admin.logs.reminders': { roles: ['ADMIN','MANAGER','LOCATION_HEAD','VIEWER'], fn: function(p, me) { return queryReminderLog_(p, me); } },
+  'admin.email.retry':    { roles: ['ADMIN'], fn: function(p, me) { return retryEmail_(p, me); } },
+  'admin.email.test':     { roles: ['ADMIN'], fn: function(p, me) { return sendTestEmail_(p, me); } },
+  'admin.run.reminder25': { roles: ['ADMIN'], fn: function(p, me) { return runJob_('REMINDER_25', p, me); } },
+  'admin.run.reminderLWD':{ roles: ['ADMIN'], fn: function(p, me) { return runJob_('REMINDER_LWD', p, me); } },
+  'admin.run.dispatch':   { roles: ['ADMIN'], fn: function(p, me) { return runJob_('MONTHLY_DISPATCH', p, me); } },
+  // Rehearse the three-strike sweep: computes everything, sends nothing.
+  'admin.strike.preview': { roles: ['ADMIN'], fn: function(p, me) { return previewStrikeSweep_(p, me); } },
+  'admin.appreciation.preview': { roles: ['ADMIN'], fn: function(p, me) { return previewAppreciationNudge_(p, me); } },
+  'admin.appreciation.run':     { roles: ['ADMIN'], fn: function(p, me) { return runAppreciationNudgeNow_(p, me); } },
+  'admin.strike.run':     { roles: ['ADMIN'], fn: function(p, me) { return runStrikeSweep_(me.email, { ignoreWindow: !!(p && p.ignoreWindow) }); } },
+  'warnings.categories':  { roles: null, fn: function(p, me) { return warningCategories_(p, me); } },
+  'warnings.raise':       { roles: ['ADMIN','MANAGER','LOCATION_HEAD'],           fn: function(p, me) { return raiseWarning_(p, me); } },
+  // MANAGER could raise a warning but not read the register - inconsistent.
+  'warnings.list':        { roles: ['ADMIN','MANAGER','LOCATION_HEAD'],            fn: function(p, me) { return listWarnings_(p, me); } },
+  'warnings.acknowledge': { roles: ['ADMIN','MANAGER','LOCATION_HEAD'],            fn: function(p, me) { return acknowledgeWarning_(p, me); } },
+  'admin.run.summary':    { roles: ['ADMIN'], fn: function(p, me) { return runJob_('MONTHLY_SUMMARY', p, me); } },
+  'admin.export.csv':     { roles: ['ADMIN','MANAGER'], fn: function(p, me) { return exportCsv_(p); } },
+  'admin.automation.status': { roles: ['ADMIN','MANAGER'], fn: function(p, me) { return automationStatus_(); } },
+  'admin.setup.seed':     { roles: ['ADMIN'], fn: function(p, me) { return seedDemoData_(me); } },
+  'admin.setup.triggers': { roles: ['ADMIN'], fn: function(p, me) { return installTriggers_(); } },
+  // Deployment self-check surfaced in Admin > Setup. Read-only.
+  'admin.preflight':      { roles: ['ADMIN'], fn: function(p, me) { return preflightReport_(p, me); } },
+
+  // Portal (read-only tokenised client link)
+  'portal.getLink':       { roles: ['ADMIN','MANAGER','LOCATION_HEAD'], fn: function(p, me) { return portalUrl_(p, me); } },
+  'portal.rotate':        { roles: ['ADMIN'], fn: function(p, me) { return portalRotate_(me); } },
+
+  // Gemini AI
+  // Fail-soft: App.html calls ai.status on EVERY page load. If Gemini.gs is
+  // missing from the deployed project (a partial clasp push / manual copy-paste)
+  // a bare call throws ReferenceError, which the dispatcher then writes to
+  // AUDIT_LOG on every single boot. Degrade to "AI unavailable" instead.
+  'ai.status':            { roles: ['ADMIN','MANAGER','LOCATION_HEAD','VIEWER'], fn: function(p, me) {
+                              if (typeof geminiStatus_ !== 'function') {
+                                return { configured: false, enabled: false, model: '', keyPreview: '', unavailable: true };
+                              }
+                              return geminiStatus_();
+                            } },
+  'ai.saveConfig':        { roles: ['ADMIN'], fn: function(p, me) { return geminiSaveConfig_(p, me); } },
+  'ai.test':              { roles: ['ADMIN'], fn: function(p, me) { return aiTestProvider_(p, me); } },
+  'admin.email.aliases':  { roles: ['ADMIN'], fn: function(p, me) { return emailAliasInfo_(p, me); } },
+  'admin.email.setFrom':  { roles: ['ADMIN'], fn: function(p, me) { return setFromAddress_(p, me); } },
+  'ai.classifyEscalation':{ roles: ['ADMIN','LOCATION_HEAD','MANAGER'], fn: function(p, me) { return aiClassifyEscalation_(p, me); } },
+  'ai.draftEscalation':   { roles: ['ADMIN','LOCATION_HEAD','MANAGER'], fn: function(p, me) { return aiDraftEscalation_(p, me); } },
+  // Open to every role: aiChat_ scopes its data snapshot per caller, so a
+  // Location Head can only ever be answered about their own clients.
+  'ai.chat':              { roles: ['ADMIN','MANAGER','LOCATION_HEAD','VIEWER'], fn: function(p, me) { return aiChat_(p, me); } },
+  'ai.weeklyAnomalies':   { roles: ['ADMIN','MANAGER'], fn: function(p, me) { return aiWeeklyAnomalies_(p); } }
+};
+
+/* =========================================================================
+ * FIRST-RUN BOOTSTRAP
+ * ========================================================================= */
+
+/**
+ * Called manually from the Apps Script editor after project creation.
+ * Creates the spreadsheet, seeds admin, installs triggers.
+ * Safe to run multiple times.
+ */
+function setup() {
+  var ss = ensureSpreadsheet_();
+  var email = Session.getEffectiveUser().getEmail();
+  // Seed the deploying user as the first ADMIN.
+  var users = readTable_('USERS');
+  if (!users.some(function(u){ return (u.Email || '').toLowerCase() === email.toLowerCase(); })) {
+    appendRow_('USERS', {
+      UserID: nextId_('USR'),
+      Name: email.split('@')[0],
+      Email: email,
+      Mobile: '',
+      Designation: 'Admin',
+      Role: 'ADMIN',
+      LocationHead: '',
+      Manager: '',
+      Status: 'ACTIVE',
+      CreatedAt: nowIso_(),
+      UpdatedAt: nowIso_(),
+      UpdatedBy: 'system'
+    });
+  }
+  syncMissingSettings_();
+  installTriggers_();
+  ensurePortalSecret_();
+  Logger.log('Setup complete. Spreadsheet: ' + ss.getUrl());
+  Logger.log('Web-app URL will be available after Deploy → New deployment.');
+  Logger.log('To enable Gemini AI: open the app → Admin → AI → paste API key.');
+  return ss.getUrl();
+}

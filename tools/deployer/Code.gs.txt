@@ -1,0 +1,244 @@
+/**
+ * Crux deployer — installs this repo into the live Apps Script project and
+ * repoints the EXISTING deployment, so the shared /exec URL never changes.
+ *
+ * This lives in its OWN throwaway Apps Script project, not in the production one.
+ * That matters: the Apps Script API needs a scope that lets the caller rewrite
+ * projects, and it is much safer to grant that to a scratch project than to add it
+ * to the live web app's manifest, even temporarily. It also means the production
+ * manifest is never hand-edited, which is the step most likely to go wrong.
+ *
+ * Two functions. Run `check` first — it writes nothing. Then `deploy`.
+ */
+
+// The live project being deployed TO. Do not change this.
+var TARGET_SCRIPT_ID = '1pueB41g1P2lzQDcGz3aIQrXlfRME6voGWddfL2bRTDz2ZN54aSONbnFB';
+
+var REPO   = 'crux-operationsalert-art/crux_escalationmanagement';
+var BRANCH = 'claude/full-stack-execution-x9z1qd';
+
+/** Every file in src/, with the type and name the Apps Script API expects. */
+var FILES = [
+  ['appsscript.json', 'JSON',      'appsscript'],
+  ['Code.gs',         'SERVER_JS', 'Code'],
+  ['Sheets.gs',       'SERVER_JS', 'Sheets'],
+  ['Auth.gs',         'SERVER_JS', 'Auth'],
+  ['Session.gs',      'SERVER_JS', 'Session'],
+  ['Clients.gs',      'SERVER_JS', 'Clients'],
+  ['Import.gs',       'SERVER_JS', 'Import'],
+  ['Email.gs',        'SERVER_JS', 'Email'],
+  ['Scheduler.gs',    'SERVER_JS', 'Scheduler'],
+  ['Escalation.gs',   'SERVER_JS', 'Escalation'],
+  ['Gemini.gs',       'SERVER_JS', 'Gemini'],
+  ['PortalSvc.gs',    'SERVER_JS', 'PortalSvc'],
+  ['Migrate.gs',      'SERVER_JS', 'Migrate'],
+  ['Preflight.gs',    'SERVER_JS', 'Preflight'],
+  ['Utils.gs',        'SERVER_JS', 'Utils'],
+  ['Index.html',      'HTML',      'Index'],
+  ['App.html',        'HTML',      'App'],
+  ['Styles.html',     'HTML',      'Styles'],
+  ['Portal.html',     'HTML',      'Portal']
+];
+
+/* ==========================================================================
+ * RUN THIS FIRST. It writes nothing at all.
+ * ======================================================================== */
+function check() {
+  var out = [];
+  out.push('Target project: ' + TARGET_SCRIPT_ID);
+  out.push('Source: ' + REPO + ' @ ' + BRANCH);
+  out.push('Signed in as: ' + safeUser_());
+  out.push('');
+
+  var ok = true;
+
+  // 1. Can we see the live project through the API?
+  var p = api_('GET', '/v1/projects/' + TARGET_SCRIPT_ID);
+  if (p.code === 200) {
+    out.push('[OK]   Apps Script API reachable, and you have access to the project.');
+    try { out.push('       Project title: ' + JSON.parse(p.body).title); } catch (e) {}
+  } else {
+    ok = false;
+    out.push('[FAIL] Cannot read the project (HTTP ' + p.code + ').');
+    out.push('       ' + p.body.slice(0, 300).replace(/\s+/g, ' '));
+    out.push('');
+    if (p.code === 403) {
+      out.push('       403 nearly always means the Apps Script API is switched off');
+      out.push('       for this Google account. Turn it on here, then run check again:');
+      out.push('         https://script.google.com/home/usersettings');
+    } else if (p.code === 404) {
+      out.push('       404 means this Google account cannot see that project at all.');
+      out.push('       Sign in as the account that owns it.');
+    } else if (p.code === 401) {
+      out.push('       401 means the manifest is missing the required scopes.');
+      out.push('       Check appsscript.json contains script.projects and');
+      out.push('       script.deployments, then re-authorise.');
+    }
+  }
+
+  // 2. Does every file download?
+  var missing = [], bytes = 0;
+  FILES.forEach(function(f) {
+    var s = fetchRaw_(f[0]);
+    if (s === null) missing.push(f[0]); else bytes += s.length;
+  });
+  if (missing.length) {
+    ok = false;
+    out.push('[FAIL] Could not download: ' + missing.join(', '));
+    out.push('       Check the branch still exists and the repo is public.');
+  } else {
+    out.push('[OK]   All ' + FILES.length + ' files downloaded (' +
+             Math.round(bytes / 1024) + ' KB).');
+  }
+
+  // 3. Which deployment would be updated?
+  if (p.code === 200) {
+    var d = listDeployments_();
+    if (d.target) {
+      out.push('[OK]   Will update deployment ' + d.target.deploymentId);
+      out.push('       (currently serving version ' +
+               d.target.deploymentConfig.versionNumber +
+               '). The /exec URL stays exactly the same.');
+    } else {
+      ok = false;
+      out.push('[FAIL] No existing versioned deployment found.');
+      out.push('       Refusing to guess: creating one would mint a NEW /exec URL.');
+      out.push('       Deployments the API can see:');
+      if (!d.all.length) out.push('         (none)');
+      d.all.forEach(function(x) {
+        out.push('         ' + x.deploymentId + '  version=' +
+          ((x.deploymentConfig || {}).versionNumber || '@HEAD (editor test target)'));
+      });
+    }
+  }
+
+  out.push('');
+  out.push(ok ? '>>> READY. Now run  deploy'
+              : '>>> NOT READY. Fix the [FAIL] lines above, then run check again.');
+  Logger.log(out.join('\n'));
+  return out.join('\n');
+}
+
+/* ==========================================================================
+ * RUN THIS SECOND. This is the one that changes the live tool.
+ * ======================================================================== */
+function deploy() {
+  var out = [];
+
+  // Download everything BEFORE writing anything, so a network hiccup halfway
+  // through cannot leave the live project half-updated.
+  var payload = { files: [] }, missing = [];
+  FILES.forEach(function(f) {
+    var src = fetchRaw_(f[0]);
+    if (src === null) { missing.push(f[0]); return; }
+    payload.files.push({ name: f[2], type: f[1], source: src });
+  });
+  if (missing.length) {
+    throw new Error('Nothing written. Could not download: ' + missing.join(', '));
+  }
+  if (payload.files.length !== FILES.length) {
+    throw new Error('Nothing written. Expected ' + FILES.length + ' files, assembled ' +
+                    payload.files.length + '.');
+  }
+
+  // Identify the deployment BEFORE touching the code.
+  var d = listDeployments_();
+  if (!d.target) {
+    throw new Error('Nothing written. No existing versioned deployment to update, and ' +
+      'creating one would change the /exec URL. Run check for the details.');
+  }
+  var deploymentId = d.target.deploymentId;
+  var desc = d.target.deploymentConfig.description || 'Crux Escalation Matrix';
+
+  // 1. Write the code.
+  var put = api_('PUT', '/v1/projects/' + TARGET_SCRIPT_ID + '/content', payload);
+  if (put.code !== 200) {
+    throw new Error('Nothing written. Writing the project failed (HTTP ' + put.code +
+                    '): ' + put.body.slice(0, 400));
+  }
+  out.push('Wrote ' + payload.files.length + ' files to the live project.');
+
+  // 2. Version it.
+  var ver = api_('POST', '/v1/projects/' + TARGET_SCRIPT_ID + '/versions',
+    { description: 'Deployed from ' + BRANCH + ' on ' + new Date().toISOString() });
+  if (ver.code !== 200) {
+    throw new Error('THE CODE IS ALREADY WRITTEN, but creating a version failed (HTTP ' +
+      ver.code + '): ' + ver.body.slice(0, 300) +
+      '\nFinish by hand in the live project: Deploy > Manage deployments > pencil > ' +
+      'Version: New version > Deploy.');
+  }
+  var v = JSON.parse(ver.body).versionNumber;
+  out.push('Created version ' + v + '.');
+
+  // 3. Repoint the EXISTING deployment. Never create a new one.
+  var upd = api_('PUT', '/v1/projects/' + TARGET_SCRIPT_ID + '/deployments/' + deploymentId, {
+    deploymentConfig: {
+      scriptId: TARGET_SCRIPT_ID,
+      versionNumber: v,
+      manifestFileName: 'appsscript',
+      description: desc
+    }
+  });
+  if (upd.code !== 200) {
+    throw new Error('Version ' + v + ' exists but repointing the deployment failed (HTTP ' +
+      upd.code + '): ' + upd.body.slice(0, 300) +
+      '\nFinish by hand in the live project: Deploy > Manage deployments > pencil > ' +
+      'Version: ' + v + ' > Deploy.');
+  }
+
+  out.push('Deployment ' + deploymentId + ' now serves version ' + v + '.');
+  out.push('The /exec URL is unchanged. The new code is LIVE.');
+  out.push('');
+  out.push('STILL TO DO, in the LIVE project (not this one):');
+  out.push('  1. retireLegacyTokensDryRun, read the log, then retireLegacyTokens');
+  out.push('     <- until this runs, every old ?t= link still works');
+  out.push('  2. canonicaliseLocationsDryRun then canonicaliseLocations');
+  out.push('  3. purgeOrphanHistoryDryRun then purgeOrphanHistory');
+  out.push('  4. normaliseTargetAllocationsDryRun then normaliseTargetAllocations');
+  out.push('  5. In the app: Admin > Users > Invite everyone marked NEEDS_REINVITE');
+  Logger.log(out.join('\n'));
+  return out.join('\n');
+}
+
+/* ---------------------------------------------------------------- internals */
+
+function api_(method, path, body) {
+  var opts = {
+    method: method,
+    headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
+    contentType: 'application/json',
+    muteHttpExceptions: true
+  };
+  if (body) opts.payload = JSON.stringify(body);
+  var r = UrlFetchApp.fetch('https://script.googleapis.com' + path, opts);
+  return { code: r.getResponseCode(), body: r.getContentText() };
+}
+
+function fetchRaw_(name) {
+  var url = 'https://raw.githubusercontent.com/' + REPO + '/' + BRANCH + '/src/' + name;
+  var r = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+  return r.getResponseCode() === 200 ? r.getContentText() : null;
+}
+
+/** Best effort, and never a reason to fail: it is only shown in the log. */
+function safeUser_() {
+  try { return Session.getEffectiveUser().getEmail() || '(unknown)'; }
+  catch (e) { return '(unknown)'; }
+}
+
+/**
+ * Apps Script always reports a @HEAD deployment — the editor's own test target,
+ * with no versionNumber. That is NOT the shared web app. The one to update is the
+ * versioned deployment; if there are several, the highest version.
+ */
+function listDeployments_() {
+  var r = api_('GET', '/v1/projects/' + TARGET_SCRIPT_ID + '/deployments');
+  if (r.code !== 200) return { all: [], target: null };
+  var all = JSON.parse(r.body).deployments || [];
+  var versioned = all.filter(function(x) {
+    return (x.deploymentConfig || {}).versionNumber;
+  }).sort(function(a, b) {
+    return b.deploymentConfig.versionNumber - a.deploymentConfig.versionNumber;
+  });
+  return { all: all, target: versioned[0] || null };
+}
