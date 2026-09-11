@@ -92,123 +92,6 @@ function rowsFromCsv(csv: string) {
   );
 }
 
-// --------------------------------------------------------------- specs
-// The exact headers each loader reads, with the rule for every column.
-const SPEC: Record<string, [string, string, string][]> = {
-  "People": [
-    ["employee_no", "EMP-0114", "Required, unique. Your own numbering; it becomes the person key."],
-    ["full_name", "Amit Kulkarni", "Required."],
-    ["work_email", "amit.kulkarni@cruxindia.co.in", "Required, unique. Checked for near-duplicates — a misspelt domain is rejected, not accepted as a second person."],
-    ["mobile", "9021469966", "Required. Used for sign-in by OTP where there is no Google account."],
-    ["chair", "Branch Manager — Pune", "Required. Must already exist in the structure."],
-    ["reports_to_employee_no", "EMP-0088", "Required except for the top chair."],
-    ["date_of_joining", "2023-01-12", "YYYY-MM-DD. Roll-ups count from this date, never before it."],
-    ["employment_type", "Employee", "Employee, Partner, Intern or Contract."],
-  ],
-  "Geography": [
-    ["group", "Zone A", "Optional."],
-    ["region", "West", "Optional. East, West, North, South, Central or North-East."],
-    ["zone", "Pune", "Required, unique after trimming."],
-    ["state", "Maharashtra", "Optional."],
-    ["city", "Pune", "Optional."],
-  ],
-  "Clients and branches": [
-    ["client_code", "SBI", "Required, unique."],
-    ["client_name", "State Bank of India", "Required."],
-    ["branch_code", "SBIN0030421", "Required and unique within the client."],
-    ["branch_name", "Kothrud", "Required."],
-    ["zone", "Pune", "Required. Must exist in the Geography file."],
-    ["address", "Kothrud, Pune 411038", "Optional."],
-    ["status", "ACTIVE", "ACTIVE or INACTIVE."],
-  ],
-  "Assignments": [
-    ["client_code", "SBI", "Required. Must exist."],
-    ["zone", "Pune", "Required. Must exist."],
-    ["product", "Home loan", "Optional. Blank means every product for that client at that location."],
-    ["handler_employee_no", "EMP-0114", "Required. Must exist in People."],
-    ["location_head_employee_no", "EMP-0088", "Optional."],
-    ["effective_from", "2026-04-01", "Required, YYYY-MM-DD."],
-    ["effective_to", "", "Blank for open-ended. Overlapping dates on the same client, zone and product is an error."],
-  ],
-  "Rates": [
-    ["client_code", "SBI", "Required. Must already exist."],
-    ["zone", "Pune", "Blank means every location for this client."],
-    ["rate", "196.00", "Required. Non-negative, up to two decimals."],
-    ["currency", "INR", "Optional, defaults to INR."],
-    ["effective_from", "2026-07-01", "Required. Records before this date keep the rate that applied then."],
-    ["effective_to", "", "Blank for open-ended. Must be after effective_from."],
-    ["reason", "Revised on renewal", "Recommended. Stored against the rate version."],
-  ],
-  "Collections": [
-    ["period", "2026-09", "Required, YYYY-MM."],
-    ["client_code", "SBI", "Required."],
-    ["zone", "Pune", "Required."],
-    ["billed", "540960.00", "Required. What was invoiced."],
-    ["collected", "412300.00", "Required. What was received."],
-  ],
-  "KPI targets": [
-    ["period", "2026-09", "Required, YYYY-MM."],
-    ["employee_no", "EMP-0114", "Required."],
-    ["kpi_name", "Field verifications completed", "Required. Must match a KPI on that chair."],
-    ["target", "1200", "Required."],
-    ["unit", "count", "count, %, score or ₹ lakh."],
-    ["sub_category", "SBI · Pune", "Optional. Sub-category targets must add up to the KPI target."],
-  ],
-  "Past performance": [
-    ["file_part", "mtd", "Required. One of mtd, revenue or collections. Load mtd first."],
-    ["period", "2026-08", "Required, YYYY-MM. Load oldest month first."],
-    ["employee_no", "EMP-0114", "Required for file_part = mtd."],
-    ["kpi_name", "Field verifications completed", "Required for mtd. Must match a loaded KPI target."],
-    ["sub_category", "SBI · Pune", "Optional."],
-    ["client_code", "SBI", "Required for revenue and collections."],
-    ["location_code", "PUN", "Required for revenue and collections."],
-    ["branch_code", "BR-00747", "Optional."],
-    ["target", "1050", "Optional on mtd."],
-    ["achieved", "1092", "Required for mtd."],
-    ["mtd_achieved", "1092", "Required for mtd."],
-    ["invoiced_inr", "1842000", "Required for revenue. Whole rupees, no commas."],
-    ["realised_inr", "1610000", "Required for revenue."],
-    ["opening_outstanding_inr", "940000", "Required for collections."],
-    ["collected_inr", "612000", "Required for collections."],
-    ["closing_outstanding_inr", "328000", "Required for collections. Opening minus collected must equal closing."],
-    ["owner_employee_no", "EMP-0114", "Recommended on revenue and collections."],
-    ["source", "Force1 export", "Recommended. Where the number came from."],
-  ],
-  "Holidays": [
-    ["date", "2026-11-08", "Required, YYYY-MM-DD."],
-    ["name", "Diwali", "Required."],
-    ["scope", "Festival", "National, Festival, or a state name."],
-    ["confirmed", "no", "yes or no. A moon-sighting date stays no until it is fixed: an unconfirmed day is shown but never shortens a deadline."],
-  ],
-  "Opening balances": [
-    ["record_type", "escalation", "escalation, ogl_assignment or claim."],
-    ["reference", "ESC-00193", "Required, unique."],
-    ["created_at", "2026-08-27T15:26:00", "Required. The real creation time — clocks are computed from this."],
-    ["current_state", "OPEN", "Must be a state that type actually has."],
-    ["owner_employee_no", "EMP-0114", "Required."],
-    ["client_code", "SBI", "Optional."],
-    ["zone", "Pune", "Optional."],
-  ],
-};
-
-function templateCsv(kind: string) {
-  const spec = SPEC[kind];
-  if (!spec) return null;
-  const esc = (v: string) =>
-    /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v);
-  return [
-    ["Crux bulk upload template", kind].map(esc).join(","),
-    ["Row below the header is an example - delete it before uploading."].map(esc).join(","),
-    ["A file with any error applies zero rows."].map(esc).join(","),
-    "",
-    spec.map((c) => esc(c[0])).join(","),
-    spec.map((c) => esc(c[1])).join(","),
-    "",
-    "NOTES",
-    ...spec.map((c) => [c[0], c[2]].map(esc).join(",")),
-  ].join("\n");
-}
-
 // ------------------------------------------------------------- handler
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
@@ -271,7 +154,9 @@ Deno.serve(async (req: Request) => {
 
     if (path === "/api/template") {
       const kind = url.searchParams.get("kind") || "";
-      const csv = templateCsv(kind);
+      // The columns and their rules live in upload_column, so a new kind
+      // needs a row, not a redeploy.
+      const csv = await rpc("upload_template", { p_kind: kind });
       if (!csv) return json({ error: "no_template", reason: "No template for " + kind }, 404);
       return new Response(csv, {
         headers: {

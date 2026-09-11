@@ -17,12 +17,29 @@ authenticates people itself; the service key stays inside the function and
 never reaches the browser. Five failed sign-ins from one address or one IP
 in fifteen minutes locks that door for fifteen minutes.
 
-Ten file kinds are defined, in load order — People, Geography, Clients and
-branches, Assignments, Rates, Collections, KPI targets, Past performance,
-Holidays, Opening balances. Each has a **Download template** button that gives
-you the exact headers, one example row, and the rule for every column.
-Loaders are implemented for Holidays and Rates; the rest validate and tell you
-plainly that no loader exists yet rather than pretending to load.
+**Eleven file kinds, all of them implemented**, in load order:
+
+| | Kind | Loads |
+|---|---|---|
+| 1 | Chairs | the chair structure, each reporting to another |
+| 2 | People | the people master, seated in their chairs |
+| 3 | Geography | zones under states, with region and group |
+| 4 | Clients and branches | client master and branch master |
+| 5 | Assignments | client × zone × handler, with a location head |
+| 6 | Rates | the commercial rate per client and location |
+| 7 | Collections | billed and collected per client, zone and month |
+| 8 | KPI targets | monthly targets per person and KPI |
+| 9 | Past performance | MTD, revenue and collections history |
+| 10 | Opening balances | live escalations and claims at cutover |
+| 11 | Holidays | the festival calendar (load any time) |
+
+Each has a **Download template** button giving the exact headers, one example
+row, and the rule for every column. Load them in order: People needs Chairs,
+Clients needs Geography, Assignments needs both plus People.
+
+Chairs was not in the original ten. The People template said the chair "must
+already exist" and nothing could create one, so no person could be loaded at
+all.
 
 ---
 
@@ -31,9 +48,10 @@ plainly that no loader exists yet rather than pretending to load.
 | Piece | Where | Live? |
 |---|---|---|
 | Database — 103 tables, RLS, functions | Supabase `crux`, ap-south-1 | **Yes** |
-| Bulk upload — validate, preview, apply | Edge function, URL above | **Yes** |
+| Bulk upload — all eleven kinds | Edge function, URL above | **Yes** |
 | PMS appraisal cascade and scoring | Database functions | **Yes** |
-| Sample data — 47 rows, 17 tables | Seeded | **Yes** |
+| Dummy dataset — 17 people, 5 clients, 16 branches | Loaded through the uploader | **Yes** |
+| Indian holiday calendar 2026–27 | 26 days, 6 confirmed | **Yes** |
 | Express API — cases, matrix, PMS, people, penalties | `project/build/api` | No — code only, needs a host |
 | Front end | `project/*.dc.html` | No — prototypes |
 
@@ -80,20 +98,32 @@ npm start          # :3000, or $PORT
 
 ---
 
-## Sample data
+## The data that is in there now
 
-47 rows across 17 tables so the screens are not empty. Every address is
-`@example.invalid` (RFC 2606), so nothing can reach a real inbox by accident.
-`sample_purge()` removes every sample row and leaves real rows alone. Run it
-before real data goes in.
+All of it is dummy data, loaded through the uploader itself so the path is the
+one you will use:
+
+- 17 chairs and 17 people, MD down to field executives
+- 12 zones across 11 states, with region and group
+- 5 clients, 16 branches
+- 14 assignments, 8 rates, 9 months of collections
+- 12 KPI targets, 6 months of MTD history, revenue and collections
+- 4 open escalations and 2 claims as opening balances
+
+Every address is `@example.invalid` (RFC 2606), so nothing can reach a real
+inbox by accident. Delete it when your own data is ready — `sample_purge()`
+clears the seeded sample rows, and the dummy rows above carry
+`source_ref = 'bulk upload'`.
 
 ## Holidays
 
-Six statutory Indian holidays are loaded and **confirmed** — Republic Day,
-Independence Day and Gandhi Jayanti for 2026 and 2027. Only confirmed holidays
-stop the working-hours clock, so festival dates that move with a moon sighting
-can be loaded now as unconfirmed and confirmed later without disturbing any
-deadline already counted.
+26 days for 2026 and 2027. The three gazetted national days — Republic Day,
+Independence Day, Gandhi Jayanti — are **confirmed**. Everything else, Diwali
+and Id included, is loaded **unconfirmed** on its expected date.
+
+Only a confirmed holiday stops the working-hours clock. So a festival whose
+date moves with a moon sighting shows on the calendar, and shortens no
+deadline, until somebody fixes it.
 
 ---
 
