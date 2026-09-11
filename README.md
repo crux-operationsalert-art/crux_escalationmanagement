@@ -189,6 +189,41 @@ The clock counts business minutes against a working window, skipping weekends
 and **confirmed** holidays only. A naive timestamp in an upload is read as
 Asia/Kolkata, not UTC — a time typed in a Pune office is a Pune time.
 
+### Raising one
+
+**OGL → Raise an assignment.** One screen: the case, the applicant, where it is
+to be verified, and the points to verify. It becomes a `verification_case` with
+its parties and requirements, and an assignment in `DRAFT` with no clock
+running.
+
+Until v20 the only way an assignment existed was the cutover loader. That is
+fine for a migration and useless for a Tuesday.
+
+### The repeated Point ID
+
+Point IDs are keyed by hand, and the same one legitimately recurs. A repeat is
+therefore **not a duplicate to refuse** — it is a decision to route, and the
+decision belongs to the assignor.
+
+On entry of a Point ID that has been used before, the tool compares the address
+against the previous attempt and proposes:
+
+| | |
+|---|---|
+| `EXACT` / `NORMALISED` | the same address written differently → **Revisit** proposed |
+| `FUZZY` with a score | close but not the same → **Revisit** proposed, with the number shown |
+| `DIFFERENT` | → **New assignment** proposed |
+
+*14-B M.G. Road* against *14B MG Road* is `NORMALISED`. Against *14-C M.G.
+Road* it is `FUZZY 89` — close, and not the same house. **The proposal is never
+applied by itself.** The point waits, the assignment stays in `DRAFT`, no clock
+starts, and the row appears under **Repeated Point IDs waiting on you** until
+the assignor picks one of four: revisit, reopen, unrelated new work, or keyed
+in error. Calling a `DIFFERENT` address a revisit needs a sentence saying why.
+
+"Overwrite" is a workflow word and never a storage one: a reopen supersedes the
+prior attempt and the earlier report stays retrievable under its own cycle.
+
 ### The engine
 
 Four things that used to be tables with nothing behind them now work, and each
@@ -227,6 +262,20 @@ reason and who waived it.
 
 All four run inside `crux_tick()`, every fifteen minutes.
 
+### Disputes and arbitration
+
+A dispute sends the work back to `REWORK` and stays open as a finding until
+somebody classifies it. **Upheld** means the report was wrong — that is a
+strike. **Not upheld** means the dispute was wrong — that waives any strike on
+that cycle, visibly, with the reason on the row.
+
+A third dispute goes to `ARBITRATION`, and the arbiter is **computed**: the
+lowest manager both parties report to, found by walking both reporting lines
+until they meet. Nobody nominates an arbiter, because a nominated arbiter is
+one of the parties' choice, which is the thing arbitration exists to avoid.
+Arbitration to rework records the dispute as upheld; arbitration to closed
+records it as not upheld and waives the strike.
+
 ## Mail
 
 **Data setup → Mail.** The outbox has existed since the first schema and until
@@ -240,6 +289,23 @@ to. Two of the three routes need nobody's permission but yours:
 | **A transactional provider** — Resend, Brevo, SendGrid, Postmark | An account, and two or three DNS records on a domain you control: SPF, DKIM, usually DMARC. No Workspace console. This is the route that scales and the one whose failures you can read. |
 | **Gmail, your own mailbox** | The OAuth client you already own, with the `gmail.send` scope added and this tool's callback listed as an authorised redirect. You consent for your own mailbox. Google's own sending limits apply. |
 | **SMTP, or a Gmail app password** | **Not possible here.** This runs as an edge function, which may make an HTTPS request and nothing else. There is no socket to port 587 from inside it, so an app password has nowhere to go. |
+
+### Where the API key comes from
+
+It is **not** a Google key, and you do not need the Google Console for it. You
+sign up with the provider yourself and the key is on their dashboard within a
+minute of registering — Resend calls it *API Keys*, Brevo *SMTP & API → API
+Keys*, SendGrid *Settings → API Keys*, Postmark *Servers → API Tokens*.
+
+**If you control no DNS either**, use *single sender verification*: you add one
+address, the provider emails a confirmation link to it, you click the link, and
+that address can send. Brevo, SendGrid and Postmark all work this way, and no
+administrator of anything is involved — only somebody who can open the mailbox.
+Free tiers run to a few hundred messages a day, which covers escalation traffic
+comfortably.
+
+Authenticating the domain (SPF, DKIM) later improves deliverability and raises
+the limits. It is worth doing, and it is not a blocker for going live.
 
 ### Setting up a provider
 
@@ -295,8 +361,9 @@ deadline, until somebody fixes it.
 
 1. ~~Configure the Google Workspace OAuth client.~~ Done.
 2. ~~Close the doors the linter found open.~~ Done — patch v19.
-3. **Choose a mail provider and paste its key** (Data setup → Mail), then send
-   yourself a test. Until this is done the tool works and tells nobody.
+3. **Choose a mail provider and paste its key** (Mail), then send yourself a
+   test. Until this is done the tool works and tells nobody. If you control no
+   DNS, use single sender verification — see *Where the API key comes from*.
 4. Load people, chairs and coverage by bulk upload, in load order.
 5. Load the full holiday calendar and the rate card.
 6. Fill in `ogl_escalation_matrix`. It is not required — escalation falls back
@@ -310,7 +377,7 @@ deadline, until somebody fixes it.
 
 ```
 project/build/schema.sql            base schema — 103 tables
-project/build/schema-patch-v3..v19  applied in order after it
+project/build/schema-patch-v3..v20  applied in order after it
 project/build/supabase/             RLS, auth gate, storage buckets
 project/build/supabase/functions/   the three live edge functions
   crux/   the front door: the page, sign-in, upload, OGL, mail settings

@@ -356,6 +356,77 @@ Deno.serve(async (req: Request) => {
       return json(out);
     }
 
+    // Raising one. The repeat Point ID check happens inside ogl_case_create:
+    // a point that has been here before is held, not refused, and the
+    // assignor is asked what it means before anything starts.
+    if (path === "/api/ogl/create" && req.method === "POST") {
+      const body = await req.json();
+      const out = await rpc("ogl_case_create", { p_actor: person.id, p_payload: body });
+      if (out && out.error) return json(out, 400);
+      return json(out, 201);
+    }
+
+    if (path === "/api/ogl/decisions") {
+      return json({ decisions: await rpc("ogl_pending_decisions", { p_person: person.id }) });
+    }
+
+    if (path === "/api/ogl/decide" && req.method === "POST") {
+      const b = await req.json();
+      const out = await rpc("ogl_repeat_decide", {
+        p_decision: b.id, p_actor: person.id, p_choice: b.choice, p_reason: b.reason ?? null });
+      if (out && out.error) return json(out, 409);
+      return json(out);
+    }
+
+    if (path === "/api/ogl/submit" && req.method === "POST") {
+      const b = await req.json();
+      const out = await rpc("ogl_submit", { p_assignment: b.id, p_actor: person.id });
+      if (out && out.error) return json(out, 409);
+      return json(out);
+    }
+
+    if (path === "/api/ogl/allocate" && req.method === "POST") {
+      const b = await req.json();
+      const out = await rpc("ogl_allocate", {
+        p_assignment: b.id, p_person: b.person, p_actor: person.id });
+      if (out && out.error) return json(out, 409);
+      return json(out);
+    }
+
+    if (path === "/api/ogl/arbiter") {
+      const id = url.searchParams.get("id");
+      if (!id) return json({ error: "missing_id" }, 400);
+      return json(await rpc("ogl_arbiter", { p_assignment: id }));
+    }
+
+    if (path === "/api/ogl/arbitrate" && req.method === "POST") {
+      const b = await req.json();
+      const out = await rpc("ogl_arbitrate", {
+        p_assignment: b.id, p_actor: person.id, p_outcome: b.outcome, p_reason: b.reason ?? "" });
+      if (out && out.error) return json(out, 409);
+      return json(out);
+    }
+
+    if (path === "/api/ogl/dispute-classify" && req.method === "POST") {
+      const b = await req.json();
+      const out = await rpc("ogl_dispute_classify", {
+        p_request: b.request, p_actor: person.id,
+        p_outcome: b.outcome, p_reason: b.reason ?? "" });
+      if (out && out.error) return json(out, 409);
+      return json(out);
+    }
+
+    if (path === "/api/ogl/participant" && req.method === "POST") {
+      const b = await req.json();
+      const out = b.revoke
+        ? await rpc("ogl_revoke_participant", { p_grant: b.grant, p_actor: person.id })
+        : await rpc("ogl_grant_participant", {
+            p_assignment: b.id, p_person: b.person, p_actor: person.id,
+            p_reason: b.reason ?? "", p_hours: b.hours ?? 72 });
+      if (out && out.error) return json(out, 403);
+      return json(out);
+    }
+
     if (path === "/api/ogl/strike-waive" && req.method === "POST") {
       const b = await req.json();
       const out = await rpc("ogl_strike_waive", {

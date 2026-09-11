@@ -332,11 +332,28 @@ async function vOgl(){
   var part = (location.hash||"").split("/")[1];
   if (part) return oglDetail(part);
 
-  var r = await Promise.all([crux("/api/ogl"), crux("/api/ogl/tray")]);
-  var rows = r[0].assignments || [], tray = r[1].segments || [];
+  var r = await Promise.all([crux("/api/ogl"), crux("/api/ogl/tray"), crux("/api/ogl/decisions")]);
+  var rows = r[0].assignments || [], tray = r[1].segments || [], dec = r[2].decisions || [];
 
   el("view").innerHTML = '<h1>OGL assignments</h1>' +
     '<p class="mute">A breached assignment is still in its state. The clock is a separate fact.</p>' +
+    '<div style="margin:12px 0"><button id="newOgl">Raise an assignment</button></div>' +
+    '<div id="newOglForm"></div>' +
+    (dec.length ? '<div class="card"><h2>Repeated Point IDs waiting on you</h2>' +
+      '<p class="mute">A Point ID keyed twice is not a duplicate to refuse - it is a decision ' +
+      'to route, and it is yours. Nothing on these assignments starts until you make it.</p>' +
+      '<div class="scroll"><table><tr><th>Point ID</th><th>On</th><th>Applicant</th>' +
+      '<th>Address then</th><th>Address now</th><th>Match</th><th>We suggest</th><th></th></tr>' +
+      dec.map(function(d){
+        var k = d.address_match==="DIFFERENT"?"bad":d.address_match==="FUZZY"?"warn":"ok";
+        return '<tr><td><b>'+esc(d.force1_point_id)+'</b></td>' +
+          '<td>'+esc(d.ref)+'<br><span class="mute">was '+esc(d.prior_ref||"-")+'</span></td>' +
+          '<td>'+esc(d.applicant_name)+'</td>' +
+          '<td class="mute">'+esc(d.prior_address)+'</td><td class="mute">'+esc(d.new_address)+'</td>' +
+          '<td><span class="pill '+k+'">'+esc(d.address_match)+' '+esc(d.match_score)+'</span></td>' +
+          '<td>'+esc(d.proposed)+'</td>' +
+          '<td><button onclick="oglDecide(\'' + esc(d.id) + '\',\'' + esc(d.proposed) + '\')">Decide</button></td></tr>';
+      }).join("") + '</table></div><div id="decForm"></div></div>' : "") +
     (tray.length ? '<div class="card"><h2>Confirm attribution</h2>' +
       '<p class="mute">These delays were accepted because nobody reviewed them in time. ' +
       'The time counts against the deadline; it counts against nobody\'s record until you say whose it was.</p>' +
@@ -358,6 +375,206 @@ async function vOgl(){
           '<td>'+esc(a.client)+'</td><td>'+esc(a.location)+'</td><td>'+esc(a.next_action_owner||"-")+'</td></tr>';
       }).join("") + '</table></div>'
       : '<div class="empty">No assignments.</div>') + '</div>';
+
+  el("newOgl").onclick = oglNew;
+}
+
+/* Raising one. The form is deliberately one screen: a case, an applicant, a
+   place, and the points to verify. Everything else the workflow works out. */
+async function oglNew(){
+  var refs = await crux("/api/refs");
+  function opts(list, val, lab){
+    return list.map(function(x){ return '<option value="'+esc(x[val])+'">'+esc(x[lab])+'</option>'; }).join("");
+  }
+  el("newOglForm").innerHTML = '<div class="card"><h2>Raise an assignment</h2>' +
+    '<div class="row">' +
+      '<div><label>Force1 case id</label><input id="nCase" placeholder="F1-2026-0001"></div>' +
+      '<div><label>Client</label><select id="nClient">' + opts(refs.clients||[], "code", "name") + '</select></div>' +
+      '<div><label>Verify in</label><select id="nTo">' + opts(refs.zones||[], "name", "name") + '</select></div>' +
+      '<div><label>Raised from</label><select id="nFrom"><option value="">Same place</option>' +
+        opts(refs.zones||[], "name", "name") + '</select></div>' +
+    '</div>' +
+    '<div class="row">' +
+      '<div><label>Applicant</label><input id="nName"></div>' +
+      '<div><label>Contact</label><input id="nContact"></div>' +
+      '<div><label>Pincode</label><input id="nPin"></div>' +
+    '</div>' +
+    '<div class="row"><div><label>Address</label><textarea id="nAddr" rows="2"></textarea></div></div>' +
+    '<div class="row"><div><label>Allocate to (optional)</label><select id="nAlloc">' +
+      '<option value="">Decide later</option>' + opts(refs.people||[], "work_email", "full_name") +
+    '</select></div></div>' +
+    '<h3 style="font-size:14px;margin:18px 0 8px">What is to be verified</h3>' +
+    '<div id="nPoints"></div>' +
+    '<button class="ghost" id="nAdd" type="button">Add another</button>' +
+    '<div style="margin-top:16px"><button id="nSave">Raise it</button> ' +
+      '<button class="ghost" onclick="el(\'newOglForm\').innerHTML=\'\'">Cancel</button></div>' +
+    '<div id="nMsg"></div></div>';
+
+  var n = 0;
+  function addPoint(){
+    n++;
+    var d = document.createElement("div");
+    d.className = "row";
+    d.innerHTML =
+      '<div><label>Party</label><select class="pRole">' +
+        '<option>APPLICANT</option><option>CO_APPLICANT</option><option>GUARANTOR</option></select></div>' +
+      '<div><label>Name</label><input class="pName" placeholder="same as applicant"></div>' +
+      '<div><label>Type</label><select class="pType">' + opts(refs.verification_types||[], "code", "label") + '</select></div>' +
+      '<div><label>Point ID</label><input class="pId"></div>' +
+      '<div><label>Address (if different)</label><input class="pAddr"></div>';
+    el("nPoints").appendChild(d);
+  }
+  el("nAdd").onclick = addPoint; addPoint();
+
+  el("nSave").onclick = async function(){
+    el("nSave").disabled = true;
+    var vs = [];
+    Array.prototype.forEach.call(el("nPoints").children, function(row){
+      var id = row.querySelector(".pId").value.trim();
+      if (!id) return;
+      vs.push({ party_role: row.querySelector(".pRole").value,
+                name: row.querySelector(".pName").value.trim(),
+                type: row.querySelector(".pType").value,
+                point_id: id,
+                address: row.querySelector(".pAddr").value.trim() });
+    });
+    var out = await crux("/api/ogl/create", { method:"POST", body:{
+      force1_case_id: el("nCase").value.trim(),
+      client_code: el("nClient").value,
+      to_location: el("nTo").value,
+      from_location: el("nFrom").value,
+      applicant_name: el("nName").value.trim(),
+      applicant_contact: el("nContact").value.trim(),
+      applicant_address: el("nAddr").value.trim(),
+      pincode: el("nPin").value.trim(),
+      allocated_to: el("nAlloc").value,
+      verifications: vs } });
+    el("nSave").disabled = false;
+    if (out.error) { el("nMsg").innerHTML = msg("bad", out.reason || out.error); return; }
+    el("nMsg").innerHTML = msg(out.points_held ? "warn" : "ok", out.ref + " - " + out.note);
+    setTimeout(function(){ location.hash = "#ogl/" + out.id; }, out.points_held ? 2500 : 1200);
+  };
+}
+
+/* The assignor's call on a repeated Point ID. The proposal is shown and never
+   applied by itself. */
+function oglDecide(id, proposed){
+  el("decForm").innerHTML =
+    '<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:14px">' +
+    '<div class="row"><div><label>What is it?</label><select id="dChoice">' +
+      ['REVISIT','REOPEN','NEW_ASSIGNMENT','REFUSED_DUPLICATE'].map(function(c){
+        return '<option value="'+c+'"'+(c===proposed?" selected":"")+'>'+
+          ({REVISIT:"A revisit - new work on the same point",
+            REOPEN:"Reopen the previous one - its report stays readable",
+            NEW_ASSIGNMENT:"Unrelated new work at a different address",
+            REFUSED_DUPLICATE:"Keyed in error - refuse it"})[c] + '</option>'; }).join("") +
+    '</select></div></div>' +
+    '<div class="row"><div><label>Why</label><textarea id="dWhy" rows="2"></textarea></div></div>' +
+    '<button id="dGo">Decide</button> ' +
+    '<button class="ghost" onclick="el(\'decForm\').innerHTML=\'\'">Cancel</button>' +
+    '<div id="dMsg"></div></div>';
+  el("dGo").onclick = async function(){
+    el("dGo").disabled = true;
+    var out = await crux("/api/ogl/decide", { method:"POST",
+      body:{ id:id, choice: el("dChoice").value, reason: el("dWhy").value } });
+    el("dGo").disabled = false;
+    if (out.error) { el("dMsg").innerHTML = msg("bad", out.reason || out.error); return; }
+    oglReload();
+  };
+}
+
+async function oglSubmit(id){
+  var out = await crux("/api/ogl/submit", { method:"POST", body:{ id:id } });
+  if (out.error) { el("oglMsg").innerHTML = msg("bad", out.reason || out.error); return; }
+  oglReload();
+}
+
+async function oglAllocate(id){
+  var refs = await crux("/api/refs");
+  el("oglForm").innerHTML =
+    '<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:16px">' +
+    '<div class="row"><div><label>Allocate to</label><select id="aTo">' +
+      (refs.people||[]).map(function(p){
+        return '<option value="'+esc(p.id)+'">'+esc(p.full_name)+
+               (p.designation?' - '+esc(p.designation):'')+'</option>'; }).join("") +
+    '</select></div></div>' +
+    '<button id="aGo">Allocate</button> ' +
+    '<button class="ghost" onclick="el(\'oglForm\').innerHTML=\'\'">Cancel</button></div>';
+  el("aGo").onclick = async function(){
+    el("aGo").disabled = true;
+    var out = await crux("/api/ogl/allocate", { method:"POST",
+      body:{ id:id, person: el("aTo").value } });
+    el("aGo").disabled = false;
+    if (out.error) { el("oglMsg").innerHTML = msg("bad", out.reason || out.error); return; }
+    oglReload();
+  };
+}
+
+/* Upheld means the report was wrong, and that is a strike. Not upheld means
+   the dispute was wrong, and that waives one - visibly, with a reason. */
+function oglClassify(request){
+  el("oglForm").innerHTML =
+    '<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:16px">' +
+    '<div class="row"><div><label>The dispute was</label><select id="cOut">' +
+      '<option value="UPHELD">Upheld - the report was wrong</option>' +
+      '<option value="NOT_UPHELD">Not upheld - the report stands</option>' +
+    '</select></div></div>' +
+    '<div class="row"><div><label>Why</label><textarea id="cWhy" rows="2"></textarea></div></div>' +
+    '<button id="cGo">Record it</button> ' +
+    '<button class="ghost" onclick="el(\'oglForm\').innerHTML=\'\'">Cancel</button></div>';
+  el("cGo").onclick = async function(){
+    el("cGo").disabled = true;
+    var out = await crux("/api/ogl/dispute-classify", { method:"POST",
+      body:{ request:request, outcome: el("cOut").value, reason: el("cWhy").value } });
+    el("cGo").disabled = false;
+    if (out.error) { el("oglMsg").innerHTML = msg("bad", out.reason || out.error); return; }
+    oglReload();
+  };
+}
+
+async function oglArbitrate(id){
+  var arb = await crux("/api/ogl/arbiter?id=" + encodeURIComponent(id));
+  el("oglForm").innerHTML =
+    '<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:16px">' +
+    '<p class="mute">Arbiter: ' + esc(arb.name || "-") + ' &mdash; ' + esc(arb.how || "") + '</p>' +
+    '<div class="row"><div><label>Decision</label><select id="rOut">' +
+      '<option value="REWORK">Send it back for rework</option>' +
+      '<option value="CLOSED">Close it as it stands</option>' +
+    '</select></div></div>' +
+    '<div class="row"><div><label>Reasoning</label><textarea id="rWhy" rows="3"></textarea></div></div>' +
+    '<button id="rGo">Decide</button> ' +
+    '<button class="ghost" onclick="el(\'oglForm\').innerHTML=\'\'">Cancel</button></div>';
+  el("rGo").onclick = async function(){
+    el("rGo").disabled = true;
+    var out = await crux("/api/ogl/arbitrate", { method:"POST",
+      body:{ id:id, outcome: el("rOut").value, reason: el("rWhy").value } });
+    el("rGo").disabled = false;
+    if (out.error) { el("oglMsg").innerHTML = msg("bad", out.reason || out.error); return; }
+    oglReload();
+  };
+}
+
+/* Helping with a case is a recorded act with an end date. */
+async function oglLend(id){
+  var refs = await crux("/api/refs");
+  el("oglForm").innerHTML =
+    '<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:16px">' +
+    '<div class="row"><div><label>Lend access to</label><select id="lWho">' +
+      (refs.people||[]).map(function(p){
+        return '<option value="'+esc(p.id)+'">'+esc(p.full_name)+'</option>'; }).join("") +
+    '</select></div><div><label>For how many hours</label><input id="lHrs" value="72"></div></div>' +
+    '<div class="row"><div><label>Why</label><textarea id="lWhy" rows="2"></textarea></div></div>' +
+    '<button id="lGo">Lend it</button> ' +
+    '<button class="ghost" onclick="el(\'oglForm\').innerHTML=\'\'">Cancel</button></div>';
+  el("lGo").onclick = async function(){
+    el("lGo").disabled = true;
+    var out = await crux("/api/ogl/participant", { method:"POST",
+      body:{ id:id, person: el("lWho").value, reason: el("lWhy").value,
+             hours: Number(el("lHrs").value) || 72 } });
+    el("lGo").disabled = false;
+    if (out.error) { el("oglMsg").innerHTML = msg("bad", out.reason || out.error); return; }
+    el("oglMsg").innerHTML = msg("ok", "Lent for " + out.expires_in_hours + " hours.");
+  };
 }
 
 /* One assignment. current_state is the operational position; the SLA status,
@@ -396,11 +613,26 @@ async function oglDetail(id){
     '<div class="card"><h2>What you can do</h2>' +
       ((acts.actions||[]).length
         ? '<div class="row" style="flex-wrap:wrap;gap:8px">' + acts.actions.map(function(x){
+            var g = ' class="ghost"';
             if (x.kind === "transition")
-              return '<button class="ghost" onclick="oglMove(\'' + esc(id) + '\',\'' + esc(x.to) + '\')">' + esc(x.label) + '</button>';
+              return '<button'+g+' onclick="oglMove(\'' + esc(id) + '\',\'' + esc(x.to) + '\')">' + esc(x.label) + '</button>';
             if (x.kind === "request")
               return '<button onclick="oglAsk(\'' + esc(id) + '\',\'' + esc(x.type) + '\')">' + esc(x.label) + '</button>';
-            return '<button onclick="oglAnswer(\'' + esc(x.request) + '\',\'' + esc(x.type) + '\')">' + esc(x.label) + '</button>';
+            if (x.kind === "resolve")
+              return '<button onclick="oglAnswer(\'' + esc(x.request) + '\',\'' + esc(x.type) + '\')">' + esc(x.label) + '</button>';
+            if (x.kind === "submit")
+              return '<button onclick="oglSubmit(\'' + esc(id) + '\')">' + esc(x.label) + '</button>';
+            if (x.kind === "allocate")
+              return '<button onclick="oglAllocate(\'' + esc(id) + '\')">' + esc(x.label) + '</button>';
+            if (x.kind === "classify")
+              return '<button onclick="oglClassify(\'' + esc(x.request) + '\')">' + esc(x.label) + '</button>';
+            if (x.kind === "arbitrate")
+              return '<button onclick="oglArbitrate(\'' + esc(id) + '\')">' + esc(x.label) + '</button>';
+            if (x.kind === "lend")
+              return '<button'+g+' onclick="oglLend(\'' + esc(id) + '\')">' + esc(x.label) + '</button>';
+            if (x.kind === "decide")
+              return '<button onclick="location.hash=\'#ogl\'">' + esc(x.label) + '</button>';
+            return "";
           }).join("") + '</div>'
         : '<div class="empty">Nothing is yours to do on this one right now.</div>') +
       '<div id="oglForm"></div><div id="oglMsg"></div></div>' +
