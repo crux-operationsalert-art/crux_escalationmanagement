@@ -1,0 +1,69 @@
+rateAdd:t('New rate: pick the client, then the scope \u2014 one location, several selected locations, or every location for that client. Set the W.E.F. date and an optional end date. The form refuses a negative rate, an end date before the start, and any overlap with an existing rate for the same scope and period.'),
+      rateMissing:'TOYOTA · Nashik carries revenue against zero MTD, and CAN FIN HOMES · Pune has only a future-dated rate. Both surface as exceptions in either view rather than borrowing another client\u2019s rate.',
+      rateHistOpen:!!S.rateHist,
+      rateHistFor:S.rateHist || '',
+      rateHistClose:() => this.setState({ rateHist:'' }),
+      rateHistRows:Component.RATES.filter(r => r.client === S.rateHist)
+        .slice().sort((a, b) => a.from < b.from ? -1 : 1)
+        .map(r => ({ from:r.from, to:r.to || 'open-ended', value:'\u20b9' + r.value.toFixed(2),
+          scope:r.scope === 'exact' ? 'One location · ' + r.locs.join(', ')
+              : r.scope === 'group' ? r.locs.length + ' locations · ' + r.locs.join(', ')
+              : 'All locations',
+          by:r.by, why:r.why, future:r.from > '2026-09-30' }))
+    };
+  }
+
+  // Part 31: inherited access is shown SEPARATELY from explicit grants, because
+  // that distinction is what makes a permission audit possible at all.
+  accessVM(me){
+    const S = this.state, t = m => () => this.setState({ toast:m });
+    const people = [
+      { id:'amit',   name:'Amit Kulkarni',   chair:'Branch Manager — Pune',
+        inherited:[{ via:'Own record', what:'Own performance and daily counts' },
+                   { via:'Chair → Pune', what:'Pune location' },
+                   { via:'Reporting line', what:'3 direct reportees' }],
+        explicit:[] },
+      { id:'nitish', name:'Nitish Bhope',    chair:'Zonal Manager — Pune',
+        inherited:[{ via:'Own record', what:'Own performance' },
+                   { via:'Reporting line', what:'4 branch managers, 12 indirect' },
+                   { via:'Chair → West', what:'Pune, Thane, Nashik' }],
+        explicit:[{ scope:'Client', val:'CLI-00007', levels:'View, Detailed', by:'Shantanu Suravase', on:'2026-08-14' }] },
+      { id:'vrunda', name:'Vrunda Potdar',   chair:'Location Head — North East',
+        inherited:[{ via:'Own record', what:'Own performance' },
+                   { via:'Coverage rules', what:'Guwahati, Port Blair, Ranchi' }],
+        explicit:[{ scope:'Zone', val:'East', levels:'View', by:'Shantanu Suravase', on:'2026-07-02' }] },
+      { id:'rajesh', name:'Rajesh Kulkarni', chair:'Franchise Partner — Nagpur',
+        inherited:[{ via:'Own record', what:'Own performance' },
+                   { via:'Partner agreement', what:'Nagpur only' }],
+        explicit:[] },
+      { id:'sneha',  name:'Sneha Radhe',     chair:'Finance Head',
+        inherited:[{ via:'Chair → Finance', what:'Revenue and rate data, all clients' }],
+        explicit:[{ scope:'Report', val:'Rate master', levels:'View, Detailed, Export', by:'Shantanu Suravase', on:'2026-06-30' }] }
+    ];
+    const picked = people.find(p => p.id === (S.accPick || 'nitish')) || people[0];
+    return {
+      accPeople:people.map(p => ({ name:p.name, chair:p.chair,
+        on:p.id === picked.id, grants:String(p.explicit.length),
+        pick:() => this.setState({ accPick:p.id, accAdd:false }) })),
+      accName:picked.name, accChair:picked.chair,
+      accInherited:picked.inherited,
+      accExplicit:picked.explicit,
+      accHasExplicit:picked.explicit.length > 0,
+      accNoExplicit:picked.explicit.length === 0,
+      accNote:'Inherited access follows the chair and the reporting line, and changes on its own when either changes. Explicit grants are decisions somebody made, and only these can be revoked here.',
+      accAddOpen:!!S.accAdd,
+      accToggleAdd:() => this.setState(st => ({ accAdd:!st.accAdd })),
+      accScopeTypes:['Location','Zone','Region','Client','Team','Employee'].map(x => ({ label:x,
+        on:(S.accScope || 'Location') === x, pick:() => this.setState({ accScope:x }) })),
+      accLevels:[
+        { label:'View', note:'Can open the report', on:true },
+        { label:'Detailed view', note:'Can drill to record level', on:(S.accDetail !== false) },
+        { label:'Export', note:'Can take data out of the system', on:!!S.accExport }
+      ].map(l => ({ ...l, pick:l.label === 'View' ? t('View is the minimum for any grant and cannot be switched off — remove the grant instead.')
+        : l.label === 'Detailed view' ? (() => this.setState(st => ({ accDetail:st.accDetail === false }))) 
+        : (() => this.setState(st => ({ accExport:!st.accExport }))) })),
+      accSave:t('Grant added for ' + picked.name + '. It is recorded as an explicit grant with your name and today\u2019s date, so an audit can tell it apart from what the chair carries. The data query enforces it — hiding a dropdown is not enforcement.'),
+      accRevoke:t('Grant revoked. ' + picked.name + ' keeps whatever the chair and reporting line carry; only the explicit addition is removed.'),
+      accWarn:'Granting Export lets this person take the data out of the system. Grant it only where the role genuinely needs it.'
+    };
+  }

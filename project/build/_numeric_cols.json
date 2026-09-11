@@ -1,0 +1,198 @@
+[
+ {
+  "line": 429,
+  "table": "target",
+  "col": "target_value",
+  "rest": ",",
+  "kind": "count"
+ },
+ {
+  "line": 430,
+  "table": "target",
+  "col": "achieved_value",
+  "rest": ",",
+  "kind": "count"
+ },
+ {
+  "line": 559,
+  "table": "kpi_target",
+  "col": "target_value",
+  "rest": "not null,",
+  "kind": "count"
+ },
+ {
+  "line": 571,
+  "table": "daily_count",
+  "col": "value",
+  "rest": "not null,",
+  "kind": "count"
+ },
+ {
+  "line": 591,
+  "table": "penalty_rule",
+  "col": "amount",
+  "rest": "not null,",
+  "kind": "money"
+ },
+ {
+  "line": 608,
+  "table": "penalty_instance",
+  "col": "amount",
+  "rest": "not null,              -- copied from th",
+  "kind": "money"
+ },
+ {
+  "line": 834,
+  "table": "kpi_eligibility",
+  "col": "deduct_points",
+  "rest": ",",
+  "kind": "unknown"
+ },
+ {
+  "line": 835,
+  "table": "kpi_eligibility",
+  "col": "default_score",
+  "rest": ",",
+  "kind": "score"
+ },
+ {
+  "line": 853,
+  "table": "task",
+  "col": "attribute_weight",
+  "rest": ",        -- how much it counts inside At",
+  "kind": "score"
+ },
+ {
+  "line": 879,
+  "table": "pms_weighting",
+  "col": "kpi_percent",
+  "rest": "not null,",
+  "kind": "score"
+ },
+ {
+  "line": 880,
+  "table": "pms_weighting",
+  "col": "attr_percent",
+  "rest": "not null,",
+  "kind": "score"
+ },
+ {
+  "line": 890,
+  "table": "pms_impact",
+  "col": "points",
+  "rest": "not null,",
+  "kind": "unknown"
+ },
+ {
+  "line": 900,
+  "table": "pms_score",
+  "col": "kpi_score",
+  "rest": ",",
+  "kind": "score"
+ },
+ {
+  "line": 901,
+  "table": "pms_score",
+  "col": "attr_score",
+  "rest": ",",
+  "kind": "score"
+ },
+ {
+  "line": 902,
+  "table": "pms_score",
+  "col": "final_score",
+  "rest": ",",
+  "kind": "score"
+ },
+ {
+  "line": 903,
+  "table": "pms_score",
+  "col": "manager_score",
+  "rest": "check (manager_score between 1 and 10),",
+  "kind": "score"
+ },
+ {
+  "line": 925,
+  "table": "raisable",
+  "col": "pms_points",
+  "rest": ",                       -- copied from p",
+  "kind": "unknown"
+ },
+ {
+  "line": 969,
+  "table": "claim",
+  "col": "amount",
+  "rest": "not null,",
+  "kind": "money"
+ },
+ {
+  "line": 1025,
+  "table": "pulse_response",
+  "col": "score",
+  "rest": "check (score between 1 and 10),",
+  "kind": "score"
+ },
+ {
+  "line": 1243,
+  "table": "pms_component",
+  "col": "raw",
+  "rest": "not null,                 -- 0-10 before",
+  "kind": "unknown"
+ },
+ {
+  "line": 1244,
+  "table": "pms_component",
+  "col": "weight_pct",
+  "rest": "not null,                 -- read from p",
+  "kind": "score"
+ },
+ {
+  "line": 1259,
+  "table": "pms_adjustment",
+  "col": "points",
+  "rest": "not null,                 -- signed",
+  "kind": "unknown"
+ },
+ {
+  "line": 1318,
+  "table": "pms_curve_band",
+  "col": "share_pct",
+  "rest": "not null,",
+  "kind": "score"
+ },
+ {
+  "line": 1334,
+  "table": "pms_band_result",
+  "col": "final",
+  "rest": "not null,",
+  "kind": "unknown"
+ },
+ {
+  "line": 1425,
+  "table": "rate",
+  "col": "value",
+  "rest": "not null check (value >= 0),",
+  "kind": "count"
+ },
+ {
+  "line": 1462,
+  "table": "business_record",
+  "col": "revenue",
+  "rest": "not null default 0,     -- STORED, autho",
+  "kind": "money"
+ },
+ {
+  "line": 1474,
+  "table": "rate_exception",
+  "col": "configured",
+  "rest": ",",
+  "kind": "unknown"
+ },
+ {
+  "line": 1475,
+  "table": "rate_exception",
+  "col": "implied",
+  "rest": ",",
+  "kind": "unknown"
+ }
+]

@@ -1,0 +1,8 @@
+﻿"employee_no","full_name","work_email","mobile","chair_id","reports_to_email","department","employment_type","date_of_joining","work_location","files_daily_count"
+"CRX0104","Yash Desai","yash.desai@cruxindia.co.in","9822011223","FE_NO","rajesh.kulkarni@cruxindia.co.in","Operations","Employee","2026-09-15","Nagpur","yes"
+
+"# People — template"
+"# Row 1 is the header. Do not rename, reorder or remove columns."
+"# Row 2 is a worked example. Delete it before you upload."
+"# employee_no must be unique and is the identity key — e-mail is not. work_email must be a cruxindia.co.in address; a near-miss domain is rejected, which is how the typo-domain identity holding 583 coverage rows got in. chair_id must exist in the chair master. reports_to_email must resolve to a loaded person, so upload managers before their reports."
+"# Every row passes the same validation as a typed entry. Nothing is relaxed for a file."

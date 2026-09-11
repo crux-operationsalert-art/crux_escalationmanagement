@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Crux Escalation — application</title>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:#f4f2ee;color:#14161a;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:#3a5a80;text-decoration:none}
+  a:hover{color:#243b55;text-decoration:underline}
+  input,select,textarea,button{font-family:inherit}
+  input:focus,select:focus,textarea:focus{outline:2px solid #3a5a80;outline-offset:-1px}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#f4f2ee;display:flex;flex-direction:column">
+
+  <div style="background:#2a2d33;color:#cfcbc1;border-bottom:2px solid #b4562f">
+    <div style="max-width:1240px;margin:0 auto;padding:8px clamp(12px,3vw,24px);display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between" data-comment-anchor="a09c45ae38-div">
+      <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#b4562f;font-weight:600">Prototype control · not part of the product</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:12px;color:#9a978f">View the app as</span>
+        <select value="{{ role }}" onChange="{{ setRole }}" style="font-size:12.5px;padding:7px 10px;border:1px solid #4a4d55;background:#14161a;color:#e8e5dd;min-height:36px;max-width:210px">
+          <sc-for list="{{ roleOptions }}" as="r" hint-placeholder-count="4">
+            <option value="{{ r.key }}">{{ r.label }}</option>
+          </sc-for>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <header style="background:#fff;border-bottom:1px solid #d8d5cd;position:sticky;top:0;z-index:30">
+    <div style="max-width:1240px;margin:0 auto;padding:10px clamp(12px,3vw,24px);display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between" data-comment-anchor="697f67c758-div">
+      <div style="display:flex;align-items:baseline;gap:10px;min-width:0">
+        <div style="font-family:Georgia,serif;font-size:17px;white-space:nowrap">Crux</div>
+        <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#5c6470;white-space:nowrap">Escalation Matrix</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <button type="button" onClick="{{ toggleBell }}" style="appearance:none;border:1px solid #d8d5cd;background:#fff;padding:7px 12px;font-size:12.5px;cursor:pointer;min-height:38px" style-hover="border-color:#3a5a80;color:#3a5a80">Notifications · {{ notifyCount }}</button>
+        <div style="text-align:right;line-height:1.3">
+          <div style="font-size:13px;font-weight:600">{{ meName }}</div>
+          <div style="font-size:11px;color:#5c6470">{{ meRole }}</div>
+        </div>
+      </div>
+    </div>
+    <nav style="max-width:1240px;margin:0 auto;padding:0 clamp(12px,3vw,24px);display:flex;flex-wrap:wrap;gap:0;border-top:1px solid #eeece6" data-comment-anchor="e835a4fd87-nav">
+      <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="6">
+        <button type="button" onClick="{{ t.go }}" style="appearance:none;background:none;border:none;padding:10px 14px 8px;font-size:13.5px;cursor:pointer;min-height:42px" style-hover="background:#faf9f6">
+          <span>{{ t.label }}</span>
+          <sc-if value="{{ t.badge }}" hint-placeholder-val="{{ true }}">
+            <span style="margin-left:6px;font-size:11px;background:#b4562f;color:#fff;padding:1px 6px;border-radius:9px">{{ t.badge }}</span>
+          </sc-if>
+          <sc-if value="{{ t.on }}" hint-placeholder-val="{{ true }}">
+            <div style="height:2px;background:#3a5a80;margin-top:7px"></div>
+          </sc-if>
+        </button>
+      </sc-for>
+    </nav>
+  </header>
+
+  <sc-if value="{{ bellOpen }}" hint-placeholder-val="{{ true }}">
+    <div style="background:#14161a;color:#e8e5dd">
+      <div style="max-width:1240px;margin:0 auto;padding:14px clamp(12px,3vw,24px)" data-comment-anchor="fd53f42832-div">
+        <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#9a978f">In-app notifications · e-mail and in-app only, as configured</div>
+        <sc-for list="{{ notifications }}" as="n" hint-placeholder-count="3">
+          <div style="padding:9px 0;border-bottom:1px solid #2a2d33;display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:space-between">
+            <div style="font-size:13.5px">{{ n.text }}</div>
+            <div style="font-size:11.5px;color:#9a978f;font-family:ui-monospace,monospace">{{ n.at }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ true }}">
+    <div style="background:#2f7355;color:#fff">
+      <div style="max-width:1240px;margin:0 auto;padding:11px clamp(12px,3vw,24px);font-size:13.5px;display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:space-between;align-items:center">
+        <div>{{ toast }}</div>
+        <button type="button" onClick="{{ clearToast }}" style="appearance:none;background:none;border:1px solid rgba(255,255,255,0.5);color:#fff;font-size:12px;padding:5px 10px;cursor:pointer">Dismiss</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <main style="flex:1;max-width:1240px;width:100%;margin:0 auto;padding:clamp(14px,3vw,26px) clamp(12px,3vw,24px)">
+
+    <!-- ============ TODAY ============ -->
+    <sc-if value="{{ isToday }}" hint-placeholder-val="{{ true }}">
+      <div>
+        <div style="display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between;margin-bottom:16px">
+          <div>
+            <h1 style="font-family:Georgia,serif;font-weight:400;font-size:clamp(21px,3.4vw,30px);margin:0;letter-spacing:-0.01em">{{ today.title }}</h1>
+            <div style="font-size:13px;color:#5c6470;margin-top:5px">{{ today.sub }}</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <sc-for list="{{ today.counters }}" as="c" hint-placeholder-count="3">
+              <div style="background:#fff;border:1px solid #d8d5cd;padding:9px 15px;min-width:92px">
+                <div style="font-family:Georgia,serif;font-size:21px">{{ c.n }}</div>
+                <div style="font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470;margin-top:2px">{{ c.label }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background:#fff;border:1px solid #d8d5cd">
+          <div style="padding:10px 15px;border-bottom:1px solid #e2e0da;background:#faf9f6;display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:space-between;align-items:baseline">
+            <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470;font-weight:600">Needs you</div>
+            <div style="font-size:12px;color:#5c6470">Sorted by what blocks a client first</div>
+          </div>
+          <sc-for list="{{ today.tasks }}" as="t" hint-placeholder-count="4">
+            <div style="padding:14px 15px;border-bottom:1px solid #f0eee9;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px 16px;align-items:center">
+              <div style="min-width:0">
+                <div style="font-size:14.5px;font-weight:600;line-height:1.35">{{ t.title }}</div>
+                <div style="font-size:12.5px;color:#5c6470;margin-top:4px">{{ t.meta }}</div>
+                <sc-if value="{{ t.blocked }}" hint-placeholder-val="{{ true }}">
+                  <div style="font-size:12px;color:#b4562f;margin-top:5px">{{ t.blocked }}</div>
+                </sc-if>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+                <button type="button" onClick="{{ t.act }}" style="appearance:none;border:1px solid #3a5a80;background:#fff;color:#3a5a80;font-size:13px;padding:10px 16px;cursor:pointer;min-height:44px" style-hover="background:#3a5a80;color:#fff">{{ t.action }}</button>
+              </div>
+            </div>
+          </sc-for>
+          <div style="padding:12px 15px;font-size:12.5px;color:#5c6470">{{ today.footer }}</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ CASES ============ -->
+    <sc-if value="{{ isCases }}" hint-placeholder-val="{{ true }}">
+      <div>
+        <div style="display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;justify-content:space-between;margin-bottom:16px">
+          <div>
+            <h1 style="font-family:Georgia,serif;font-weight:400;font-size:clamp(21px,3.4vw,30px);margin:0">Cases</h1>
+            <div style="font-size:13px;color:#5c6470;margin-top:5px">{{ caseSummary }}</div>
+          </div>
+          <button type="button" onClick="{{ startRaise }}" style="appearance:none;border:1px solid #3a5a80;background:#3a5a80;color:#fff;font-size:13.5px;padding:11px 18px;cursor:pointer;min-height:44px" style-hover="background:#2c4665" data-comment-anchor="449d2d746b-button">Raise a case</button>
+        </div>
+
+        <sc-if value="{{ raising }}" hint-placeholder-val="{{ true }}">
+          <div style="background:#fff;border:1px solid #3a5a80;margin-bottom:18px">
+            <div style="padding:12px 16px;border-bottom:1px solid #e2e0da;background:#f7f9fb;display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:space-between;align-items:baseline">
+              <div style="font-family:Georgia,serif;font-size:18px">New case</div>
+              <div style="font-size:12px;color:#5c6470">Four fields. Everything else is inherited or resolved.</div>
+            </div>
+            <div style="padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
+              <label style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470">Branch
+                <select value="{{ draft.branchId }}" onChange="{{ setDraftBranch }}" style="display:block;width:100%;margin-top:6px;padding:11px 10px;border:1px solid #cfcbc1;font-size:14px;min-height:44px;background:#fff">
+                  <sc-for list="{{ branchOptions }}" as="b" hint-placeholder-count="5">
+                    <option value="{{ b.id }}">{{ b.label }}</option>
+                  </sc-for>
+                </select>
+              </label>
+              <label style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470">Category
+                <select value="{{ draft.category }}" onChange="{{ setDraftCategory }}" style="display:block;width:100%;margin-top:6px;padding:11px 10px;border:1px solid #cfcbc1;font-size:14px;min-height:44px;background:#fff">
+                  <sc-for list="{{ categoryOptions }}" as="c" hint-placeholder-count="22">
+                    <option value="{{ c }}">{{ c }}</option>
+                  </sc-for>
+                </select>
+              </label>
+              <label style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470">Person concerned
+                <input value="{{ draft.against }}" onChange="{{ setDraftAgainst }}" placeholder="Type to search the directory" style="display:block;width:100%;margin-top:6px;padding:11px 10px;border:1px solid #cfcbc1;font-size:14px;min-height:44px" />
+              </label>
+              <label style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470">Notify now
+                <select value="{{ draft.notify }}" onChange="{{ setDraftNotify }}" style="display:block;width:100%;margin-top:6px;padding:11px 10px;border:1px solid #cfcbc1;font-size:14px;min-height:44px;background:#fff">
+                  <option value="yes">Yes — notify level 1 and the desk</option>
+                  <option value="no">No — log only</option>
+                </select>
+              </label>
+              <label style="grid-column:1/-1;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470">What happened
+                <textarea value="{{ draft.description }}" onChange="{{ setDraftDescription }}" rows="3" style="display:block;width:100%;margin-top:6px;padding:11px 10px;border:1px solid #cfcbc1;font-size:14px;line-height:1.5"></textarea>
+              </label>
+            </div>
+            <div style="margin:0 16px 16px;border:1px solid #e2e0da;background:#faf9f6;padding:13px 15px">
+              <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#3a5a80;font-weight:600">Resolved automatically — nothing to choose</div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px 16px;margin-top:10px">
+                <sc-for list="{{ draftResolved }}" as="d" hint-placeholder-count="6">
+                  <div>
+                    <div style="font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470">{{ d.k }}</div>
+                    <div style="font-size:13.5px;margin-top:3px">{{ d.v }}</div>
+                  </div>
+                </sc-for>
+              </div>
+              <sc-if value="{{ draftPinned }}" hint-placeholder-val="{{ true }}">
+                <div style="margin-top:11px;padding-top:10px;border-top:1px dotted #d8d5cd;font-size:12.5px;color:#b4562f">{{ draftPinned }}</div>
+              </sc-if>
+            </div>
+            <div style="padding:0 16px 16px;display:flex;gap:10px;flex-wrap:wrap">
+              <button type="button" onClick="{{ submitCase }}" style="appearance:none;border:1px solid #3a5a80;background:#3a5a80;color:#fff;font-size:13.5px;padding:12px 20px;cursor:pointer;min-height:44px" style-hover="background:#2c4665">{{ submitLabel }}</button>
+              <button type="button" onClick="{{ cancelRaise }}" style="appearance:none;border:1px solid #d8d5cd;background:#fff;font-size:13.5px;padding:12px 18px;cursor:pointer;min-height:44px" style-hover="border-color:#14161a">Cancel</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <div style="background:#fff;border:1px solid #d8d5cd">
+          <div style="overflow-x:auto">
+            <table style="border-collapse:collapse;width:100%;min-width:640px;font-size:13.5px">
+              <thead><tr style="background:#faf9f6">
+                <th style="text-align:left;padding:10px 13px;border-bottom:1px solid #e2e0da;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470">Ref</th>
+                <th style="text-align:left;padding:10px 13px;border-bottom:1px solid #e2e0da;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470">Where</th>
+                <th style="text-align:left;padding:10px 13px;border-bottom:1px solid #e2e0da;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470">Category → desk</th>
+                <th style="text-align:left;padding:10px 13px;border-bottom:1px solid #e2e0da;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470">Owner</th>
+                <th style="text-align:left;padding:10px 13px;border-bottom:1px solid #e2e0da;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470">Status</th>
+                <th style="text-align:left;padding:10px 13px;border-bottom:1px solid #e2e0da;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470">Next</th>
+              </tr></thead>
+              <tbody>
+                <sc-for list="{{ caseRows }}" as="c" hint-placeholder-count="4">
+                  <tr onClick="{{ c.open }}" style="cursor:pointer" style-hover="background:#faf9f6">
+                    <td style="padding:11px 13px;border-bottom:1px solid #f0eee9;font-family:ui-monospace,monospace;font-size:12px">{{ c.ref }}</td>
+                    <td style="padding:11px 13px;border-bottom:1px solid #f0eee9">{{ c.where }}</td>
+                    <td style="padding:11px 13px;border-bottom:1px solid #f0eee9">{{ c.cat }}</td>
+                    <td style="padding:11px 13px;border-bottom:1px solid #f0eee9;font-size:12.5px">{{ c.owner }}</td>
+                    <td style="padding:11px 13px;border-bottom:1px solid #f0eee9">{{ c.status }}</td>
+                    <td style="padding:11px 13px;border-bottom:1px solid #f0eee9;font-size:12.5px;color:#5c6470">{{ c.next }}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <sc-if value="{{ openCase }}" hint-placeholder-val="{{ true }}">
+          <div style="background:#fff;border:1px solid #d8d5cd;margin-top:18px">
+            <div style="padding:14px 16px;border-bottom:1px solid #e2e0da;display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:space-between;align-items:baseline">
+              <div>
+                <div style="font-family:ui-monospace,monospace;font-size:11.5px;color:#5c6470">{{ openCase.ref }} · {{ openCase.raised }}</div>
+                <div style="font-family:Georgia,serif;font-size:clamp(18px,2.6vw,23px);margin-top:5px">{{ openCase.headline }}</div>
+              </div>
+              <button type="button" onClick="{{ closeCase }}" style="appearance:none;border:1px solid #d8d5cd;background:#fff;font-size:12.5px;padding:8px 14px;cursor:pointer;min-height:40px">Close panel</button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:0">
+              <div style="padding:16px;border-right:1px solid #f0eee9;min-width:0">
+                <div style="font-size:14px;line-height:1.6;color:#3d434d">{{ openCase.description }}</div>
+                <div style="margin-top:16px;border:1px solid #e2e0da;background:#faf9f6;padding:13px 15px">
+                  <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470;font-weight:600">Chase clock</div>
+                  <div style="font-size:13.5px;line-height:1.6;margin-top:6px">{{ openCase.clock }}</div>
+                </div>
+                <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:9px">
+                  <sc-for list="{{ caseActions }}" as="a" hint-placeholder-count="3">
+                    <button type="button" onClick="{{ a.run }}" style="appearance:none;border:1px solid #3a5a80;background:#fff;color:#3a5a80;font-size:13px;padding:11px 16px;cursor:pointer;min-height:44px" style-hover="background:#3a5a80;color:#fff">{{ a.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="padding:16px;min-width:0">
+                <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470;font-weight:600">History · append-only</div>
+                <sc-for list="{{ openCase.history }}" as="h" hint-placeholder-count="4">
+                  <div style="padding:10px 0;border-bottom:1px dotted #e2e0da">
+                    <div style="font-size:13px;line-height:1.5">{{ h.what }}</div>
+                    <div style="font-family:ui-monospace,monospace;font-size:11px;color:#5c6470;margin-top:3px">{{ h.at }}</div>
+                  </div>
+                </sc-for>
+                <div style="font-size:11.5px;color:#5c6470;margin-top:12px;line-height:1.5">Every send is one outbox row with a unique key. A duplicate chase is rejected by the database, not by convention.</div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+    <!-- ============ CLIENTS ============ -->
+    <sc-if value="{{ isClients }}" hint-placeholder-val="{{ true }}">
+      <div>
+        <div style="margin-bottom:16px">
+          <h1 style="font-family:Georgia,serif;font-weight:400;font-size:clamp(21px,3.4vw,30px);margin:0">Clients</h1>
+          <div style="font-size:13px;color:#5c6470;margin-top:5px">{{ clientSummary }}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;align-items:start">
+          <div style="background:#fff;border:1px solid #d8d5cd">
+            <div style="padding:10px 14px;border-bottom:1px solid #e2e0da;background:#faf9f6;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470;font-weight:600">Branches in scope</div>
+            <sc-for list="{{ branchList }}" as="b" hint-placeholder-count="6">
+              <button type="button" onClick="{{ b.pick }}" style="appearance:none;background:none;border:none;border-bottom:1px solid #f0eee9;width:100%;text-align:left;padding:12px 14px;cursor:pointer;min-height:44px;font-size:13px" style-hover="background:#faf9f6">
+                <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">
+                  <div>
+                    <div style="font-weight:600">{{ b.name }}</div>
+                    <div style="font-family:ui-monospace,monospace;font-size:11px;color:#5c6470;margin-top:2px">{{ b.id }}</div>
+                  </div>
+                  <div style="font-size:11.5px;white-space:nowrap">{{ b.state }}</div>
+                </div>
+                <sc-if value="{{ b.on }}" hint-placeholder-val="{{ true }}">
+                  <div style="height:2px;background:#3a5a80;margin-top:8px"></div>
+                </sc-if>
+              </button>
+            </sc-for>
+            <div style="padding:11px 14px;font-size:11.5px;color:#5c6470;line-height:1.5">{{ eligibleNote }}</div>
+          </div>
+
+          <div style="grid-column:span 2;min-width:0;background:#fff;border:1px solid #d8d5cd">
+            <div style="padding:14px;border-bottom:1px solid #e2e0da;display:flex;flex-wrap:wrap;gap:10px 18px;justify-content:space-between;align-items:baseline">
+              <div style="min-width:0">
+                <div style="font-family:Georgia,serif;font-size:20px">{{ current.name }}</div>
+                <div style="font-family:ui-monospace,monospace;font-size:11.5px;color:#5c6470;margin-top:4px;word-break:break-word">{{ current.meta }}</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;font-weight:600">{{ current.gate }}</div>
+                <div style="font-size:11.5px;color:#5c6470;margin-top:3px">{{ current.gateNote }}</div>
+              </div>
+            </div>
+            <sc-for list="{{ levelRows }}" as="l" hint-placeholder-count="5">
+              <div style="border-bottom:1px solid #f0eee9;padding:12px 14px">
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:end">
+                  <div style="display:flex;gap:10px;align-items:baseline">
+                    <span style="font-family:Georgia,serif;font-size:17px;color:#b4562f">{{ l.n }}</span>
+                    <div>
+                      <div style="font-size:13px;font-weight:600">{{ l.role }}</div>
+                      <div style="font-size:11.5px;margin-top:2px">{{ l.stateLabel }}</div>
+                    </div>
+                  </div>
+                  <label style="font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470">Name
+                    <input value="{{ l.name }}" onChange="{{ l.setName }}" style="display:block;width:100%;margin-top:5px;padding:10px;border:1px solid #cfcbc1;font-size:13.5px;min-height:44px" />
+                  </label>
+                  <label style="font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470">Mobile
+                    <input value="{{ l.mobile }}" onChange="{{ l.setMobile }}" style="display:block;width:100%;margin-top:5px;padding:10px;border:1px solid #cfcbc1;font-size:13.5px;min-height:44px" />
+                  </label>
+                  <label style="font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470">E-mail
+                    <input value="{{ l.email }}" onChange="{{ l.setEmail }}" style="display:block;width:100%;margin-top:5px;padding:10px;border:1px solid #cfcbc1;font-size:13.5px;min-height:44px" />
+                  </label>
+                </div>
+              </div>
+            </sc-for>
+            <div style="padding:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+              <button type="button" onClick="{{ saveMatrix }}" style="appearance:none;border:1px solid #3a5a80;background:#3a5a80;color:#fff;font-size:13.5px;padding:12px 20px;cursor:pointer;min-height:44px" style-hover="background:#2c4665">Save matrix</button>
+              <div style="font-size:12px;color:#5c6470;line-height:1.5;max-width:52ch">A level counts as complete with a name plus a mobile or an e-mail — your rule. Client, zone and region are never asked: the branch already knows them.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ PEOPLE ============ -->
+    <sc-if value="{{ isPeople }}" hint-placeholder-val="{{ true }}">
+      <div>
+        <div style="margin-bottom:16px">
+          <h1 style="font-family:Georgia,serif;font-weight:400;font-size:clamp(21px,3.4vw,30px);margin:0">People &amp; coverage</h1>
+          <div style="font-size:13px;color:#5c6470;margin-top:5px">55 people · {{ ruleCount }} coverage rules resolving 1,413 branches · overlaps refused at save</div>
+        </div>
+        <div style="background:#fff;border:1px solid #d8d5cd;margin-bottom:16px">
+          <div style="padding:10px 14px;border-bottom:1px solid #e2e0da;background:#faf9f6;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470;font-weight:600">Coverage rules</div>
+          <div style="overflow-x:auto">
+            <table style="border-collapse:collapse;width:100%;min-width:620px;font-size:13px">
+              <thead><tr>
+                <th style="text-align:left;padding:9px 13px;border-bottom:1px solid #e2e0da;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470">Person</th>
+                <th style="text-align:left;padding:9px 13px;border-bottom:1px solid #e2e0da;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470">Role</th>
+                <th style="text-align:left;padding:9px 13px;border-bottom:1px solid #e2e0da;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470">Scope</th>
+                <th style="text-align:right;padding:9px 13px;border-bottom:1px solid #e2e0da;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470">Branches</th>
+              </tr></thead>
+              <tbody>
+                <sc-for list="{{ ruleRows }}" as="r" hint-placeholder-count="4">
+                  <tr>
+                    <td style="padding:10px 13px;border-bottom:1px solid #f0eee9">{{ r.person }}</td>
+                    <td style="padding:10px 13px;border-bottom:1px solid #f0eee9;font-size:12.5px">{{ r.role }}</td>
+                    <td style="padding:10px 13px;border-bottom:1px solid #f0eee9;font-size:12.5px">{{ r.scope }}</td>
+                    <td style="padding:10px 13px;border-bottom:1px solid #f0eee9;text-align:right;font-family:ui-monospace,monospace;font-size:12px">{{ r.count }}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div style="background:#fff;border:1px solid #d8d5cd">
+          <div style="padding:12px 14px;border-bottom:1px solid #e2e0da;font-family:Georgia,serif;font-size:17px">Add a coverage rule</div>
+          <div style="padding:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px">
+            <label style="font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470">Person
+              <select value="{{ newRule.person }}" onChange="{{ setRulePerson }}" style="display:block;width:100%;margin-top:5px;padding:11px 10px;border:1px solid #cfcbc1;font-size:13.5px;min-height:44px;background:#fff">
+                <sc-for list="{{ personOptions }}" as="p" hint-placeholder-count="4">
+                  <option value="{{ p }}">{{ p }}</option>
+                </sc-for>
+              </select>
+            </label>
+            <label style="font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470">Scope type
+              <select value="{{ newRule.scopeType }}" onChange="{{ setRuleScopeType }}" style="display:block;width:100%;margin-top:5px;padding:11px 10px;border:1px solid #cfcbc1;font-size:13.5px;min-height:44px;background:#fff">
+                <option value="client">Whole client</option>
+                <option value="client_zone">Client zone</option>
+                <option value="state">Client + state</option>
+                <option value="branch">Branch list</option>
+              </select>
+            </label>
+            <label style="font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:#5c6470">Scope value
+              <select value="{{ newRule.scopeValue }}" onChange="{{ setRuleScopeValue }}" style="display:block;width:100%;margin-top:5px;padding:11px 10px;border:1px solid #cfcbc1;font-size:13.5px;min-height:44px;background:#fff">
+                <sc-for list="{{ scopeValueOptions }}" as="v" hint-placeholder-count="4">
+                  <option value="{{ v }}">{{ v }}</option>
+                </sc-for>
+              </select>
+            </label>
+            <div style="display:flex;align-items:flex-end">
+              <button type="button" onClick="{{ addRule }}" style="appearance:none;border:1px solid #3a5a80;background:#3a5a80;color:#fff;font-size:13.5px;padding:12px 20px;cursor:pointer;min-height:44px;width:100%" style-hover="background:#2c4665">Save rule</button>
+            </div>
+          </div>
+          <sc-if value="{{ ruleError }}" hint-placeholder-val="{{ true }}">
+            <div style="margin:0 14px 14px;border:1px solid #b4562f;background:#fdf6f3;padding:13px 15px;font-size:13px;line-height:1.6;color:#3d434d">{{ ruleError }}</div>
+          </sc-if>
+          <div style="padding:0 14px 14px;font-size:12px;color:#5c6470;line-height:1.55">Try Nitish Bhope · Client zone · SBI West — it overlaps his existing rule and will be refused with the conflicting branches named. That refusal is what ends the 1,729-row cross-product and the "Dublicate" column.</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ REPORTS ============ -->
+    <sc-if value="{{ isReports }}" hint-placeholder-val="{{ true }}">
+      <div>
+        <div style="display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;justify-content:space-between;margin-bottom:16px">
+          <div>
+            <h1 style="font-family:Georgia,serif;font-weight:400;font-size:clamp(21px,3.4vw,30px);margin:0">Reports</h1>
+            <div style="font-size:13px;color:#5c6470;margin-top:5px">One filter model · one export · four documents laid out for paper</div>
+          </div>
+          <button type="button" onClick="{{ exportAll }}" style="appearance:none;border:1px solid #3a5a80;background:#fff;color:#3a5a80;font-size:13px;padding:11px 16px;cursor:pointer;min-height:44px" style-hover="background:#3a5a80;color:#fff">Export full workbook</button>
+        </div>
+        <div style="background:#fff;border:1px solid #d8d5cd;padding:clamp(14px,3vw,24px)">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #14161a;padding-bottom:9px;flex-wrap:wrap;gap:8px">
+            <div>
+              <div style="font-family:Georgia,serif;font-size:18px">Escalation Register</div>
+              <div style="font-size:11.5px;color:#5c6470;margin-top:3px">September 2026 · all clients · Crux Risk Management Pvt Ltd</div>
+            </div>
+            <div style="font-family:ui-monospace,monospace;font-size:10.5px;color:#5c6470;text-align:right">Generated 3 Sep 2026<br />Page 1 of 1</div>
+          </div>
+          <div style="overflow-x:auto">
+            <table style="border-collapse:collapse;width:100%;min-width:560px;font-size:12px;margin-top:12px">
+              <thead><tr>
+                <th style="text-align:left;padding:7px 6px;border-bottom:1px solid #14161a;font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase">Ref</th>
+                <th style="text-align:left;padding:7px 6px;border-bottom:1px solid #14161a;font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase">Client / branch</th>
+                <th style="text-align:left;padding:7px 6px;border-bottom:1px solid #14161a;font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase">Category</th>
+                <th style="text-align:left;padding:7px 6px;border-bottom:1px solid #14161a;font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase">Desk</th>
+                <th style="text-align:left;padding:7px 6px;border-bottom:1px solid #14161a;font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase">Owner</th>
+                <th style="text-align:left;padding:7px 6px;border-bottom:1px solid #14161a;font-size:9.5px;letter-spacing:0.06em;text-transform:uppercase">Status</th>
+              </tr></thead>
+              <tbody>
+                <sc-for list="{{ caseRows }}" as="c" hint-placeholder-count="3">
+                  <tr>
+                    <td style="padding:7px 6px;border-bottom:1px solid #eae8e2;font-family:ui-monospace,monospace;font-size:11px">{{ c.ref }}</td>
+                    <td style="padding:7px 6px;border-bottom:1px solid #eae8e2">{{ c.where }}</td>
+                    <td style="padding:7px 6px;border-bottom:1px solid #eae8e2">{{ c.cat }}</td>
+                    <td style="padding:7px 6px;border-bottom:1px solid #eae8e2">{{ c.desk }}</td>
+                    <td style="padding:7px 6px;border-bottom:1px solid #eae8e2;font-size:11px">{{ c.owner }}</td>
+                    <td style="padding:7px 6px;border-bottom:1px solid #eae8e2">{{ c.status }}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+          <div style="font-size:11px;color:#5c6470;margin-top:12px;line-height:1.5">Fixed page box, repeating header, no screen chrome. The other three print documents — monthly summary, scorecard, warning and notice letters — share this layout engine.</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ OPERATIONS ============ -->
+    <sc-if value="{{ isOps }}" hint-placeholder-val="{{ true }}">
+      <div>
+        <div style="margin-bottom:16px">
+          <h1 style="font-family:Georgia,serif;font-weight:400;font-size:clamp(21px,3.4vw,30px);margin:0">Operations</h1>
+          <div style="font-size:13px;color:#5c6470;margin-top:5px">Automation health first, configuration second. No job can be silently paused.</div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:0;border:1px solid #d8d5cd;border-bottom:none;background:#fff">
+          <sc-for list="{{ opsTabs }}" as="o" hint-placeholder-count="2">
+            <button type="button" onClick="{{ o.pick }}" style="appearance:none;background:none;border:none;border-right:1px solid #e2e0da;padding:11px 18px 9px;font-size:13px;cursor:pointer;min-height:44px;text-align:left" style-hover="background:#faf9f6">
+              <span style="font-weight:600">{{ o.label }}</span>
+              <sc-if value="{{ o.on }}" hint-placeholder-val="{{ true }}">
+                <div style="height:2px;background:#3a5a80;margin-top:8px"></div>
+              </sc-if>
+            </button>
+          </sc-for>
+        </div>
+
+        <sc-if value="{{ opsHealth }}" hint-placeholder-val="{{ true }}">
+          <div style="background:#fff;border:1px solid #d8d5cd">
+            <div style="padding:14px;border-bottom:1px solid #e2e0da;display:flex;flex-wrap:wrap;gap:10px 18px;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-family:Georgia,serif;font-size:19px">All jobs healthy</div>
+                <div style="font-size:12.5px;color:#5c6470;margin-top:4px">Mail budget today 341 of 1,800 · 0 deferred · 0 abandoned · outbox empty</div>
+              </div>
+              <div style="font-size:12px;color:#2f7355;border:1px solid #2f7355;padding:7px 12px;max-width:44ch;line-height:1.45">Disabling a job requires a reason and raises a banner on every screen</div>
+            </div>
+            <div style="overflow-x:auto">
+              <table style="border-collapse:collapse;width:100%;min-width:640px;font-size:13px">
+                <thead><tr style="background:#faf9f6">
+                  <th style="text-align:left;padding:9px 13px;border-bottom:1px solid #e2e0da;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470">Job</th>
+                  <th style="text-align:left;padding:9px 13px;border-bottom:1px solid #e2e0da;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470">Last run</th>
+                  <th style="text-align:left;padding:9px 13px;border-bottom:1px solid #e2e0da;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470">Result</th>
+                  <th style="text-align:left;padding:9px 13px;border-bottom:1px solid #e2e0da;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:#5c6470">Next</th>
+                  <th style="padding:9px 13px;border-bottom:1px solid #e2e0da"></th>
+                </tr></thead>
+                <tbody>
+                  <sc-for list="{{ jobs }}" as="j" hint-placeholder-count="6">
+                    <tr>
+                      <td style="padding:10px 13px;border-bottom:1px solid #f0eee9;font-family:ui-monospace,monospace;font-size:11.5px">{{ j.key }}</td>
+                      <td style="padding:10px 13px;border-bottom:1px solid #f0eee9;color:#5c6470;font-size:12.5px">{{ j.last }}</td>
+                      <td style="padding:10px 13px;border-bottom:1px solid #f0eee9;font-size:12.5px">{{ j.result }}</td>
+                      <td style="padding:10px 13px;border-bottom:1px solid #f0eee9;color:#5c6470;font-size:12.5px">{{ j.next }}</td>
+                      <td style="padding:10px 13px;border-bottom:1px solid #f0eee9;text-align:right">
+                        <button type="button" onClick="{{ j.run }}" style="appearance:none;border:1px solid #3a5a80;background:#fff;color:#3a5a80;font-size:12px;padding:8px 13px;cursor:pointer;min-height:40px" style-hover="background:#3a5a80;color:#fff">Re-run</button>
+                      </td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ opsConfig }}" hint-placeholder-val="{{ true }}">
+          <div style="background:#fff;border:1px solid #d8d5cd">
+            <div style="padding:12px 14px;border-bottom:1px solid #e2e0da;font-size:12.5px;color:#5c6470">Admin only · every change writes an audit entry · no deployment required for anything on this page</div>
+            <sc-for list="{{ configRows }}" as="c" hint-placeholder-count="8">
+              <div style="padding:12px 14px;border-bottom:1px solid #f0eee9;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px 14px;align-items:center">
+                <div>
+                  <div style="font-size:13.5px;font-weight:600">{{ c.label }}</div>
+                  <div style="font-size:12px;color:#5c6470;margin-top:3px">{{ c.note }}</div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap">
+                  <div style="font-size:13px;font-family:ui-monospace,monospace;border:1px solid #cfcbc1;padding:9px 12px;min-height:40px;display:flex;align-items:center;background:#faf9f6">{{ c.value }}</div>
+                  <sc-if value="{{ c.flag }}" hint-placeholder-val="{{ true }}">
+                    <span style="font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:#b4562f;border:1px solid #b4562f;padding:3px 7px">{{ c.flag }}</span>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+  </main>
+
+  <footer style="background:#14161a;color:#9a978f;font-size:11.5px">
+    <div style="max-width:1240px;margin:0 auto;padding:14px clamp(12px,3vw,24px);display:flex;flex-wrap:wrap;gap:6px 20px;justify-content:space-between">
+      <div>Crux Risk Management Pvt Ltd · prototype on real data · 1,413 branches · 28 clients · 55 people</div>
+      <div>Signed in as {{ meLabel }}</div>
+    </div>
+  </footer>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1240},&quot;startRole&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;MANAGER&quot;,&quot;LOCATION_HEAD&quot;,&quot;ADMIN&quot;,&quot;VIEWER&quot;],&quot;default&quot;:&quot;MANAGER&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototype&quot;},&quot;startRoute&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;today&quot;,&quot;clients&quot;,&quot;cases&quot;,&quot;people&quot;,&quot;reports&quot;,&quot;operations&quot;],&quot;default&quot;:&quot;today&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototype&quot;}}">
+class Component extends DCLogic {
+  state = {
+    route: 'today', role: 'MANAGER', bellOpen: false, toast: '', raising: false,
+    openRef: '', extraCases: [],
+    draft: { branchId: 'BR-00747', category: 'Service Delivery', against: '', notify: 'yes', description: '' },
+    levels: null, rules: null, ranJob: '', clientId: 'CLI-00024', branchId: 'BR-00747', masterTab: 'coverage', opsTab: 'health'
+  };
+
+  // ---------- reference data (mirrors the real datastore) ----------
+  static CATEGORIES = ['Service Delivery','Delay/TAT','Report Quality','Data Accuracy','Staff Behaviour','Customer Handling','Communication','Assignment/Allocation','Client/Branch Mapping','Client Requirements','Billing','Payment','Compliance','Audit/Quality','Fraud/Integrity','Data Privacy','Technology','Access/Permissions','MIS/Reporting','Performance/KPI','Escalation/Complaint Handling','Vendor/Partner'];
+
+  static DESK_OF = {
+    'Billing':'Finance','Payment':'Finance',
+    'Staff Behaviour':'HR','Performance/KPI':'HR',
+    'Technology':'IT','Access/Permissions':'IT',
+    'Compliance':'Compliance','Fraud/Integrity':'Compliance','Data Privacy':'Compliance','Audit/Quality':'Compliance',
+    'MIS/Reporting':'MIS'
+  };
+  static PINNED = ['Fraud/Integrity','Data Privacy'];
+  static DESK_HEAD = { Operations:'Operations Head (AVP Operations)', Finance:'Finance Head / CFO', HR:'HR Head', IT:'IT Head', Compliance:'Compliance Head', MIS:'MIS primary — not set' };
+
+  static BRANCHES = [
+    { id:'BR-00747', name:'Kothrud', client:'CLI-00024', clientName:'State Bank of India', geo:'West → Maharashtra → Pune', zone:'SBI West', poc:'am.pune@cruxindia.co.in', owner:'nitish.bhope@cruxindia.co.in', code:'SBIN0030421' },
+    { id:'BR-00748', name:'Deccan Gymkhana', client:'CLI-00024', clientName:'State Bank of India', geo:'West → Maharashtra → Pune', zone:'SBI West', poc:'am.pune@cruxindia.co.in', owner:'nitish.bhope@cruxindia.co.in', code:'SBIN0030430' },
+    { id:'BR-00762', name:'Hadapsar', client:'CLI-00024', clientName:'State Bank of India', geo:'West → Maharashtra → Pune', zone:'SBI West', poc:'am.pune@cruxindia.co.in', owner:'nitish.bhope@cruxindia.co.in', code:'SBIN0030455' },
+    { id:'BR-00196', name:'North Lakhimpur', client:'CLI-00024', clientName:'State Bank of India', geo:'North-East → Assam → N. Lakhimpur', zone:'SBI North-East', poc:'am.guwahati@cruxindia.co.in', owner:'vrunda.potdar@cruxindia.co.in', code:'SBIN0011902' },
+    { id:'BR-00185', name:'Guwahati Main', client:'CLI-00024', clientName:'State Bank of India', geo:'North-East → Assam → Guwahati', zone:'SBI North-East', poc:'am.guwahati@cruxindia.co.in', owner:'vrunda.potdar@cruxindia.co.in', code:'' },
+    { id:'BR-00096', name:'Port Blair', client:'CLI-00024', clientName:'State Bank of India', geo:'East → A&N Islands → Port Blair', zone:'SBI East', poc:'am.kolkata@cruxindia.co.in', owner:'vrunda.potdar@cruxindia.co.in', code:'SBIN0002211' }
+  ];
+
+  static DEFAULT_LEVELS = {
+    'BR-00747': [
+      { n:1, role:'SPOC', name:'Vaibhavi Kanavaje', mobile:'7350874077', email:'bo.pune@cruxindia.co.in' },
+      { n:2, role:'Team Leader', name:'Girish Kate', mobile:'8552906535', email:'bo.pune@cruxindia.co.in' },
+      { n:3, role:'Branch Manager', name:'Avinash Chaskar', mobile:'9021469966', email:'avinash.chaskar@cruxindia.co.in' },
+      { n:4, role:'Zonal Manager', name:'Nitish Bhope', mobile:'9762348486', email:'nitish.bhope@cruxindia.co.in' },
+      { n:5, role:'Head Office', name:'Manish Shukla', mobile:'9870066855', email:'manish.s@cruxindia.co.in' }
+    ],
+    'BR-00762': [
+      { n:1, role:'SPOC', name:'Akanksha Pawar', mobile:'9145428137', email:'am.pune@cruxindia.co.in' },
+      { n:2, role:'Team Leader', name:'Girish Kate', mobile:'8552906535', email:'' },
+      { n:3, role:'Branch Manager', name:'Avinash Chaskar', mobile:'9021469966', email:'avinash.chaskar@cruxindia.co.in' },
+      { n:4, role:'Zonal Manager', name:'', mobile:'', email:'' },
+      { n:5, role:'Head Office', name:'Manish Shukla', mobile:'9870066855', email:'manish.s@cruxindia.co.in' }
+    ],
+    'BR-00748': [
+      { n:1, role:'SPOC', name:'Akanksha Pawar', mobile:'9145428137', email:'am.pune@cruxindia.co.in' },
+      { n:2, role:'Team Leader', name:'Girish Kate', mobile:'8552906535', email:'bo.pune@cruxindia.co.in' },
+      { n:3, role:'Branch Manager', name:'Avinash Chaskar', mobile:'9021469966', email:'avinash.chaskar@cruxindia.co.in' },
+      { n:4, role:'Zonal Manager', name:'Nitish Bhope', mobile:'9762348486', email:'nitish.bhope@cruxindia.co.in' },
+      { n:5, role:'Head Office', name:'Manish Shukla', mobile:'9870066855', email:'manish.s@cruxindia.co.in' }
+    ],
+    'BR-00185': [
+      { n:1, role:'SPOC', name:'Rupam Das', mobile:'9435012233', email:'bo.guwahati@cruxindia.co.in' },
+      { n:2, role:'Team Leader', name:'Bhaskar Nath', mobile:'9864012876', email:'bo.guwahati@cruxindia.co.in' },
+      { n:3, role:'Branch Manager', name:'Pranab Saikia', mobile:'9864455112', email:'am.guwahati@cruxindia.co.in' },
+      { n:4, role:'Zonal Manager', name:'Vrunda Potdar', mobile:'8828285747', email:'vrunda.potdar@cruxindia.co.in' },
+      { n:5, role:'Head Office', name:'Manish Shukla', mobile:'9870066855', email:'manish.s@cruxindia.co.in' }
+    ],
+    'BR-00096': [
+      { n:1, role:'SPOC', name:'Sandeep Roy', mobile:'9474011233', email:'bo.portblair@cruxindia.co.in' },
+      { n:2, role:'Team Leader', name:'Anjali Biswas', mobile:'9474088211', email:'bo.portblair@cruxindia.co.in' },
+      { n:3, role:'Branch Manager', name:'Dipak Halder', mobile:'9476512240', email:'am.kolkata@cruxindia.co.in' },
+      { n:4, role:'Zonal Manager', name:'Vrunda Potdar', mobile:'8828285747', email:'vrunda.potdar@cruxindia.co.in' },
+      { n:5, role:'Head Office', name:'Manish Shukla', mobile:'9870066855', email:'manish.s@cruxindia.co.in' }
+    ],
+    'BR-00196': [
+      { n:1, role:'SPOC', name:'Rupam Das', mobile:'9435012233', email:'bo.guwahati@cruxindia.co.in' },
+      { n:2, role:'Team Leader', name:'Bhaskar Nath', mobile:'', email:'' },
+      { n:3, role:'Branch Manager', name:'Pranab Saikia', mobile:'9864455112', email:'' },
+      { n:4, role:'Zonal Manager', name:'', mobile:'', email:'' },
+      { n:5, role:'Head Office', name:'Vrunda Potdar', mobile:'8828285747', email:'vrunda.potdar@cruxindia.co.in' }
+    ]
+  };
+
+  static ME = {
+    ADMIN:{ email:'shantanu.suravase@cruxindia.co.in', label:'Shantanu Suravase · Admin' },
+    MANAGER:{ email:'nitish.bhope@cruxindia.co.in', label:'Nitish Bhope · Zonal Manager' },
+    LOCATION_HEAD:{ email:'vrunda.potdar@cruxindia.co.in', label:'Vrunda Potdar · Location Head' },
+    VIEWER:{ email:'valsan.p@cruxindia.co.in', label:'Valsan P · Viewer' }
+  };
+
+  // ---------- helpers ----------
+  deskFor(cat){ return Component.DESK_OF[cat] || 'Operations'; }
+  levelsFor(id){
+    const store = this.state.levels || {};
+    if (store[id]) return store[id];
+    const base = Component.DEFAULT_LEVELS[id];
+    if (base) return base.map(l => ({ ...l }));
+    return [1,2,3,4,5].map(n => ({ n, role:['SPOC','Team Leader','Branch Manager','Zonal Manager','Head Office'][n-1], name:'', mobile:'', email:'' }));
+  }
+  completeCount(id){ return this.levelsFor(id).filter(l => l.name.trim() && (l.mobile.trim() || l.email.trim())).length; }
+  branch(id){ return Component.BRANCHES.find(b => b.id === id) || Component.BRANCHES[0]; }
+  setDraft(patch){ this.setState(s => ({ draft: { ...s.draft, ...patch } })); }
+  editLevel(id, i, patch){
+    this.setState(s => {
+      const store = { ...(s.levels || {}) };
+      const rows = (store[id] || this.levelsFor(id)).map(l => ({ ...l }));
+      rows[i] = { ...rows[i], ...patch };
+      store[id] = rows;
+      return { levels: store };
+    });
+  }
+  componentDidMount(){
+    const patch = {};
+    if (this.props.startRole) patch.role = this.props.startRole;
+    if (this.props.startRoute) patch.route = this.props.startRoute;
+    if (Object.keys(patch).length) this.setState(patch);
+  }
+  go(route){ this.setState({ route, toast:'', openRef:'', raising:false }); }
+
+  baseCases(){
+    return [
+      { ref:'ESC-00191', where:'SBI · Raj branch', cat:'Billing', desk:'Finance', owner:'am.raj@cruxindia.co.in', status:'In progress', next:'Strike 2 · 4 Sep 11:00', headline:'Billing dispute raised against Kapil Harvara', raised:'raised 26 Aug 12:36 · shantanu.suravase@', description:'Client disputes the August invoice for three branches; amounts differ from the agreed rate card. Finance desk notified at level 1.', clock:'Strike 1 sent 27 Aug 11:00. No activity for 19 working hours. Strike 2 due 4 Sep 11:00 — it will add the Finance desk to the recipients.', history:[{what:'Case raised · category Billing → Finance desk',at:'26 Aug 12:36'},{what:'Notified L1 SPOC + Finance desk · outbox 1 row',at:'26 Aug 12:36'},{what:'Strike 1 sent to owner',at:'27 Aug 11:00'},{what:'Owner opened the case',at:'27 Aug 14:02'}] },
+      { ref:'ESC-00192', where:'CLI-00007 · Pawar', cat:'Service Delivery', desk:'Operations', owner:'ronak.pawar@cruxindia.co.in', status:'Resolved', next:'Auto-close 3 Sep 00:05', headline:'Service delivery complaint — reliever did not report', raised:'raised 27 Aug 11:59 · shantanu.suravase@', description:'Night reliever failed to report at the client site; cover arranged within two hours. Resolution recorded by the owner on 27 Aug.', clock:'Clock stopped when the resolution was recorded. Seven-day objection window ends 3 Sep 00:05, after which the case closes itself.', history:[{what:'Case raised · Service Delivery → Operations',at:'27 Aug 11:59'},{what:'Resolution recorded by owner',at:'27 Aug 18:20'},{what:'Auto-close scheduled · 7 days',at:'27 Aug 18:20'}] },
+      { ref:'ESC-00193', where:'CLI-00007 · Desai', cat:'Service Delivery', desk:'Operations', owner:'yash.desai@cruxindia.co.in', status:'Open', next:'Strike 2 · 4 Sep 11:00', headline:'Service complaint against yash.desai', raised:'raised 27 Aug 15:26 · shantanu.suravase@', description:'This is the case that generated 1,889 e-mails in the old system. Here it has produced one notification and one strike, because the outbox rejects a duplicate key.', clock:'Strike 1 sent 3 Sep 11:00. Next chase 4 Sep 11:00 — one per window, scheduled from the case, not swept.', history:[{what:'Case raised · Service Delivery → Operations',at:'27 Aug 15:26'},{what:'Notified L1 SPOC + Operations desk',at:'27 Aug 15:26'},{what:'Strike 1 sent · outbox key CHASE:ESC-00193:1',at:'3 Sep 11:00'},{what:'Duplicate chase rejected by unique key ×4',at:'3 Sep 11:05'}] }
+    ];
+  }
+
+  renderVals(){
+    const S = this.state;
+    const role = S.role;
+    const me = Component.ME[role];
+    const cases = [...S.extraCases, ...this.baseCases()];
+
+    const navDefs = [
+      { key:'today', label:'Today' },
+      { key:'clients', label:'Clients' },
+      { key:'cases', label:'Cases', badge: String(cases.filter(c => c.status !== 'Resolved' && c.status !== 'Closed').length) },
+      { key:'people', label:'People', roles:['ADMIN','MANAGER','LOCATION_HEAD'] },
+      { key:'reports', label:'Reports' },
+      { key:'operations', label:'Operations', roles:['ADMIN'] }
+    ];
+    const tabs = navDefs
+      .filter(t => !t.roles || t.roles.indexOf(role) > -1)
+      .map(t => ({ label:t.label, badge:t.badge || '', on: S.route === t.key, go: () => this.go(t.key) }));
+
+    // ---- Today ----
+    const blockedBranches = Component.BRANCHES.filter(b => this.completeCount(b.id) < 5);
+    // Coverage scoping: Admin sees everything; a Manager sees their own client
+    // zone; everyone else sees only what their coverage rules resolve to.
+    const myZone = 'SBI West';
+    const myBlocked = blockedBranches.filter(b =>
+      role === 'ADMIN' ? true :
+      role === 'MANAGER' ? b.zone === myZone :
+      b.owner === me.email);
+    const todayByRole = {
+      MANAGER: {
+        title: myBlocked.length ? (myBlocked.length === 1 ? 'One branch will not be sent this month' : myBlocked.length + ' branches will not be sent this month') : 'Every branch in your zone is dispatchable',
+        sub: 'Zonal Manager · client zone SBI West · 46 branches · 4 location heads',
+        counters:[{n:String(myBlocked.length),label:'Blocked in zone'},{n:'2',label:'My cases'},{n:String(46 - myBlocked.length),label:'Ready in zone'}]
+      },
+      LOCATION_HEAD: {
+        title: myBlocked.length ? (myBlocked.length === 1 ? 'One branch needs a contact before 1 Oct' : myBlocked.length + ' branches need a contact before 1 Oct') : 'All your branches are dispatchable',
+        sub: 'Location Head · SBI · Assam, Goa, A&N · 183 branches',
+        counters:[{n:String(myBlocked.length),label:'Blocked'},{n:'0',label:'My cases'},{n:String(183 - myBlocked.length),label:'Ready'}]
+      },
+      ADMIN: {
+        title: 'Automation healthy · 2 configuration gaps',
+        sub: 'Admin · 55 people · 28 clients · 1,413 branches · 11 blocked nationally',
+        counters:[{n:'0',label:'Failed jobs'},{n:'2',label:'Config gaps'},{n:'693',label:'Dispatchable'}]
+      },
+      VIEWER: { title:'Read-only view', sub:'Viewer · reports and registers only', counters:[{n:'3',label:'Open cases'},{n:'693',label:'Dispatchable'},{n:'11',label:'Blocked'}] }
+    };
+    const t0 = todayByRole[role];
+    const tasks = [];
+    myBlocked.forEach(b => {
+      const miss = this.levelsFor(b.id).filter(l => !(l.name.trim() && (l.mobile.trim() || l.email.trim()))).map(l => 'L' + l.n).join(', ');
+      tasks.push({ title: b.id + ' · ' + b.name + ' — ' + miss + ' incomplete', meta: b.clientName + ' · ' + b.geo, blocked:'Blocks the monthly dispatch · rule R-01', action:'Fix matrix', act: () => this.setState({ route:'clients', branchId:b.id, clientId:b.client, toast:'' }) });
+    });
+    if (!b_isViewer(role)) tasks.push({ title:'ESC-00193 · service complaint, strike 1 sent', meta:'Operations desk · no activity for 19 working hours', blocked:'Strike 2 due 4 Sep 11:00', action:'Open case', act: () => this.setState({ route:'cases', openRef:'ESC-00193' }) });
+    if (role === 'ADMIN') {
+      tasks.push({ title:'HOLIDAYS is empty — the strike clock cannot exclude holidays', meta:'Rule R-03 depends on it', blocked:'The rule is not doing what it claims', action:'Add holidays', act: () => this.setState({ route:'operations', opsTab:'config', toast:'Holiday calendar is empty. Rule R-03 excludes weekends only until it is populated.' }) });
+      tasks.push({ title:'MIS desk has no primary person', meta:'Designation matches 2 people · MIS cases would block', blocked:'Rule R-06 would refuse to route', action:'Set primary', act: () => this.setState({ route:'operations', opsTab:'config' }) });
+    }
+    const today = { ...t0, tasks, footer: role === 'ADMIN' ? 'Last dispatch 1 Sep: 693 sent, 0 failed. Mail budget today 341 of 1,800.' : 'Next dispatch 1 Oct at 09:00. Nothing else is waiting on you.' };
+
+    // ---- Cases ----
+    const draft = S.draft;
+    const dBranch = this.branch(draft.branchId);
+    const dDesk = this.deskFor(draft.category);
+    const draftResolved = [
+      { k:'Client', v:dBranch.clientName + ' · ' + dBranch.client },
+      { k:'Geography', v:dBranch.geo },
+      { k:'Client zone', v:dBranch.zone },
+      { k:'Desk (from category)', v:dDesk },
+      { k:'First notified', v:'L1 ' + (this.levelsFor(dBranch.id)[0].name || 'level 1 contact') + ' + ' + dDesk + ' desk' },
+      { k:'Working owner', v:dBranch.owner }
+    ];
+    const pinned = Component.PINNED.indexOf(draft.category) > -1
+      ? 'This category is pinned to Compliance and cannot be routed elsewhere — including by an admin.'
+      : (dDesk === 'MIS' ? 'The MIS desk has no primary person set, so this case would be blocked and shown on the admin home rather than sent nowhere.' : '');
+
+    const caseRows = cases.map(c => ({ ...c, cat: c.cat + ' → ' + c.desk, open: () => this.setState({ openRef: c.ref }) }));
+    const openCase = cases.find(c => c.ref === S.openRef) || null;
+    const caseActions = openCase ? [
+      { label:'Record action', run: () => this.setState({ toast:'Activity recorded on ' + openCase.ref + '. Chase clock reset — next chase 4 Sep 11:00. No mail queued.' }) },
+      { label:'Record resolution', run: () => this.setState({ toast:'Resolution recorded. Clock stopped, auto-close set for 7 days (10 Sep). One closure notification queued.' }) },
+      { label:'Escalate a level', run: () => this.setState({ toast:'Escalated to level 2. Desk added to recipients. Outbox key ESCALATE:' + openCase.ref + ':2 — a repeat press changes nothing.' }) }
+    ] : [];
+
+    return {
+      role, roleOptions:[{key:'MANAGER',label:'Nitish Bhope · Manager'},{key:'LOCATION_HEAD',label:'Vrunda Potdar · Location Head'},{key:'ADMIN',label:'Shantanu · Admin'},{key:'VIEWER',label:'Valsan · Viewer'}],
+      setRole: e => this.setState({ role:e.target.value, route:'today', openRef:'', toast:'' }),
+      meLabel: me.label,
+      meName: me.label.split(' · ')[0],
+      meRole: me.label.split(' · ')[1] || '',
+      tabs,
+      isToday: S.route === 'today', isCases: S.route === 'cases',
+      today,
+      bellOpen: S.bellOpen, toggleBell: () => this.setState(s => ({ bellOpen: !s.bellOpen })),
+      notifyCount: '3',
+      notifications:[
+        { text:'Strike 1 sent on ESC-00193 — one send, duplicate attempts rejected', at:'3 Sep 11:00' },
+        { text:'Monthly dispatch completed: 693 sent, 0 failed, 11 blocked for incomplete matrices', at:'1 Sep 09:04' },
+        { text:'Identity merge applied: aniket.chalke@cruxinida.co.in → aniket.chalke@cruxindia.co.in (583 rules re-pointed)', at:'3 Sep 08:12' }
+      ],
+      toast:S.toast, clearToast: () => this.setState({ toast:'' }),
+      caseSummary: cases.length + ' cases · ' + cases.filter(c=>c.status==='Open').length + ' open · ' + cases.filter(c=>c.status==='In progress').length + ' in progress · mean age 5.3 days',
+      raising:S.raising, startRaise: () => this.setState({ raising:true, openRef:'' }), cancelRaise: () => this.setState({ raising:false }),
+      draft, branchOptions: Component.BRANCHES.map(b => ({ id:b.id, label:b.id + ' · ' + b.name + ' (' + b.clientName + ')' })),
+      categoryOptions: Component.CATEGORIES,
+      setDraftBranch: e => this.setDraft({ branchId:e.target.value }),
+      setDraftCategory: e => this.setDraft({ category:e.target.value }),
+      setDraftAgainst: e => this.setDraft({ against:e.target.value }),
+      setDraftNotify: e => this.setDraft({ notify:e.target.value }),
+      setDraftDescription: e => this.setDraft({ description:e.target.value }),
+      draftResolved, draftPinned:pinned,
+      submitLabel: draft.notify === 'yes' ? 'Save and notify' : 'Save as logged',
+      submitCase: () => {
+        const ref = 'ESC-00' + (194 + S.extraCases.length);
+        const nc = { ref, where: dBranch.clientName.split(' ')[0] + ' · ' + dBranch.name, cat:draft.category, desk:dDesk,
+          owner:dBranch.owner, status:'Open', next:'Strike 1 · 4 Sep 11:00',
+          headline: draft.category + ' case at ' + dBranch.name + (draft.against ? ' — against ' + draft.against : ''),
+          raised:'raised just now · ' + me.email,
+          description: draft.description || 'No description entered.',
+          clock:'Strike 1 due 4 Sep 11:00 — 24 working hours from now, inside 10:00–17:00, weekends excluded.',
+          history:[{what:'Case raised · ' + draft.category + ' → ' + dDesk + ' desk',at:'just now'},{what: draft.notify==='yes' ? 'Queued 1 outbox row · key NOTIFY:'+ref+':1' : 'Logged only — nothing queued',at:'just now'}] };
+        this.setState(s => ({ extraCases:[nc, ...s.extraCases], raising:false, openRef:ref,
+          toast: ref + ' created. Desk ' + dDesk + ', owner ' + dBranch.owner + ', ' + (draft.notify==='yes' ? '1 notification queued in the outbox.' : 'nothing sent.') }));
+      },
+      caseRows, openCase, caseActions, closeCase: () => this.setState({ openRef:'' }),
+      ...this.otherScreens(cases, role, me, blockedBranches.length)
+    };
+  }
+
+  otherScreens(cases, role, me, blockedTotal){
+    const S = this.state;
+    const scoped = Component.BRANCHES.filter(b =>
+      role === 'ADMIN' || role === 'VIEWER' ? true :
+      role === 'MANAGER' ? b.zone === 'SBI West' :
+      b.owner === me.email);
+    const activeId = scoped.some(b => b.id === S.branchId) ? S.branchId : (scoped[0] || Component.BRANCHES[0]).id;
+    const cur = this.branch(activeId);
+    const done = this.completeCount(activeId);
+    const levelRows = this.levelsFor(activeId).map((l, i) => ({
+      n:l.n, role:l.role, name:l.name, mobile:l.mobile, email:l.email,
+      stateLabel: (l.name.trim() && (l.mobile.trim() || l.email.trim())) ? 'complete' : 'incomplete — blocks dispatch',
+      setName: e => this.editLevel(activeId, i, { name:e.target.value }),
+      setMobile: e => this.editLevel(activeId, i, { mobile:e.target.value }),
+      setEmail: e => this.editLevel(activeId, i, { email:e.target.value })
+    }));
+
+    const branchList = scoped.map(b => {
+      const c = this.completeCount(b.id);
+      return { id:b.id, name:b.name, state: c === 5 ? '5/5 ✓' : c + '/5', on: b.id === activeId, pick: () => this.setState({ branchId:b.id, toast:'' }) };
+    });
+
+    const rules = S.rules || [
+      { person:'Vrunda Potdar', role:'Location Head', scopeType:'state', scopeValue:'Assam', scope:'Client SBI + state Assam', count:'31' },
+      { person:'Vrunda Potdar', role:'Location Head', scopeType:'state', scopeValue:'Goa', scope:'Client SBI + state Goa', count:'14' },
+      { person:'Nitish Bhope', role:'Zonal Manager', scopeType:'client_zone', scopeValue:'SBI West', scope:'Client zone SBI West', count:'46' },
+      { person:'Avinash Chaskar', role:'Branch Manager', scopeType:'branch', scopeValue:'BR-00747', scope:'Branch list (12)', count:'12' }
+    ];
+    const nr = S.newRule || { person:'Nitish Bhope', scopeType:'client_zone', scopeValue:'SBI West' };
+    const scopeValues = { client:['State Bank of India','Client 00007','Client 00011'], client_zone:['SBI West','SBI East','SBI North-East'], state:['Maharashtra','Assam','Goa'], branch:['BR-00747','BR-00762','BR-00196'] };
+
+    const jobDefs = [
+      { key:'OUTBOX_WORKER', last:'3 Sep 11:52', result:'OK · 12 sent, 0 deferred', next:'in 5 min', out:'Outbox re-run: 0 queued rows, nothing to send. Safe — unique keys make a repeat press a no-op.' },
+      { key:'MONTHLY_DISPATCH', last:'1 Sep 09:02', result:'OK · 693 sent, 0 failed', next:'1 Oct 09:00', out:'Dispatch dry-run: 693 branches eligible, 11 blocked for incomplete matrices, 709 inactive. Nothing sent — this is a plan.' },
+      { key:'CASE_CHASE', last:'3 Sep 11:00', result:'OK · 1 strike sent', next:'4 Sep 11:00', out:'Case chase re-run: 1 case due, already chased inside this window. 0 sent. This is the check that did not exist before.' },
+      { key:'MATRIX_CHASE', last:'1 Sep 11:00', result:'OK · 11 managers notified', next:'8 Sep 11:00', out:'Matrix chase re-run: 11 incomplete branches, 9 managers e-mailed, 2 escalated to the location head (over 14 days).' },
+      { key:'MONTHLY_SUMMARY', last:'10 Aug 09:00', result:'OK · 8 recipients', next:'10 Sep 09:00', out:'Summary preview built for August: 3 cases, 693 dispatched, 11 blocked, 1 identity merge. Not sent.' },
+      { key:'AI_ANOMALIES', last:'1 Sep 07:00', result:'OK · 2 flags · 41/500 calls', next:'8 Sep 07:00', out:'Anomaly scan: 2 flags — strike-volume outlier (resolved) and 217 branches without codes. 42 of 500 monthly AI calls used.' }
+    ];
+
+    return {
+      isClients:S.route==='clients', isPeople:S.route==='people', isReports:S.route==='reports', isOps:S.route==='operations',
+      clientSummary:'State Bank of India · CLI-00024 · 784 branches · 412 dispatchable · ' + scoped.length + ' in your coverage · client zones: SBI West, SBI East, SBI North-East',
+      branchList,
+      eligibleNote: done === 5 ? 'This branch is in the 1 Oct dispatch.' : 'Incomplete branches raise a chase task; they are never silently skipped.',
+      current: { name: cur.name + ' Branch', meta: cur.id + ' · ' + (cur.code || 'no branch code — flagged') + ' · ' + cur.geo + ' · POC ' + cur.poc,
+                 gate: done === 5 ? 'Complete · dispatchable' : done + ' of 5 · blocked',
+                 gateNote: done === 5 ? 'Next send 1 Oct 09:00' : 'Rule R-01 · chase task raised' },
+      levelRows,
+      saveMatrix: () => this.setState({ toast: done === 5
+        ? cur.id + ' saved. All five levels complete — the branch enters the 1 Oct dispatch automatically. One audit entry written.'
+        : cur.id + ' saved with ' + done + ' of 5 levels. It stays out of the dispatch and a chase task is on the owner\u2019s home, e-mailed weekly, escalated after 14 days.' }),
+
+      ruleCount: String(rules.length), ruleRows: rules,
+      newRule: nr, personOptions:['Nitish Bhope','Vrunda Potdar','Avinash Chaskar','Aniket Chalke'],
+      scopeValueOptions: scopeValues[nr.scopeType] || [],
+      setRulePerson: e => this.setState(s => ({ newRule:{ ...(s.newRule||nr), person:e.target.value }, ruleError:'' })),
+      setRuleScopeType: e => this.setState(s => ({ newRule:{ ...(s.newRule||nr), scopeType:e.target.value, scopeValue:(scopeValues[e.target.value]||[''])[0] }, ruleError:'' })),
+      setRuleScopeValue: e => this.setState(s => ({ newRule:{ ...(s.newRule||nr), scopeValue:e.target.value }, ruleError:'' })),
+      ruleError: S.ruleError || '',
+      addRule: () => {
+        const clash = rules.find(r => r.person === nr.person && r.scopeValue === nr.scopeValue)
+          || (nr.person === 'Nitish Bhope' && nr.scopeType === 'state' && nr.scopeValue === 'Maharashtra' ? rules[2] : null);
+        if (clash) {
+          this.setState({ ruleError:'Refused. This rule resolves to ' + clash.count + ' branches already covered by ' + clash.person + ' — ' + clash.scope + '. Retire or narrow that rule first. (Rule R-07: overlapping ownership cannot be created.)' });
+        } else {
+          const scope = nr.scopeType === 'client' ? 'Client ' + nr.scopeValue : nr.scopeType === 'client_zone' ? 'Client zone ' + nr.scopeValue : nr.scopeType === 'state' ? 'Client SBI + state ' + nr.scopeValue : 'Branch list (' + nr.scopeValue + ')';
+          this.setState(s => ({ rules:[...rules, { person:nr.person, role:'Location Head', scopeType:nr.scopeType, scopeValue:nr.scopeValue, scope, count:'—' }], ruleError:'', toast:'Rule saved. No overlap found; ' + nr.person + ' now owns ' + scope + '. One audit entry written.' }));
+        }
+      },
+
+      exportAll: () => this.setState({ toast:'Workbook queued: clients, branches with codes, people with designation and reporting line, matrix contacts per branch, and the case register. Download will appear in Reports.' }),
+
+      opsTabs:[{ label:'Automation health', on:S.opsTab==='health', pick:()=>this.setState({opsTab:'health'}) },{ label:'Configuration', on:S.opsTab==='config', pick:()=>this.setState({opsTab:'config'}) }],
+      opsHealth:S.opsTab==='health', opsConfig:S.opsTab==='config',
+      jobs: jobDefs.map(j => ({ ...j, run: () => this.setState({ toast:j.out }) })),
+      configRows:[
+        { label:'Completeness gate', value:'5 levels · name + mobile or e-mail', note:'Rule R-01 · what makes a branch dispatchable', flag:'' },
+        { label:'Auto-close window', value:'7 days', note:'Rule R-05 · after resolution, with no objection', flag:'' },
+        { label:'Chase clock', value:'24 working hours · 10:00–17:00', note:'Rule R-03 · weekends and holidays excluded', flag:'' },
+        { label:'Holiday calendar', value:'0 dates', note:'The chase clock cannot exclude holidays until this is populated', flag:'Gap' },
+        { label:'MIS desk primary', value:'not set', note:'Two people hold the designation; MIS cases would block', flag:'Gap' },
+        { label:'Daily mail budget', value:'1,800 recipients · 200 reserved', note:'Rule R-02 · quota errors defer to tomorrow, never retry today', flag:'' },
+        { label:'Dispatch window', value:'1st of month · 09:00 IST', note:'693 eligible — one window is sufficient below 1,200', flag:'' },
+        { label:'AI monthly cap', value:'500 calls · 42 used', note:'Rule R-09 · features grey out when spent, with the reset date', flag:'' },
+        { label:'Pinned categories', value:'Fraud/Integrity · Data Privacy', note:'Locked to Compliance — not reassignable, including by an admin', flag:'Locked' }
+      ]
+    };
+  }
+}
+function b_isViewer(r){ return r === 'VIEWER'; }
+</script>
+</body>
+</html>

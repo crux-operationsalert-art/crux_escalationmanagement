@@ -1,0 +1,129 @@
+{
+ "escalations": [
+  {
+   "ID": "ESC-00191",
+   "Type": "RAISED",
+   "ClientID": "CLI-00024",
+   "Category": "Billing",
+   "Severity": "High",
+   "Against": "Kapil Harvara",
+   "Owner": "am.raj@cruxindia.co.in",
+   "Status": "IN_PROGRESS",
+   "CreatedAt": "2026-08-26T12:36:46+05:30"
+  },
+  {
+   "ID": "ESC-00192",
+   "Type": "LOGGED",
+   "ClientID": "CLI-00007",
+   "Category": "Service",
+   "Severity": "High",
+   "Against": "Ronak Pawar",
+   "Owner": "ronak.pawar@cruxindia.co.in",
+   "Status": "RESOLVED",
+   "CreatedBy": "shantanu.suravase@cruxindia.co.in",
+   "CreatedAt": "2026-08-27T11:59:23+05:30"
+  },
+  {
+   "ID": "ESC-00193",
+   "Type": "LOGGED",
+   "ClientID": "CLI-00007",
+   "Category": "Service",
+   "Severity": "High",
+   "Against": "yash.desai",
+   "Owner": "yash.desai@cruxindia.co.in",
+   "Status": "OPEN",
+   "CreatedBy": "shantanu.suravase@cruxindia.co.in",
+   "CreatedAt": "2026-08-27T15:26:05+05:30"
+  }
+ ],
+ "strikeEmails": {
+  "total": 1892,
+  "distinctRecipients": 3,
+  "distinctIdempotencyKeys": 77,
+  "firstTs": "2026-08-25T13:24:20+05:30",
+  "lastTs": "2026-09-03T11:51:54+05:30",
+  "topRecipients": [
+   [
+    "yash.desai@cruxindia.co.in",
+    1889
+   ],
+   [
+    "shantanu.suravase@cruxindia.co.in",
+    2
+   ],
+   [
+    "am.raj@cruxindia.co.in",
+    1
+   ]
+  ]
+ },
+ "peopleEvents": {
+  "live": 26,
+  "copyTab": 451,
+  "idsOnlyInCopy": 449,
+  "liveTypes": {
+   "APPRECIATION": 2,
+   "ACTIVATION": 24
+  },
+  "copyTypes": {
+   "APPRECIATION": 2,
+   "NOTE": 449
+  }
+ },
+ "clientActivation": {
+  "rows": 635,
+  "activeValues": {
+   "YES": 631,
+   "NO": 4
+  },
+  "duplicatePairs": 10
+ },
+ "settings": {
+  "rows": 54,
+  "winovrKeys": 1
+ },
+ "sheet4Junk": [
+  {
+   "A": "manish shukla rows: 670"
+  },
+  {
+   "A": "NO MATCH on ContactName"
+  },
+  {
+   "A": "level5 rows: 763"
+  },
+  {
+   "A": "updated today: 60"
+  },
+  {
+   "A": "by avinash: 30"
+  },
+  {
+   "A": "MTX-00024 || CLI-00011 || 1 || SPOC || PARAG MAYEKAR || 8600185862 || am.pune@cruxindia.co.in || 2026-08-26T19:58:40+05:30 || nitish.bhope@cruxindia.co.in || MTX-00025 || CLI-00011 || 2 || Team Leader || Girish Kate || 8552906535 || bo.pune@cruxindia.co.in  || 2026-08-26T19:58:40+05:30 || nitish.bhope@cruxindia.co.in || MTX-00026 || CLI-00011 || 3 || Branch Manager || Avinash Chaskar || 9021469966 || avinash.chaskar@cruxindia.co.in || 2026-08-26T19:58:41+05:30 || nitish.bhope@cruxindia.co.in || MTX-00027 || CLI-00011 || 4 || Zonal Manager || Nitish Bhope || 9762348486 || nitish.bhope@cruxindia.co.in || 2026-08-26T19:58:41+05:30 || nitish.bhope@cruxindia.co.in || MTX-00028 || CLI-00011 || 5 || Head Office || Manish Shukla || 9870066855 || manish.shukla@cruxindia.co.in || 2026-08-26T19:58:42+05:30 || nitish.bhope@cruxindia.co.in || MTX-00110 || CLI-00024 || 1 || SPOC || Akanksha Pawar || 91454 28137 || am.pune@cruxindia.co.in || 2026-08-26T11:34:09+05:30 || bo.pune@cruxindia.co.in || PUNE || MTX-00111 || CLI-00024 || 2 || Team Leader || Girish Kate || 8552906535 || am.pune@cruxindia.co.in || 2026-08-26T11:34:10+05:30 || bo.pune@cruxindia.co.in || PUNE || MTX-00112 || CLI-00024 || 3 || Branch Manager || Avinash Chaskar || 9021469966 || avinash.chaskar@cruxindia.co.in || 2026-08-26T11:34:10+05:30 || bo.pune@cruxindia.co.in || PUNE || MTX-00113 || CLI-00024 || 4 || Zonal Manager || Nitish Bhope || 9762348486 || nitish.bhope@cruxindia.co.in  || 2026-08-26T11:34:11+05:30 || bo.pune@cruxindia.co.in || PUNE || MTX-00114 || CLI-00024 || 5 || Head Office || Vrunda Potdar || 8828285747 || vrunda.potdar@cruxindia.co.in  || 2026-08-26T11:34:11+05:30 || bo.pune@cruxindia.co.in || PUNE || MTX-00549 || CLI-00024 || 1 || SPOC || Vaibhavi Kanavaje || 7350874077 || bo.pune@cruxindia.co.in || 2026-08-26T19:39:45+05:30 || nitish.bhope@cruxindia.co.in || BR-00747 || MTX-00550 || CLI-00024 || 2 || Team Leader || Girish Kate || 8552906535 || bo.pune@cruxindia.co.in || 2026-08-26T19:39:45+05:30 || nitish.bhope@cruxindia.co.in || BR-00747 || MTX-00551 || CLI-00024 || 3 || Branch Manager || Avinash Chaskar || 9021469966 || avinash.chaskar@cruxindia.co.in || 2026-08-26T19:39:45+05:30 || nitish.bhope@cruxindia.co.in || BR-00748 || MTX-00552 || CLI-00024 || 4 || Zonal Manager || Nitish Bhope || 9762348486 || nitish.bhope@cruxindia.co.in || 2026-08-26T19:39:46+05:30 || nitish.bhope@cruxindia.co.in || BR-00748 || MTX-00553 || CLI-00024 || 5 || Head Office || Manish Shukla || 9870066855 || manish.s@cruxindia.co.in || 2026-08-26T19:39:46+05:30 || nitish.bhope@cruxindia.co.in || BR-00748 || MTX-00554 || CLI-00024 || 1 || SPOC || Vaibhavi Kanavaje || 7350874077 || bo.pune@cruxindia.co.in || 2026-08-26T11:01:41+05:30 || avinash.chaskar@cruxindia.co.in || BR-00748 || MTX-00555 || CLI-00024 || 2 || Team Leader || Girish Kate || 8552906535 || bo.pune@cruxindia.co.in || 2026-08-26T11:01:42+05:30 || avinash.chaskar@cruxindia.co.in || BR-00748 || MTX-00556 || CLI-00024 || 3 || Branch Manager || Avinash Chaskar || 9021469966 || avinash.chaskar@cruxindia.co.in || 2026-08-26T11:01:42+05:30 || avinash.chaskar@cruxindia.co.in || BR-00749 || MTX-00557 || CLI-00024 || 4 || Zonal Manager || Nitish Bhope || 9762348486 || nitish.bhope@cruxindia.co.in || 2026-08-26T11:01:42+05:30 || avinash.chaskar@cruxindia.co.in || BR-00749 || MTX-00558 || CLI-00024 || 5 || Head Office || Manish Shukla || 9870066855 || manish.s@cruxindia.co.in || 2026-08-26T11:01:43+05:30 || avinash.chaskar@cruxindia.co.in || BR-00749 || MTX-00569 || CLI-00024 || 1 || SPOC || Sarita Shinde || 9637349232 || bo.pune@cruxindia.co.in || 2026-08-26T11:11:29+05:30 || avinash.chaskar@cruxindia.co.in || BR-00751 || MTX-00570 || CLI-00024 || 2 || Team Leader || AKANKSHA || 91454 28137 || bo.pune@cruxindia.co.in || 2026-08-26T11:11:30+05:30 || avinash.chaskar@cruxindia.co.in || BR-00751 || MTX-00571 || CLI-00024 || 3 || Branch Manager || Girish Kate || 8552906535 || bo.pune@cruxindia.co.in || 2026-08-26T11:11:31+05:30 || avinash.chaskar@cruxindia.co.in || BR-00755 || MTX-00572 || CLI-00024 || 4 || Zonal Manager || Parag Mayekar || 8600000000 || am.pune@cruxindia.co.in || 2026-08-26T11:11:31+05:30 || avinash.chaskar@cruxindia.co.in || BR-00755 || MTX-00573 || CLI-00024 || 5 || Head Office || Avinash Chaskar || 90214 69966 || avinash.chaskar@cruxindia.co.in || 2026-08-26T11:11:31+05:30 || avinash.chaskar@cruxindia.co.in || BR-00755 || MTX-00549 || CLI-00019 || 1 || SPOC || Vaibhavi Kanavaje || 7350874077 || bo.pune@cruxindia.co.in || 2026-08-26T10:26:56+05:30 || avinash.chaskar@cruxindia.co.in || Pune || MTX-00550 || CLI-00019 || 2 || Team Leader || Girish Kate || 8552906535 || bo.pune@cruxindia.co.in || 2026-08-26T10:26:57+05:30 || avinash.chaskar@cruxindia.co.in || Pune || MTX-00551 || CLI-00019 || 3 || Branch Manager || Avinash Chaskar || 9021469966 || avinash.chaskar@cruxindia.co.in || 2026-08-26T10:26:58+05:30 || avinash.chaskar@cruxindia.co.in || Pune || MTX-00552 || CLI-00019 || 4 || Zonal Manager || Nitish Bhope || 9762348486 || nitish.bhope@cruxindia.co.in || 2026-08-26T10:26:58+05:30 || avinash.chaskar@cruxindia.co.in || Pune || MTX-00553 || CLI-00019 || 5 || Head Office || Manish Shukla || 9870066855 || manish.shukla@cruxindia.co.in || 2026-08-26T10:26:59+05:30 || avinash.chaskar@cruxindia.co.in || Pune || MTX-00559 || CLI-00011 || 1 || SPOC || Nikita Kadam || 9699018068 || bo.pune@cruxindia.co.in || 2026-08-26T11:07:46+05:30 || avinash.chaskar@cruxindia.co.in || AKURDI || MTX-00560 || CLI-00011 || 2 || Team Leader || Girish Kate || 8552906535 || bo.pune@cruxindia.co.in || 2026-08-26T11:07:47+05:30 || avinash.chaskar@cruxindia.co.in || AKURDI || MTX-00561 || CLI-00011 || 3 || Branch Manager || Avinash Chaskar || 9021469966 || avinash.chaskar@cruxindia.co.in || 2026-08-26T11:07:47+05:30 || avinash.chaskar@cruxindia.co.in || AKURDI || MTX-00562 || CLI-00011 || 4 || Zonal Manager || Nitish Bhope || 9762348486 || nitish.bhope@cruxindia.co.in || 2026-08-26T11:07:48+05:30 || avinash.chaskar@cruxindia.co.in || AKURDI || MTX-00563 || CLI-00011 || 5 || Head Office || Manish Shukla || 9870066855 || manish.shukla@cruxindia.co.in || 2026-08-26T11:07:49+05:30 || avinash.chaskar@cruxindia.co.in || AKURDI || MTX-00564 || CLI-00011 || 1 || SPOC || Nikita Kadam || 9699018068 || bo.pune@cruxindia.co.in || 2026-08-26T11:09:16+05:30 || avinash.chaskar@cruxindia.co.in || ALANDI || MTX-00565 || CLI-00011 || 2 || Team Leader || Girish Kate || 8552906535 || bo.pune@cruxindia.co.in || 2026-08-26T11:09:17+05:30 || avinash.chaskar@cruxindia.co.in || ALANDI || MTX-00566 || CLI-00011 || 3 || Branch Manager || Avinash Chaskar || 9021469966 || avinash.chaskar@cruxindia.co.in || 2026-08-26T11:09:17+05:30 || avinash.chaskar@cruxindia.co.in || ALANDI || MTX-00567 || CLI-00011 || 4 || Zonal Manager || Nitish Bhope || 9762348486 || nitish.bhope@cruxindia.co.in || 2026-08-26T11:09:18+05:30 || avinash.chaskar@cruxindia.co.in || ALANDI || MTX-00568 || CLI-00011 || 5 || Head Office || Manish Shukla || 9870066855 || manish.shukla@cruxindia.co.in || 2026-08-26T11:09:18+05:30 || avinash.chaskar@cruxindia.co.in || ALANDI || MTX-00569 || CLI-00011 || 1 || SPOC || Sarita Shinde || 9637349232 || bo.pune@cruxindia.co.in || 2026-08-26T11:11:17+05:30 || avinash.chaskar@cruxindia.co.in || AMANORA || MTX-00570 || CLI-00011 || 2 || Team Leader || Girish Kate || 8552906535 || bo.pune@cruxindia.co.in || 2026-08-26T11:11:18+05:30 || avinash.chaskar@cruxindia.co.in || AMANORA || MTX-00571 || CLI-00011 || 3 || Branch Manager || Avinash Chaskar || 9021469966 || avinash.chaskar@cruxindia.co.in || 2026-08-26T11:11:19+05:30 || avinash.chaskar@cruxindia.co.in || AMANORA || MTX-00572 || CLI-00011 || 4 || Zonal Manager || Nitish Bhope || 9762348486 || nitish.bhope@cruxindia.co.in || 2026-08-26T11:11:19+05:30 || avinash.chaskar@cruxindia.co.in || AMANORA || MTX-00573 || CLI-00011 || 5 || Head Office || Manish Shukla || 9870066855 || manish.shukla@cruxindia.co.in || 2026-08-26T11:11:20+05:30 || avinash.chaskar@cruxindia.co.in || AMANORA || MTX-00574 || CLI-00024 || 1 || SPOC || Sarita Shinde || 9637349232 || bo.pune@cruxindia.co.in || 2026-08-26T11:25:34+05:30 || bo.pune@cruxindia.co.in || Amravati || MTX-00575 || CLI-00024 || 2 || Team Leader || Girish Kate || 8552906535 || bo.pune@cruxindia.co.in || 2026-08-26T11:25:35+05:30 || bo.pune@cruxindia.co.in || Amravati || MTX-00576 || CLI-00024 || 3 || Branch Manager || Avinash Chaskar || 9021469966 || avinash.chaskar@cruxindia.co.in || 2026-08-26T11:25:37+05:30 || bo.pune@cruxindia.co.in || Amravati || MTX-00577 || CLI-00024 || 4 || Zonal Manager || Nitish Bhope || 9762348486 || nitish.bhope@cruxindia.co.in || 2026-08-26T11:25:37+05:30 || bo.pune@cruxindia.co.in || Amravati || MTX-00578 || CLI-00024 || 5 || Head Office || Manish Shukla || 9870066855 || manish.shukla@cruxindia.co.in || 2026-08-26T11:25:38+05:30 || bo.pune@cruxindia.co.in || Amravati || MTX-00579 || CLI-00024 || 1 || SPOC || Akanksha Pawar || 9154428137 || am.pune@cruxindia.co.in   || 2026-08-26T11:36:32+05:30 || bo.pune@cruxindia.co.in || Pimpri || MTX-00580 || CLI-00024 || 2 || Team Leader || Girish Kate || 8552906535 || bo.pune@cruxindia.co.in  || 2026-08-26T11:36:34+05:30 || bo.pune@cruxindia.co.in || Pimpri || MTX-00581 || CLI-00024 || 3 || Branch Manager || Avinash Chaskar || 9021469966 || avinash.chaskar@cruxindia.co.in || 2026-08-26T11:36:35+05:30 || bo.pune@cruxindia.co.in || Pimpri || MTX-00582 || CLI-00024 || 4 || Zonal Manager || Nitish Bhope || 9762348486 || nitish.bhope@cruxindia.co.in || 2026-08-26T11:36:36+05:30 || bo.pune@cruxindia.co.in || Pimpri || MTX-00583 || CLI-00024 || 5 || Head Office || Manish Shukla || 9870066855 || manish.shukla@cruxindia.co.in || 2026-08-26T11:36:37+05:30 || bo.pune@cruxindia.co.in || Pimpri || MTX-00584 || CLI-00011 || 1 || SPOC || ANIKET SASANE || 9529977022 || bo.pune@cruxindia.co.in || 2026-08-26T18:49:51+05:30 || bo.pune@cruxindia.co.in || Pune || MTX-00585 || CLI-00011 || 2 || Team Leader || Girish Kate || 8552906535 || bo.pune@cruxindia.co.in  || 2026-08-26T18:49:52+05:30 || bo.pune@cruxindia.co.in || Pune || MTX-00586 || CLI-00011 || 3 || Branch Manager || Avinash Chaskar || 9021469966 || avinash.chaskar@cruxindia.co.in || 2026-08-26T18:49:53+05:30 || bo.pune@cruxindia.co.in || Pune || MTX-00587 || CLI-00011 || 4 || Zonal Manager || Nitish Bhope || 9762348486 || nitish.bhope@cruxindia.co.in || 2026-08-26T18:49:54+05:30 || bo.pune@cruxindia.co.in || Pune || MTX-00588 || CLI-00011 || 5 || Head Office || Manish Shukla || 9870066855 || manish.shukla@cruxindia.co.in || 2026-08-26T18:49:55+05:30 || bo.pune@cruxindia.co.in || Pune"
+  },
+  {
+   "A": "BRT clients: CLI-00019"
+  },
+  {
+   "A": "MTX-00553 || CLI-00019 || 5 || Head Office || Manish Shukla || 9870066855 || manish.shukla@cruxindia.co.in || 2026-08-26T10:26:59+05:30 || avinash.chaskar@cruxindia.co.in || Pune"
+  },
+  {
+   "A": "CLI-00019 rows: 5"
+  },
+  {
+   "A": "Mumbai branches: 594  zones: AHMEDABAD,AURANGABAD,GOA,JALGAON,MUMBAI,SATARA,SOLAPUR,West"
+  },
+  {
+   "A": "avinash ScopeZones/Locs: Pune | Pune"
+  }
+ ],
+ "targets": {
+  "rows": 102,
+  "categories": {
+   "Revenue": 71,
+   "Business Development": 21,
+   "Collection": 10
+  },
+  "rowsWithBothClientIdAndClientName": 61
+ }
+}

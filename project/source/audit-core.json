@@ -1,0 +1,300 @@
+{
+ "matrixCompleteness": {
+  "perBranch": {
+   "total": 704,
+   "complete5": 693,
+   "incomplete": 11,
+   "level1and2": 700,
+   "level1": 700
+  },
+  "perClientOnly": {
+   "total": 7,
+   "complete5": 5,
+   "incomplete": 2,
+   "level1and2": 7,
+   "level1": 7
+  }
+ },
+ "users": {
+  "total": 55,
+  "roles": {
+   "ADMIN": 2,
+   "MANAGER": 7,
+   "LOCATION_HEAD": 26,
+   "VIEWER": 20
+  },
+  "status": {
+   "ACTIVE": 54,
+   "PENDING": 1
+  },
+  "departments": {
+   "Operations": 50,
+   "HR": 2,
+   "Other": 1,
+   "(blank)": 1,
+   "Finance": 1
+  },
+  "duplicateEmails": [],
+  "withAccessToken": 39,
+  "withAnyScope": 50,
+  "aniketRecords": [
+   {
+    "email": "aniket.chalke@cruxindia.co.in",
+    "role": "LOCATION_HEAD",
+    "status": "ACTIVE",
+    "desig": "Branch Manager"
+   },
+   {
+    "email": "aniketsasane022@gmail.com",
+    "role": "VIEWER",
+    "status": "ACTIVE",
+    "desig": "Executive"
+   }
+  ]
+ },
+ "auditLog": {
+  "rows": 5913,
+  "topActions": [
+   [
+    "EMAIL_RETRY",
+    1740
+   ],
+   [
+    "BRANCH_CREATE",
+    1421
+   ],
+   [
+    "MATRIX_SAVE",
+    967
+   ],
+   [
+    "RPC_ERROR",
+    259
+   ],
+   [
+    "TARGET_SET",
+    226
+   ],
+   [
+    "ESCALATION_LOG",
+    145
+   ],
+   [
+    "WARNING_RAISE",
+    137
+   ],
+   [
+    "ALIGNMENT_SET",
+    126
+   ],
+   [
+    "BRANCH_UPDATE",
+    91
+   ],
+   [
+    "CLIENT_ACTIVATED",
+    75
+   ],
+   [
+    "TEAM_ADD",
+    67
+   ],
+   [
+    "WARNING_ACK",
+    58
+   ],
+   [
+    "USER_UPDATE",
+    52
+   ],
+   [
+    "INVITE_SEND",
+    52
+   ],
+   [
+    "AI_DRAFT_ESCALATION",
+    49
+   ]
+  ],
+  "topEntities": [
+   [
+    "EMAIL_LOG",
+    1740
+   ],
+   [
+    "BRANCHES",
+    1514
+   ],
+   [
+    "ESCALATION_MATRIX",
+    969
+   ],
+   [
+    "USERS",
+    273
+   ],
+   [
+    "TARGETS",
+    254
+   ],
+   [
+    "WARNINGS",
+    211
+   ],
+   [
+    "ESCALATIONS",
+    206
+   ],
+   [
+    "BRANCH_ASSIGNMENTS",
+    126
+   ],
+   [
+    "PEOPLE_EVENTS",
+    106
+   ],
+   [
+    "GEMINI",
+    94
+   ],
+   [
+    "CLIENT_ACTIVATION",
+    80
+   ],
+   [
+    "ai.status",
+    38
+   ],
+   [
+    "CLIENTS",
+    34
+   ],
+   [
+    "alignment.setGeo",
+    29
+   ],
+   [
+    "matrix.save",
+    21
+   ]
+  ],
+  "topUsers": [
+   [
+    "shantanu.suravase@cruxindia.co.in",
+    2348
+   ],
+   [
+    "system:retry",
+    1740
+   ],
+   [
+    "varsha.sonawane@cruxindia.co.in",
+    572
+   ],
+   [
+    "operations.alert@cruxindia.co.in",
+    290
+   ],
+   [
+    "nitish.bhope@cruxindia.co.in",
+    223
+   ],
+   [
+    "am.pune@cruxindia.co.in",
+    124
+   ],
+   [
+    "cruxbposervicespvtltd@gmail.com",
+    119
+   ],
+   [
+    "bo.pune@cruxindia.co.in",
+    92
+   ]
+  ]
+ },
+ "dispatchQueue": {
+  "rows": 2080,
+  "status": {
+   "CANCELLED": 286,
+   "PENDING": 1794
+  },
+  "months": {
+   "46235.0": 4,
+   "46266.0": 2076
+  },
+  "topErrors": [
+   [
+    "Duplicate of an earlier queued row for the same recipient. Cancelled by cleanDis",
+    286
+   ]
+  ]
+ },
+ "emailLog": {
+  "rows": 2229,
+  "status": {
+   "SENT": 304,
+   "FAILED": 1925
+  },
+  "types": {
+   "REMINDER_25": 25,
+   "REMINDER_LWD": 2,
+   "MONTHLY_DISPATCH": 1,
+   "INCOMPLETE_ESCALATION": 3,
+   "RAISED_ESCALATION": 48,
+   "MONTHLY_SUMMARY": 1,
+   "WARNING_LETTER": 2,
+   "PEOPLE": 242,
+   "APPRECIATION_NUDGE": 13,
+   "STRIKE_1": 1892
+  },
+  "topErrors": [
+   [
+    "Service invoked too many times for one day: premium email.",
+    1849
+   ],
+   [
+    "Invalid argument: : Invalid Cc header",
+    74
+   ],
+   [
+    "The script does not have permission to perform that action. Required permissions: (https:/",
+    2
+   ],
+   [
+    "23401",
+    1
+   ],
+   [
+    "23802",
+    1
+   ],
+   [
+    "23805",
+    1
+   ]
+  ]
+ },
+ "reminderLog": {
+  "rows": 1707,
+  "types": {
+   "REMINDER_LWD": 1,
+   "MONTHLY_SUMMARY": 1,
+   "STRIKE_SWEEP": 1690,
+   "DISPATCH_PLAN": 2,
+   "APPRECIATION_NUDGE": 3,
+   "HR_DAILY": 9,
+   "REMINDER_25": 1
+  },
+  "results": [
+   [
+    "NOOP",
+    1535
+   ],
+   [
+    "OK",
+    172
+   ]
+  ]
+ }
+}

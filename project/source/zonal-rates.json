@@ -1,0 +1,300 @@
+{
+ "byClient": {
+  "LIC HFL": [
+   "600×35"
+  ],
+  "SBI": [
+   "300×2",
+   "190×3",
+   "500×6",
+   "240×12",
+   "260×6",
+   "350×1",
+   "296×2",
+   "225×1",
+   "200×1",
+   "750×2"
+  ],
+  "BOM": [
+   "750×30",
+   "1000×6"
+  ],
+  "BOM MSME PRE": [
+   "2500×36"
+  ],
+  "BOM MSME POST": [
+   "1250×23"
+  ],
+  "CAN FIN HOMES": [
+   "1250×1",
+   "100×6",
+   "350×2",
+   "200×4",
+   "500×14"
+  ],
+  "CANARA": [
+   "500×2",
+   "200×1",
+   "1000×1"
+  ],
+  "IDBI Bank": [
+   "750×36"
+  ],
+  "KARNATAKA BANK": [
+   "750×9",
+   "1000×4"
+  ],
+  "BOI": [
+   "500×2",
+   "750×7",
+   "700×10",
+   "1000×12"
+  ],
+  "TOYOTA": [
+   "300×8"
+  ],
+  "BOM MSME Post": [
+   "1250×5"
+  ],
+  "NIDO": [
+   "750×5",
+   "500×14",
+   "250×3",
+   "100×1"
+  ],
+  "SVC": [
+   "600×14"
+  ],
+  "UNION": [
+   "950×1",
+   "750×8",
+   "1000×2"
+  ],
+  "BOB": [
+   "300×2",
+   "500×2",
+   "200×1",
+   "100×9"
+  ],
+  "BOB FSL": [
+   "100×5"
+  ],
+  "Tezzract": [
+   "350×2",
+   "300×1"
+  ],
+  "SBI Car Loan+": [
+   "240×2"
+  ],
+  "AXIS BANK": [
+   "70×1",
+   "100×4"
+  ],
+  "BOB HL": [
+   "200×1"
+  ],
+  "GIC HFL": [
+   "500×1"
+  ],
+  "POOL PURCHASE": [
+   "100×1"
+  ],
+  "CRED": [
+   "200×1"
+  ],
+  "BOB Car Loan +": [
+   "200×2"
+  ],
+  "RBL": [
+   "350×1",
+   "175×1"
+  ],
+  "ICICI": [
+   "65×1"
+  ],
+  "Tata Capital": [
+   "250×1"
+  ],
+  "PNB HFL": [
+   "500×1"
+  ],
+  "Axis Finace": [
+   "100×1"
+  ],
+  "DNSB": [
+   "200×2"
+  ],
+  "BOM Retail POST": [
+   "200×1"
+  ],
+  "COSMOS": [
+   "200×1"
+  ],
+  "TJSB": [
+   "115×1",
+   "230×1"
+  ],
+  "BCCB": [
+   "600×1"
+  ],
+  "BOB ITR": [
+   "100×1"
+  ],
+  "BOM INOP": [
+   "200×1"
+  ],
+  "BRT": [
+   "300×1"
+  ]
+ },
+ "zones": {
+  "0": 2,
+  "27": 2,
+  "28": 1,
+  "163": 2,
+  "166": 1,
+  "168": 1,
+  "169": 1,
+  "170": 1,
+  "171": 1,
+  "172": 1,
+  "173": 1,
+  "174": 1,
+  "175": 1,
+  "176": 1,
+  "177": 1,
+  "201": 1,
+  "202": 1,
+  "203": 1,
+  "204": 1,
+  "205": 1,
+  "216": 1,
+  "217": 1,
+  "218": 1,
+  "219": 1,
+  "220": 1,
+  "221": 1,
+  "223": 1,
+  "224": 1,
+  "225": 1,
+  "248": 1,
+  "249": 1,
+  "262": 1,
+  "263": 1,
+  "264": 1,
+  "265": 1,
+  "266": 1,
+  "267": 1,
+  "276": 1,
+  "277": 1,
+  "278": 1,
+  "378": 1,
+  "380": 1,
+  "382": 1,
+  "383": 1,
+  "384": 1,
+  "386": 1,
+  "387": 1,
+  "388": 1,
+  "389": 1,
+  "Zonal Business Tracker Report": 1,
+  "Bhuvaneshvar ODISHA Zone": 12,
+  "Location": 1,
+  "Total Bhuvaneshvar ODISHA Zone": 1,
+  "Bhopal MP Zone": 12,
+  "Total Bhopal MP Zone": 1,
+  "Indore": 11,
+  "Total Indore": 1,
+  "Bhopal": 11,
+  "Total Bhopal": 1,
+  "Bilaspur": 11,
+  "Total Bilaspur": 1,
+  "Raipur": 11,
+  "Total Raipur": 1,
+  "GWALIOR": 11,
+  "Total GWALIOR": 1,
+  "Bengaluru (Rest Of Karnataka) Zone": 1,
+  "Bengaluru + Rest Of Karnataka + Kerela": 16,
+  "Total Bengaluru + Rest Of Karnataka + Kerela": 1,
+  "Tamilnadu Zone": 1,
+  "Tamilnadu + Chennai": 11,
+  "Total Tamilnadu + Chennai": 1,
+  "Delhi": 21,
+  "Total DEL(B)": 1,
+  "PUNJAB": 6,
+  "Total PUNJAB": 1,
+  "Gujrat Zone": 1,
+  "Gujarat Zone": 7,
+  "Total Gujarat Zone": 1,
+  "AHMEDABAD": 7,
+  "Total AHMEDABAD": 1,
+  "VADODARA": 7,
+  "Total VADODARA": 1,
+  "GANDHINAGAR": 7,
+  "Total GANDHINAGAR": 1,
+  "BHAVNAGAR": 7,
+  "Total BHAVNAGAR": 1,
+  "RAJKOT": 7,
+  "Total RAJKOT": 1,
+  "Surat": 7,
+  "Total Surat": 1,
+  "Guwahati Assam Zone": 11,
+  "Total Guwahati Assam Zone": 1,
+  "Hyderabad Zone": 17,
+  "Total Hyderabad Zone": 1,
+  "Kolkata Zone": 16,
+  "Total Kolkata Zone": 1,
+  "Lucknow / ROUP Zone": 9,
+  "Total UP": 1,
+  "Lucknow/ROUP -  (Ajay Pathak)": 8,
+  "Total Lucknow/ROUP -  (Ajay Pathak)": 1,
+  "Lucknow/ROUP -  (Mukesh Yadav)": 7,
+  "Total Lucknow/ROUP -  (Mukesh Yadav)": 1,
+  "Mumbai + Goa Zone": 25,
+  "Total Mumbai + Goa Zone": 1,
+  "Mumbai": 24,
+  "Total MumbaI": 1,
+  "GOA": 9,
+  "Total JOA": 1,
+  "Rest Of Maharashtra Zone": 21,
+  "Total Rest Of Maharashtra Zone": 1,
+  "Amaravati": 11,
+  "Total Amaravati": 1,
+  "Chhatrapati SambhajinaJar (AURANGABAD)": 11,
+  "Total Chhatrapati SambhajinaJar (AURANGABAD)": 1,
+  "JALGAON": 7,
+  "Total JALJAON": 1,
+  "KOLHAPUR": 11,
+  "Total KOLHAPUR": 1,
+  "Latur (MM)": 11,
+  "Total Latur (MM)": 1,
+  "NAGPUR (YASH)": 11,
+  "Total NAGPUR (YASH)": 1,
+  "NAGPUR (Sudhir)": 11,
+  "Total NAGPUR (Sudhir)": 1,
+  "NASHIK": 11,
+  "Total NASHIK": 1,
+  "Nanded": 11,
+  "Total Nanded": 1,
+  "Pune": 17,
+  "Total Pune": 1,
+  "Solapur": 11,
+  "Total SOL(A)": 1,
+  "Patna Zone": 10,
+  "Total Patna Zone": 1,
+  "BIHAR/PATNA": 9,
+  "Total BIHAR / PATNA": 1,
+  "JHARKHAND (Firoz+ Crux)": 8,
+  "Total JHARKHAND (Firoz+ Crux)": 1,
+  "Zone A": 1,
+  "Zone B": 1,
+  "North Zone": 1,
+  "South Zone": 1,
+  "East Zone": 1,
+  "West Zone": 1,
+  "ROI": 1,
+  "Pan India": 1,
+  "#NAME?": 1,
+  "-10814": 1
+ }
+}

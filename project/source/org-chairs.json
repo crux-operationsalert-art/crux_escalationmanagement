@@ -1,0 +1,282 @@
+[
+ {
+  "id": "ACC",
+  "name": "Accounts"
+ },
+ {
+  "id": "ACE",
+  "name": "Accounts Executives"
+ },
+ {
+  "id": "ADM",
+  "name": "Administration & Facilities"
+ },
+ {
+  "id": "GRC",
+  "name": "Assurance, Risk & Compliance"
+ },
+ {
+  "id": "AVP",
+  "name": "AVP — Operations & Growth"
+ },
+ {
+  "id": "BO",
+  "name": "Back Office / Processing Executives"
+ },
+ {
+  "id": "BO_NO",
+  "name": "Back Office Executives — North"
+ },
+ {
+  "id": "BO_EO",
+  "name": "Back Office Executives — North East & East"
+ },
+ {
+  "id": "BO_W",
+  "name": "Back Office Executives — other West locations"
+ },
+ {
+  "id": "BO_SO",
+  "name": "Back Office Executives — South"
+ },
+ {
+  "id": "BO_T",
+  "name": "Back Office Executives — Thane"
+ },
+ {
+  "id": "BID",
+  "name": "Bids, Tenders & Contracts"
+ },
+ {
+  "id": "BRD",
+  "name": "Board of Directors"
+ },
+ {
+  "id": "CE_NO",
+  "name": "Branch Collection Executives — North"
+ },
+ {
+  "id": "CE_EO",
+  "name": "Branch Collection Executives — North East & East"
+ },
+ {
+  "id": "CE_W",
+  "name": "Branch Collection Executives — other West locations"
+ },
+ {
+  "id": "CE_P",
+  "name": "Branch Collection Executives — Pune"
+ },
+ {
+  "id": "CE_SO",
+  "name": "Branch Collection Executives — South"
+ },
+ {
+  "id": "CE_T",
+  "name": "Branch Collection Executives — Thane"
+ },
+ {
+  "id": "BM_P",
+  "name": "Branch Manager — Pune"
+ },
+ {
+  "id": "BM_T",
+  "name": "Branch Manager — Thane"
+ },
+ {
+  "id": "BM_NO",
+  "name": "Branch Managers — North"
+ },
+ {
+  "id": "BM_EO",
+  "name": "Branch Managers — North East & East"
+ },
+ {
+  "id": "BM_W",
+  "name": "Branch Managers — other West locations"
+ },
+ {
+  "id": "BM_SO",
+  "name": "Branch Managers — South"
+ },
+ {
+  "id": "BD",
+  "name": "Business Development"
+ },
+ {
+  "id": "BDE_NO",
+  "name": "Business Development Executives — North"
+ },
+ {
+  "id": "BDE_EO",
+  "name": "Business Development Executives — North East & East"
+ },
+ {
+  "id": "BDE_W",
+  "name": "Business Development Executives — other West locations"
+ },
+ {
+  "id": "BDE_P",
+  "name": "Business Development Executives — Pune"
+ },
+ {
+  "id": "BDE_SO",
+  "name": "Business Development Executives — South"
+ },
+ {
+  "id": "BDE_T",
+  "name": "Business Development Executives — Thane"
+ },
+ {
+  "id": "BEX",
+  "name": "Business Excellence & PMO"
+ },
+ {
+  "id": "BZ_S",
+  "name": "Business Manager — South Zone"
+ },
+ {
+  "id": "CCE",
+  "name": "Central Collections Executives"
+ },
+ {
+  "id": "CS",
+  "name": "Company Secretary"
+ },
+ {
+  "id": "CCM",
+  "name": "Credit & Collections"
+ },
+ {
+  "id": "ENG",
+  "name": "Engineering & Platform"
+ },
+ {
+  "id": "FE",
+  "name": "Field Executives / Verifiers"
+ },
+ {
+  "id": "FE_NO",
+  "name": "Field Executives — North"
+ },
+ {
+  "id": "FE_EO",
+  "name": "Field Executives — North East & East"
+ },
+ {
+  "id": "FE_W",
+  "name": "Field Executives — other West locations"
+ },
+ {
+  "id": "FE_SO",
+  "name": "Field Executives — South"
+ },
+ {
+  "id": "FE_T",
+  "name": "Field Executives — Thane"
+ },
+ {
+  "id": "FEX",
+  "name": "Finance Executive"
+ },
+ {
+  "id": "FIN",
+  "name": "Finance Head"
+ },
+ {
+  "id": "PA_NO",
+  "name": "Franchise Partners — North"
+ },
+ {
+  "id": "PA_EO",
+  "name": "Franchise Partners — North East & East"
+ },
+ {
+  "id": "PA_SO",
+  "name": "Franchise Partners — South"
+ },
+ {
+  "id": "PA_W",
+  "name": "Franchise Partners — West"
+ },
+ {
+  "id": "HRH",
+  "name": "Head — Human Resources"
+ },
+ {
+  "id": "HRE",
+  "name": "HR Operations"
+ },
+ {
+  "id": "INT",
+  "name": "Interns — project based"
+ },
+ {
+  "id": "LND",
+  "name": "Learning & Development"
+ },
+ {
+  "id": "LEG",
+  "name": "Legal & Compliance"
+ },
+ {
+  "id": "MD",
+  "name": "Managing Director"
+ },
+ {
+  "id": "MIS",
+  "name": "MIS & Business Analytics"
+ },
+ {
+  "id": "OPS",
+  "name": "National Head — Risk Operations"
+ },
+ {
+  "id": "RM_N",
+  "name": "Regional Manager — North"
+ },
+ {
+  "id": "RM_E",
+  "name": "Regional Manager — North East & East"
+ },
+ {
+  "id": "RM_S",
+  "name": "Regional Manager — South"
+ },
+ {
+  "id": "RM_W",
+  "name": "Regional Manager — West"
+ },
+ {
+  "id": "RISK",
+  "name": "Risk & Business Continuity"
+ },
+ {
+  "id": "TL",
+  "name": "Team Leaders"
+ },
+ {
+  "id": "TL_NO",
+  "name": "Team Leaders — North"
+ },
+ {
+  "id": "TL_EO",
+  "name": "Team Leaders — North East & East"
+ },
+ {
+  "id": "TL_W",
+  "name": "Team Leaders — other West locations"
+ },
+ {
+  "id": "TL_SO",
+  "name": "Team Leaders — South"
+ },
+ {
+  "id": "TL_T",
+  "name": "Team Leaders — Thane"
+ },
+ {
+  "id": "TEC",
+  "name": "Technology"
+ }
+]

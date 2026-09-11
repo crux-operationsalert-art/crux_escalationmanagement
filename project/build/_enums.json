@@ -1,0 +1,113 @@
+{
+ "role_kind": [
+  "'ADMIN'",
+  "'MANAGER'",
+  "'LOCATION_HEAD'",
+  "'VIEWER'"
+ ],
+ "entity_status": [
+  "'ACTIVE'",
+  "'INACTIVE'"
+ ],
+ "geo_level": [
+  "'ZONE'",
+  "'STATE'",
+  "'CITY'"
+ ],
+ "scope_kind": [
+  "'CLIENT'",
+  "'CLIENT_ZONE'",
+  "'STATE'",
+  "'BRANCH'"
+ ],
+ "case_status": [
+  "'OPEN'",
+  "'IN_PROGRESS'",
+  "'RESOLVED'",
+  "'CLOSED'",
+  "'BLOCKED'"
+ ],
+ "outbox_state": [
+  "'QUEUED'",
+  "'SENT'",
+  "'DEFERRED'",
+  "'ABANDONED'"
+ ],
+ "job_result": [
+  "'OK'",
+  "'NOOP'",
+  "'FAILED'"
+ ],
+ "person_event_kind": [
+  "'NOTE'",
+  "'APPRECIATION'",
+  "'WARNING'",
+  "'PIP'",
+  "'ACTIVATION'"
+ ],
+ "penalty_state": [
+  "'PENDING'",
+  "'APPLIED'",
+  "'WAIVED'",
+  "'DISPUTED'",
+  "'REVERSED'"
+ ],
+ "approval_state": [
+  "'DRAFT'",
+  "'AWAITING_HR'",
+  "'AWAITING_ADMIN'",
+  "'ACTIVE'",
+  "'REJECTED'"
+ ],
+ "esc_party": [
+  "'RAISER'",
+  "'RESPONDENT'",
+  "'MANAGER'",
+  "'DESK'",
+  "'HR'",
+  "'ADMIN'",
+  "'INFORMED'"
+ ],
+ "raisable_kind": [
+  "'ESCALATION'",
+  "'WARNING'",
+  "'APPRECIATION'",
+  "'ASSISTANCE'"
+ ],
+ "claim_stage": [
+  "'DRAFT'",
+  "'OPS_APPROVAL'",
+  "'HR_APPROVAL'",
+  "'ACCOUNTS'",
+  "'DISPUTED'",
+  "'PAID'",
+  "'REJECTED'"
+ ],
+ "idea_stage": [
+  "'SUBMITTED'",
+  "'IN_REVIEW'",
+  "'ACCEPTED'",
+  "'INITIATED'",
+  "'ON_HOLD'",
+  "'REJECTED'",
+  "'DELIVERED'"
+ ],
+ "note_class": [
+  "'UNCLASSIFIED'",
+  "'ATTRIBUTE'",
+  "'FYI'"
+ ],
+ "pms_cycle_state": [
+  "'PENDING'",
+  "'SELF_DONE'",
+  "'AWAITING_REVIEW'",
+  "'SCORED'",
+  "'DISPUTED'",
+  "'CLOSED'"
+ ],
+ "rate_scope": [
+  "'exact'",
+  "'group'",
+  "'client'"
+ ]
+}

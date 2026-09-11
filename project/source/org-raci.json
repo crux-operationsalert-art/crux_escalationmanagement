@@ -1,0 +1,5778 @@
+{
+ "chairs": [
+  {
+   "id": "ACC",
+   "name": "Accounts"
+  },
+  {
+   "id": "ACE",
+   "name": "Accounts Executives"
+  },
+  {
+   "id": "ADM",
+   "name": "Administration & Facilities"
+  },
+  {
+   "id": "GRC",
+   "name": "Assurance, Risk & Compliance"
+  },
+  {
+   "id": "AVP",
+   "name": "AVP — Operations & Growth"
+  },
+  {
+   "id": "BO",
+   "name": "Back Office / Processing Executives"
+  },
+  {
+   "id": "BO_NO",
+   "name": "Back Office Executives — North"
+  },
+  {
+   "id": "BO_EO",
+   "name": "Back Office Executives — North East & East"
+  },
+  {
+   "id": "BO_W",
+   "name": "Back Office Executives — other West locations"
+  },
+  {
+   "id": "BO_SO",
+   "name": "Back Office Executives — South"
+  },
+  {
+   "id": "BO_T",
+   "name": "Back Office Executives — Thane"
+  },
+  {
+   "id": "BID",
+   "name": "Bids, Tenders & Contracts"
+  },
+  {
+   "id": "BRD",
+   "name": "Board of Directors"
+  },
+  {
+   "id": "CE_NO",
+   "name": "Branch Collection Executives — North"
+  },
+  {
+   "id": "CE_EO",
+   "name": "Branch Collection Executives — North East & East"
+  },
+  {
+   "id": "CE_W",
+   "name": "Branch Collection Executives — other West locations"
+  },
+  {
+   "id": "CE_P",
+   "name": "Branch Collection Executives — Pune"
+  },
+  {
+   "id": "CE_SO",
+   "name": "Branch Collection Executives — South"
+  },
+  {
+   "id": "CE_T",
+   "name": "Branch Collection Executives — Thane"
+  },
+  {
+   "id": "BM_P",
+   "name": "Branch Manager — Pune"
+  },
+  {
+   "id": "BM_T",
+   "name": "Branch Manager — Thane"
+  },
+  {
+   "id": "BM_NO",
+   "name": "Branch Managers — North"
+  },
+  {
+   "id": "BM_EO",
+   "name": "Branch Managers — North East & East"
+  },
+  {
+   "id": "BM_W",
+   "name": "Branch Managers — other West locations"
+  },
+  {
+   "id": "BM_SO",
+   "name": "Branch Managers — South"
+  },
+  {
+   "id": "BD",
+   "name": "Business Development"
+  },
+  {
+   "id": "BDE_NO",
+   "name": "Business Development Executives — North"
+  },
+  {
+   "id": "BDE_EO",
+   "name": "Business Development Executives — North East & East"
+  },
+  {
+   "id": "BDE_W",
+   "name": "Business Development Executives — other West locations"
+  },
+  {
+   "id": "BDE_P",
+   "name": "Business Development Executives — Pune"
+  },
+  {
+   "id": "BDE_SO",
+   "name": "Business Development Executives — South"
+  },
+  {
+   "id": "BDE_T",
+   "name": "Business Development Executives — Thane"
+  },
+  {
+   "id": "BEX",
+   "name": "Business Excellence & PMO"
+  },
+  {
+   "id": "BZ_S",
+   "name": "Business Manager — South Zone"
+  },
+  {
+   "id": "CCE",
+   "name": "Central Collections Executives"
+  },
+  {
+   "id": "CS",
+   "name": "Company Secretary"
+  },
+  {
+   "id": "CCM",
+   "name": "Credit & Collections"
+  },
+  {
+   "id": "ENG",
+   "name": "Engineering & Platform"
+  },
+  {
+   "id": "FE",
+   "name": "Field Executives / Verifiers"
+  },
+  {
+   "id": "FE_NO",
+   "name": "Field Executives — North"
+  },
+  {
+   "id": "FE_EO",
+   "name": "Field Executives — North East & East"
+  },
+  {
+   "id": "FE_W",
+   "name": "Field Executives — other West locations"
+  },
+  {
+   "id": "FE_SO",
+   "name": "Field Executives — South"
+  },
+  {
+   "id": "FE_T",
+   "name": "Field Executives — Thane"
+  },
+  {
+   "id": "FEX",
+   "name": "Finance Executive"
+  },
+  {
+   "id": "FIN",
+   "name": "Finance Head"
+  },
+  {
+   "id": "PA_NO",
+   "name": "Franchise Partners — North"
+  },
+  {
+   "id": "PA_EO",
+   "name": "Franchise Partners — North East & East"
+  },
+  {
+   "id": "PA_SO",
+   "name": "Franchise Partners — South"
+  },
+  {
+   "id": "PA_W",
+   "name": "Franchise Partners — West"
+  },
+  {
+   "id": "HRH",
+   "name": "Head — Human Resources"
+  },
+  {
+   "id": "HRE",
+   "name": "HR Operations"
+  },
+  {
+   "id": "INT",
+   "name": "Interns — project based"
+  },
+  {
+   "id": "LND",
+   "name": "Learning & Development"
+  },
+  {
+   "id": "LEG",
+   "name": "Legal & Compliance"
+  },
+  {
+   "id": "MD",
+   "name": "Managing Director"
+  },
+  {
+   "id": "MIS",
+   "name": "MIS & Business Analytics"
+  },
+  {
+   "id": "OPS",
+   "name": "National Head — Risk Operations"
+  },
+  {
+   "id": "RM_N",
+   "name": "Regional Manager — North"
+  },
+  {
+   "id": "RM_E",
+   "name": "Regional Manager — North East & East"
+  },
+  {
+   "id": "RM_S",
+   "name": "Regional Manager — South"
+  },
+  {
+   "id": "RM_W",
+   "name": "Regional Manager — West"
+  },
+  {
+   "id": "RISK",
+   "name": "Risk & Business Continuity"
+  },
+  {
+   "id": "TL",
+   "name": "Team Leaders"
+  },
+  {
+   "id": "TL_NO",
+   "name": "Team Leaders — North"
+  },
+  {
+   "id": "TL_EO",
+   "name": "Team Leaders — North East & East"
+  },
+  {
+   "id": "TL_W",
+   "name": "Team Leaders — other West locations"
+  },
+  {
+   "id": "TL_SO",
+   "name": "Team Leaders — South"
+  },
+  {
+   "id": "TL_T",
+   "name": "Team Leaders — Thane"
+  },
+  {
+   "id": "TEC",
+   "name": "Technology"
+  }
+ ],
+ "functions": [
+  {
+   "function": "Leadership",
+   "count": "Board, MD and the six chairs reporting to him",
+   "processes": [
+    {
+     "ref": "R1",
+     "process": "Company revenue target and achievement",
+     "owns": "MD",
+     "does": [
+      "BD",
+      "OPS",
+      "AVP"
+     ],
+     "advises": [
+      "FIN",
+      "BID"
+     ],
+     "informed": [
+      "BRD",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Regional revenue roll-up",
+       "from": "AVP"
+      },
+      {
+       "what": "Pipeline and conversion forecast",
+       "from": "BD"
+      },
+      {
+       "what": "Tender award forecast",
+       "from": "BID"
+      },
+      {
+       "what": "Billed revenue actuals",
+       "from": "ACC"
+      }
+     ]
+    },
+    {
+     "ref": "R10",
+     "process": "Market and competitor intelligence",
+     "owns": "BD",
+     "does": [
+      "BD"
+     ],
+     "advises": [
+      "MD",
+      "BEX"
+     ],
+     "informed": [
+      "OPS",
+      "FIN"
+     ],
+     "inputs": [
+      {
+       "what": "Client feedback and lost-bid reasons",
+       "from": "BID"
+      },
+      {
+       "what": "Rate benchmarks",
+       "from": "ACC"
+      }
+     ]
+    },
+    {
+     "ref": "R11",
+     "process": "Key account relationships across multiple regions",
+     "owns": "BD",
+     "does": [
+      "RM_W",
+      "RM_E"
+     ],
+     "advises": [
+      "MD",
+      "OPS"
+     ],
+     "informed": [
+      "FIN",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Service performance by client",
+       "from": "MIS"
+      },
+      {
+       "what": "Quality score by client",
+       "from": "GRC"
+      }
+     ]
+    },
+    {
+     "ref": "R12EO",
+     "process": "Branch business development — North East & East",
+     "owns": "BDE_EO",
+     "does": [
+      "BDE_EO"
+     ],
+     "advises": [
+      "BM_EO",
+      "BD"
+     ],
+     "informed": [
+      "MD",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Approved pricing band",
+       "from": "MD"
+      },
+      {
+       "what": "Local client list",
+       "from": "BD"
+      }
+     ]
+    },
+    {
+     "ref": "R12NO",
+     "process": "Branch business development — North",
+     "owns": "BDE_NO",
+     "does": [
+      "BDE_NO"
+     ],
+     "advises": [
+      "BM_NO",
+      "BD"
+     ],
+     "informed": [
+      "MD",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Approved pricing band",
+       "from": "MD"
+      },
+      {
+       "what": "Local client list",
+       "from": "BD"
+      }
+     ]
+    },
+    {
+     "ref": "R12P",
+     "process": "Branch business development — Pune",
+     "owns": "BDE_P",
+     "does": [
+      "BDE_P"
+     ],
+     "advises": [
+      "BM_P",
+      "BD"
+     ],
+     "informed": [
+      "MD",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Approved pricing band",
+       "from": "MD"
+      },
+      {
+       "what": "Local client list",
+       "from": "BD"
+      }
+     ]
+    },
+    {
+     "ref": "R12SO",
+     "process": "Branch business development — South",
+     "owns": "BDE_SO",
+     "does": [
+      "BDE_SO"
+     ],
+     "advises": [
+      "BM_SO",
+      "BD"
+     ],
+     "informed": [
+      "MD",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Approved pricing band",
+       "from": "MD"
+      },
+      {
+       "what": "Local client list",
+       "from": "BD"
+      }
+     ]
+    },
+    {
+     "ref": "R12T",
+     "process": "Branch business development — Thane",
+     "owns": "BDE_T",
+     "does": [
+      "BDE_T"
+     ],
+     "advises": [
+      "BM_T",
+      "BD"
+     ],
+     "informed": [
+      "MD",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Approved pricing band",
+       "from": "MD"
+      },
+      {
+       "what": "Local client list",
+       "from": "BD"
+      }
+     ]
+    },
+    {
+     "ref": "R12W",
+     "process": "Branch business development — other West locations",
+     "owns": "BDE_W",
+     "does": [
+      "BDE_W"
+     ],
+     "advises": [
+      "BM_W",
+      "BD"
+     ],
+     "informed": [
+      "MD",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Approved pricing band",
+       "from": "MD"
+      },
+      {
+       "what": "Local client list",
+       "from": "BD"
+      }
+     ]
+    },
+    {
+     "ref": "R13",
+     "process": "Rate revision and price escalation with existing clients",
+     "owns": "MD",
+     "does": [
+      "BD",
+      "BID"
+     ],
+     "advises": [
+      "FIN",
+      "OPS"
+     ],
+     "informed": [
+      "BRD",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Cost per case trend",
+       "from": "FIN"
+      },
+      {
+       "what": "Contract escalation clause",
+       "from": "LEG"
+      }
+     ]
+    },
+    {
+     "ref": "R14",
+     "process": "Product-wise pricing, margin and profitability",
+     "owns": "FIN",
+     "does": [
+      "ACC",
+      "MIS"
+     ],
+     "advises": [
+      "BD",
+      "OPS",
+      "BEX"
+     ],
+     "informed": [
+      "MD",
+      "BRD"
+     ],
+     "inputs": [
+      {
+       "what": "Cost per case by product",
+       "from": "OPS"
+      },
+      {
+       "what": "Revenue by product",
+       "from": "ACC"
+      }
+     ]
+    },
+    {
+     "ref": "R15EO",
+     "process": "Franchise performance — North East & East",
+     "owns": "PA_EO",
+     "does": [
+      "PA_EO"
+     ],
+     "advises": [
+      "RM_E",
+      "CCM"
+     ],
+     "informed": [
+      "MD",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Territory plan",
+       "from": "RM_E"
+      },
+      {
+       "what": "Billing statement",
+       "from": "ACC"
+      },
+      {
+       "what": "Quality findings",
+       "from": "GRC"
+      }
+     ]
+    },
+    {
+     "ref": "R15NO",
+     "process": "Franchise performance — North",
+     "owns": "PA_NO",
+     "does": [
+      "PA_NO"
+     ],
+     "advises": [
+      "RM_N",
+      "CCM"
+     ],
+     "informed": [
+      "MD",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Territory plan",
+       "from": "RM_N"
+      },
+      {
+       "what": "Billing statement",
+       "from": "ACC"
+      },
+      {
+       "what": "Quality findings",
+       "from": "GRC"
+      }
+     ]
+    },
+    {
+     "ref": "R15SO",
+     "process": "Franchise performance — South",
+     "owns": "PA_SO",
+     "does": [
+      "PA_SO"
+     ],
+     "advises": [
+      "RM_S",
+      "CCM"
+     ],
+     "informed": [
+      "MD",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Territory plan",
+       "from": "RM_S"
+      },
+      {
+       "what": "Billing statement",
+       "from": "ACC"
+      },
+      {
+       "what": "Quality findings",
+       "from": "GRC"
+      }
+     ]
+    },
+    {
+     "ref": "R15W",
+     "process": "Franchise performance — West",
+     "owns": "PA_W",
+     "does": [
+      "PA_W"
+     ],
+     "advises": [
+      "RM_W",
+      "CCM"
+     ],
+     "informed": [
+      "MD",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Territory plan",
+       "from": "RM_W"
+      },
+      {
+       "what": "Billing statement",
+       "from": "ACC"
+      },
+      {
+       "what": "Quality findings",
+       "from": "GRC"
+      }
+     ]
+    },
+    {
+     "ref": "R2",
+     "process": "Regional revenue target and achievement — West",
+     "owns": "RM_W",
+     "does": [
+      "BM_P",
+      "BM_T"
+     ],
+     "advises": [
+      "AVP",
+      "BD"
+     ],
+     "informed": [
+      "OPS",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Branch revenue actuals",
+       "from": "BM_P"
+      },
+      {
+       "what": "Client volume forecast",
+       "from": "BD"
+      },
+      {
+       "what": "Billing data by branch",
+       "from": "ACC"
+      }
+     ]
+    },
+    {
+     "ref": "R3",
+     "process": "Regional revenue target and achievement — North East & East",
+     "owns": "RM_E",
+     "does": [
+      "BM_EO"
+     ],
+     "advises": [
+      "AVP",
+      "BD"
+     ],
+     "informed": [
+      "OPS",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Branch revenue actuals",
+       "from": "BM_EO"
+      },
+      {
+       "what": "Billing data by branch",
+       "from": "ACC"
+      }
+     ]
+    },
+    {
+     "ref": "R4",
+     "process": "Regional revenue target and achievement — North",
+     "owns": "RM_N",
+     "does": [
+      "BM_NO"
+     ],
+     "advises": [
+      "AVP",
+      "BD"
+     ],
+     "informed": [
+      "OPS",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Branch revenue actuals",
+       "from": "BM_NO"
+      },
+      {
+       "what": "Billing data by branch",
+       "from": "ACC"
+      }
+     ]
+    },
+    {
+     "ref": "R5",
+     "process": "Regional revenue target and achievement — South",
+     "owns": "RM_S",
+     "does": [
+      "BZ_S"
+     ],
+     "advises": [
+      "AVP",
+      "BD"
+     ],
+     "informed": [
+      "OPS",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Zone revenue actuals",
+       "from": "BZ_S"
+      },
+      {
+       "what": "Billing data by zone",
+       "from": "ACC"
+      }
+     ]
+    },
+    {
+     "ref": "R6",
+     "process": "Branch revenue target and account activation — Pune",
+     "owns": "BM_P",
+     "does": [
+      "TL",
+      "FE"
+     ],
+     "advises": [
+      "RM_W",
+      "BD"
+     ],
+     "informed": [
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Case volume by client",
+       "from": "TL"
+      },
+      {
+       "what": "Client billing statement",
+       "from": "ACC"
+      },
+      {
+       "what": "Local pipeline",
+       "from": "BD"
+      }
+     ]
+    },
+    {
+     "ref": "R7",
+     "process": "Branch revenue target and account activation — Thane",
+     "owns": "BM_T",
+     "does": [
+      "TL"
+     ],
+     "advises": [
+      "RM_W",
+      "BD"
+     ],
+     "informed": [
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Case volume by client",
+       "from": "TL"
+      },
+      {
+       "what": "Client billing statement",
+       "from": "ACC"
+      }
+     ]
+    },
+    {
+     "ref": "R8",
+     "process": "Zone revenue and account activation — South",
+     "owns": "BZ_S",
+     "does": [
+      "BM_SO"
+     ],
+     "advises": [
+      "RM_S",
+      "BD"
+     ],
+     "informed": [
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Branch revenue actuals",
+       "from": "BM_SO"
+      },
+      {
+       "what": "Billing statement",
+       "from": "ACC"
+      }
+     ]
+    },
+    {
+     "ref": "R9",
+     "process": "Partner channel revenue",
+     "owns": "PA_W",
+     "does": [
+      "PA_W"
+     ],
+     "advises": [
+      "BM_P",
+      "BD",
+      "RM_W"
+     ],
+     "informed": [
+      "MD",
+      "ACC",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Partner-attributed billing",
+       "from": "ACC"
+      },
+      {
+       "what": "Territory plan",
+       "from": "BD"
+      },
+      {
+       "what": "Quality gate result",
+       "from": "GRC"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "function": "Profit & loss",
+   "count": "12 processes",
+   "processes": [
+    {
+     "ref": "L1",
+     "process": "Company P&L and EBITDA",
+     "owns": "MD",
+     "does": [
+      "FIN"
+     ],
+     "advises": [
+      "OPS",
+      "BRD"
+     ],
+     "informed": [
+      "BRD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Consolidated P&L",
+       "from": "FIN"
+      },
+      {
+       "what": "Regional P&L pack",
+       "from": "AVP"
+      },
+      {
+       "what": "Cost per case",
+       "from": "OPS"
+      }
+     ]
+    },
+    {
+     "ref": "L2",
+     "process": "Regional P&L — West",
+     "owns": "RM_W",
+     "does": [
+      "BM_P",
+      "BM_T"
+     ],
+     "advises": [
+      "FIN",
+      "AVP"
+     ],
+     "informed": [
+      "OPS",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Branch P&L statements",
+       "from": "BM_P"
+      },
+      {
+       "what": "Regional cost allocation",
+       "from": "ACC"
+      },
+      {
+       "what": "Collection status",
+       "from": "CCM"
+      }
+     ]
+    },
+    {
+     "ref": "L3",
+     "process": "Regional P&L — North East & East",
+     "owns": "RM_E",
+     "does": [
+      "BM_EO"
+     ],
+     "advises": [
+      "FIN",
+      "AVP"
+     ],
+     "informed": [
+      "OPS",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Branch P&L statements",
+       "from": "BM_EO"
+      },
+      {
+       "what": "Regional cost allocation",
+       "from": "ACC"
+      }
+     ]
+    },
+    {
+     "ref": "L4",
+     "process": "Regional P&L — North",
+     "owns": "RM_N",
+     "does": [
+      "BM_NO"
+     ],
+     "advises": [
+      "FIN",
+      "AVP"
+     ],
+     "informed": [
+      "OPS",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Branch P&L statements",
+       "from": "BM_NO"
+      },
+      {
+       "what": "Regional cost allocation",
+       "from": "ACC"
+      }
+     ]
+    },
+    {
+     "ref": "L5",
+     "process": "Regional P&L — South",
+     "owns": "RM_S",
+     "does": [
+      "BZ_S"
+     ],
+     "advises": [
+      "FIN",
+      "AVP"
+     ],
+     "informed": [
+      "OPS",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Zone P&L statement",
+       "from": "BZ_S"
+      },
+      {
+       "what": "Regional cost allocation",
+       "from": "ACC"
+      }
+     ]
+    },
+    {
+     "ref": "L6",
+     "process": "Branch P&L — Pune",
+     "owns": "BM_P",
+     "does": [
+      "TL"
+     ],
+     "advises": [
+      "RM_W",
+      "ACC"
+     ],
+     "informed": [
+      "FIN",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Branch revenue statement",
+       "from": "ACC"
+      },
+      {
+       "what": "Branch expense ledger",
+       "from": "ACC"
+      },
+      {
+       "what": "Headcount cost",
+       "from": "HRE"
+      }
+     ]
+    },
+    {
+     "ref": "L7",
+     "process": "Branch P&L — Thane",
+     "owns": "BM_T",
+     "does": [
+      "TL"
+     ],
+     "advises": [
+      "RM_W",
+      "ACC"
+     ],
+     "informed": [
+      "FIN",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Branch revenue statement",
+       "from": "ACC"
+      },
+      {
+       "what": "Branch expense ledger",
+       "from": "ACC"
+      }
+     ]
+    },
+    {
+     "ref": "L8",
+     "process": "Branch P&L — locations not yet registered",
+     "owns": "BM_EO",
+     "does": [
+      "TL"
+     ],
+     "advises": [
+      "RM_E",
+      "ACC"
+     ],
+     "informed": [
+      "FIN",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Branch revenue and expense statement",
+       "from": "ACC"
+      }
+     ]
+    },
+    {
+     "ref": "L9EO",
+     "process": "Branch P&L — North East & East",
+     "owns": "BM_EO",
+     "does": [
+      "TL_EO"
+     ],
+     "advises": [
+      "RM_E",
+      "CCM"
+     ],
+     "informed": [
+      "FIN",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Branch revenue and expense statement",
+       "from": "ACC"
+      },
+      {
+       "what": "Collection status",
+       "from": "CCM"
+      }
+     ]
+    },
+    {
+     "ref": "L9NO",
+     "process": "Branch P&L — North",
+     "owns": "BM_NO",
+     "does": [
+      "TL_NO"
+     ],
+     "advises": [
+      "RM_N",
+      "CCM"
+     ],
+     "informed": [
+      "FIN",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Branch revenue and expense statement",
+       "from": "ACC"
+      },
+      {
+       "what": "Collection status",
+       "from": "CCM"
+      }
+     ]
+    },
+    {
+     "ref": "L9SO",
+     "process": "Branch P&L — South",
+     "owns": "BM_SO",
+     "does": [
+      "TL_SO"
+     ],
+     "advises": [
+      "BZ_S",
+      "CCM"
+     ],
+     "informed": [
+      "FIN",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Branch revenue and expense statement",
+       "from": "ACC"
+      },
+      {
+       "what": "Collection status",
+       "from": "CCM"
+      }
+     ]
+    },
+    {
+     "ref": "L9W",
+     "process": "Branch P&L — other West locations",
+     "owns": "BM_W",
+     "does": [
+      "TL_W"
+     ],
+     "advises": [
+      "RM_W",
+      "CCM"
+     ],
+     "informed": [
+      "FIN",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Branch revenue and expense statement",
+       "from": "ACC"
+      },
+      {
+       "what": "Collection status",
+       "from": "CCM"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "function": "Cost & expense",
+   "count": "11 processes",
+   "processes": [
+    {
+     "ref": "X1",
+     "process": "Company cost base and cost per case",
+     "owns": "FIN",
+     "does": [
+      "ACC",
+      "OPS"
+     ],
+     "advises": [
+      "AVP",
+      "BEX"
+     ],
+     "informed": [
+      "MD",
+      "BRD"
+     ],
+     "inputs": [
+      {
+       "what": "Cost per case model",
+       "from": "OPS"
+      },
+      {
+       "what": "Function-wise spend",
+       "from": "ACC"
+      },
+      {
+       "what": "Headcount cost",
+       "from": "HRE"
+      },
+      {
+       "what": "Technology and cloud spend",
+       "from": "TEC"
+      }
+     ]
+    },
+    {
+     "ref": "X10",
+     "process": "Banking relationship and working capital facilities",
+     "owns": "FIN",
+     "does": [
+      "ACC"
+     ],
+     "advises": [
+      "MD",
+      "BRD"
+     ],
+     "informed": [
+      "GRC",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Cash flow forecast",
+       "from": "FIN"
+      },
+      {
+       "what": "Facility utilisation",
+       "from": "ACC"
+      }
+     ]
+    },
+    {
+     "ref": "X11",
+     "process": "Statutory dues calendar and payment discipline",
+     "owns": "ACC",
+     "does": [
+      "ACE"
+     ],
+     "advises": [
+      "CS",
+      "LEG"
+     ],
+     "informed": [
+      "FIN",
+      "GRC",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Filing calendar",
+       "from": "CS"
+      },
+      {
+       "what": "Liability computation",
+       "from": "ACC"
+      }
+     ]
+    },
+    {
+     "ref": "X2",
+     "process": "Branch expense control and budget variance — Pune",
+     "owns": "BM_P",
+     "does": [
+      "TL"
+     ],
+     "advises": [
+      "ACC",
+      "RM_W"
+     ],
+     "informed": [
+      "FIN",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Monthly expense ledger",
+       "from": "ACC"
+      },
+      {
+       "what": "Approved branch budget",
+       "from": "FIN"
+      }
+     ]
+    },
+    {
+     "ref": "X3",
+     "process": "Field and agency cost per case",
+     "owns": "OPS",
+     "does": [
+      "RM_W",
+      "RM_E",
+      "BZ_S"
+     ],
+     "advises": [
+      "FIN",
+      "ACC"
+     ],
+     "informed": [
+      "MD",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Agency invoices and rates",
+       "from": "ACC"
+      },
+      {
+       "what": "Case volume by product",
+       "from": "MIS"
+      },
+      {
+       "what": "Field productivity",
+       "from": "BM_P"
+      }
+     ]
+    },
+    {
+     "ref": "X4",
+     "process": "Administration, facilities and travel spend",
+     "owns": "ADM",
+     "does": [
+      "ADM"
+     ],
+     "advises": [
+      "ACC",
+      "FIN"
+     ],
+     "informed": [
+      "GRC",
+      "OPS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Approved admin budget",
+       "from": "FIN"
+      },
+      {
+       "what": "Expense claims",
+       "from": "ACC"
+      },
+      {
+       "what": "New location requirement",
+       "from": "BEX"
+      }
+     ]
+    },
+    {
+     "ref": "X5",
+     "process": "Technology and cloud cost governance",
+     "owns": "TEC",
+     "does": [
+      "ENG"
+     ],
+     "advises": [
+      "FIN",
+      "BEX"
+     ],
+     "informed": [
+      "MD"
+     ],
+     "inputs": [
+      {
+       "what": "Approved technology budget",
+       "from": "FIN"
+      },
+      {
+       "what": "Vendor invoices",
+       "from": "ACC"
+      }
+     ]
+    },
+    {
+     "ref": "X6",
+     "process": "Payroll cost and headcount budget",
+     "owns": "GRC",
+     "does": [
+      "HRE"
+     ],
+     "advises": [
+      "FIN",
+      "ACC"
+     ],
+     "informed": [
+      "MD",
+      "OPS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Approved manpower plan",
+       "from": "MD"
+      },
+      {
+       "what": "Attendance and leave data",
+       "from": "HRE"
+      },
+      {
+       "what": "Payroll disbursement record",
+       "from": "ACC"
+      }
+     ]
+    },
+    {
+     "ref": "X7",
+     "process": "Vendor payment processing and control",
+     "owns": "ACC",
+     "does": [
+      "ACE"
+     ],
+     "advises": [
+      "ADM",
+      "OPS",
+      "BEX"
+     ],
+     "informed": [
+      "FIN",
+      "GRC"
+     ],
+     "inputs": [
+      {
+       "what": "Approved vendor invoices",
+       "from": "ADM"
+      },
+      {
+       "what": "Empanelment and rate card",
+       "from": "OPS"
+      },
+      {
+       "what": "Payment authorisation",
+       "from": "FIN"
+      }
+     ]
+    },
+    {
+     "ref": "X8",
+     "process": "Procurement and vendor rate negotiation",
+     "owns": "ACC",
+     "does": [
+      "ADM"
+     ],
+     "advises": [
+      "OPS",
+      "FIN"
+     ],
+     "informed": [
+      "GRC",
+      "MD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Requirement and specification",
+       "from": "ADM"
+      },
+      {
+       "what": "Approved budget",
+       "from": "FIN"
+      }
+     ]
+    },
+    {
+     "ref": "X9",
+     "process": "Insurance cover and claims",
+     "owns": "RISK",
+     "does": [
+      "ADM"
+     ],
+     "advises": [
+      "FIN",
+      "LEG"
+     ],
+     "informed": [
+      "MD",
+      "BRD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Asset register",
+       "from": "ADM"
+      },
+      {
+       "what": "Exposure assessment",
+       "from": "RISK"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "function": "Cash & collections",
+   "count": "17 processes",
+   "processes": [
+    {
+     "ref": "F1",
+     "process": "Client invoicing and billing accuracy",
+     "owns": "ACC",
+     "does": [
+      "ACE"
+     ],
+     "advises": [
+      "OPS",
+      "BM_P"
+     ],
+     "informed": [
+      "FIN",
+      "CCM",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Completed case data",
+       "from": "TL"
+      },
+      {
+       "what": "Contract rate card",
+       "from": "BID"
+      },
+      {
+       "what": "Client PO or work order",
+       "from": "BD"
+      }
+     ]
+    },
+    {
+     "ref": "F10EO",
+     "process": "Local certification and invoice approval — North East & East",
+     "owns": "CE_EO",
+     "does": [
+      "CE_EO"
+     ],
+     "advises": [
+      "BM_EO",
+      "CCM"
+     ],
+     "informed": [
+      "FIN",
+      "ACC",
+      "BEX",
+      "CCE"
+     ],
+     "inputs": [
+      {
+       "what": "Invoice and ageing data",
+       "from": "ACC"
+      },
+      {
+       "what": "Client contact list",
+       "from": "BM_EO"
+      }
+     ]
+    },
+    {
+     "ref": "F10NO",
+     "process": "Local certification and invoice approval — North",
+     "owns": "CE_NO",
+     "does": [
+      "CE_NO"
+     ],
+     "advises": [
+      "BM_NO",
+      "CCM"
+     ],
+     "informed": [
+      "FIN",
+      "ACC",
+      "BEX",
+      "CCE"
+     ],
+     "inputs": [
+      {
+       "what": "Invoice and ageing data",
+       "from": "ACC"
+      },
+      {
+       "what": "Client contact list",
+       "from": "BM_NO"
+      }
+     ]
+    },
+    {
+     "ref": "F10P",
+     "process": "Local certification and invoice approval — Pune",
+     "owns": "CE_P",
+     "does": [
+      "CE_P"
+     ],
+     "advises": [
+      "BM_P",
+      "CCM"
+     ],
+     "informed": [
+      "FIN",
+      "ACC",
+      "BEX",
+      "CCE"
+     ],
+     "inputs": [
+      {
+       "what": "Invoice and ageing data",
+       "from": "ACC"
+      },
+      {
+       "what": "Client contact list",
+       "from": "BM_P"
+      }
+     ]
+    },
+    {
+     "ref": "F10SO",
+     "process": "Local certification and invoice approval — South",
+     "owns": "CE_SO",
+     "does": [
+      "CE_SO"
+     ],
+     "advises": [
+      "BM_SO",
+      "CCM"
+     ],
+     "informed": [
+      "FIN",
+      "ACC",
+      "BEX",
+      "CCE"
+     ],
+     "inputs": [
+      {
+       "what": "Invoice and ageing data",
+       "from": "ACC"
+      },
+      {
+       "what": "Client contact list",
+       "from": "BM_SO"
+      }
+     ]
+    },
+    {
+     "ref": "F10T",
+     "process": "Local certification and invoice approval — Thane",
+     "owns": "CE_T",
+     "does": [
+      "CE_T"
+     ],
+     "advises": [
+      "BM_T",
+      "CCM"
+     ],
+     "informed": [
+      "FIN",
+      "ACC",
+      "BEX",
+      "CCE"
+     ],
+     "inputs": [
+      {
+       "what": "Invoice and ageing data",
+       "from": "ACC"
+      },
+      {
+       "what": "Client contact list",
+       "from": "BM_T"
+      }
+     ]
+    },
+    {
+     "ref": "F10W",
+     "process": "Local certification and invoice approval — other West locations",
+     "owns": "CE_W",
+     "does": [
+      "CE_W"
+     ],
+     "advises": [
+      "BM_W",
+      "CCM"
+     ],
+     "informed": [
+      "FIN",
+      "ACC",
+      "BEX",
+      "CCE"
+     ],
+     "inputs": [
+      {
+       "what": "Invoice and ageing data",
+       "from": "ACC"
+      },
+      {
+       "what": "Client contact list",
+       "from": "BM_W"
+      }
+     ]
+    },
+    {
+     "ref": "F11",
+     "process": "Bad debt write-off approval and recovery escalation",
+     "owns": "FIN",
+     "does": [
+      "CCM",
+      "LEG"
+     ],
+     "advises": [
+      "ACC",
+      "MD"
+     ],
+     "informed": [
+      "BRD",
+      "GRC",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Ageing beyond recovery policy",
+       "from": "CCM"
+      },
+      {
+       "what": "Legal opinion",
+       "from": "LEG"
+      }
+     ]
+    },
+    {
+     "ref": "F2",
+     "process": "AR ledger integrity and receipt allocation",
+     "owns": "ACC",
+     "does": [
+      "CCE"
+     ],
+     "advises": [
+      "CCM"
+     ],
+     "informed": [
+      "FIN",
+      "GRC",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Bank receipt advice",
+       "from": "ACC"
+      },
+      {
+       "what": "Client remittance detail",
+       "from": "CCE"
+      }
+     ]
+    },
+    {
+     "ref": "F3",
+     "process": "Customer credit limits and service suspension",
+     "owns": "FIN",
+     "does": [
+      "CCM"
+     ],
+     "advises": [
+      "OPS",
+      "BD"
+     ],
+     "informed": [
+      "MD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Ageing by client",
+       "from": "CCM"
+      },
+      {
+       "what": "Client credit standing",
+       "from": "BD"
+      },
+      {
+       "what": "Service impact assessment",
+       "from": "OPS"
+      }
+     ]
+    },
+    {
+     "ref": "F4",
+     "process": "Collection target achievement",
+     "owns": "OPS",
+     "does": [
+      "CCM",
+      "RM_W",
+      "RM_E",
+      "RM_N",
+      "RM_S",
+      "BM_P"
+     ],
+     "advises": [
+      "FIN",
+      "AVP"
+     ],
+     "informed": [
+      "MD",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Collection target by region",
+       "from": "FIN"
+      },
+      {
+       "what": "Ageing report by bucket",
+       "from": "ACC"
+      },
+      {
+       "what": "Branch collection status",
+       "from": "BM_P"
+      },
+      {
+       "what": "Dispute log",
+       "from": "CCM"
+      }
+     ]
+    },
+    {
+     "ref": "F4b",
+     "process": "DSO measurement, credit policy compliance and independent reporting",
+     "owns": "FIN",
+     "does": [
+      "ACC",
+      "MIS"
+     ],
+     "advises": [
+      "OPS",
+      "CCM",
+      "BEX"
+     ],
+     "informed": [
+      "MD",
+      "BRD"
+     ],
+     "inputs": [
+      {
+       "what": "AR ledger and ageing",
+       "from": "ACC"
+      },
+      {
+       "what": "Collection actuals",
+       "from": "CCM"
+      },
+      {
+       "what": "Billing for the period",
+       "from": "ACC"
+      }
+     ]
+    },
+    {
+     "ref": "F5",
+     "process": "Collection method, portfolio allocation and two-stage tracking",
+     "owns": "CCM",
+     "does": [
+      "CCE",
+      "CE_P"
+     ],
+     "advises": [
+      "FIN",
+      "BM_P"
+     ],
+     "informed": [
+      "FIN",
+      "ACC",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Collection target by region",
+       "from": "FIN"
+      },
+      {
+       "what": "Ageing by bucket and stage",
+       "from": "ACC"
+      },
+      {
+       "what": "Dispute log",
+       "from": "CCM"
+      }
+     ]
+    },
+    {
+     "ref": "F5b",
+     "process": "Central collection — payment release against assigned client portfolio",
+     "owns": "CCE",
+     "does": [
+      "CCE"
+     ],
+     "advises": [
+      "CCM",
+      "ACC"
+     ],
+     "informed": [
+      "ACC",
+      "BM_P",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Certified accounts handed over",
+       "from": "CE_P"
+      },
+      {
+       "what": "Invoice and ageing data",
+       "from": "ACC"
+      },
+      {
+       "what": "Client payables contact",
+       "from": "BD"
+      }
+     ]
+    },
+    {
+     "ref": "F6",
+     "process": "Cash flow forecast and working capital",
+     "owns": "FIN",
+     "does": [
+      "ACC"
+     ],
+     "advises": [
+      "MD",
+      "CCM"
+     ],
+     "informed": [
+      "BRD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Collection forecast",
+       "from": "CCM"
+      },
+      {
+       "what": "Payables schedule",
+       "from": "ACC"
+      },
+      {
+       "what": "Capex and hiring plan",
+       "from": "MD"
+      }
+     ]
+    },
+    {
+     "ref": "F8",
+     "process": "Transaction processing and reconciliation accuracy",
+     "owns": "ACE",
+     "does": [
+      "ACE"
+     ],
+     "advises": [
+      "ACC",
+      "BEX"
+     ],
+     "informed": [
+      "FIN",
+      "GRC"
+     ],
+     "inputs": [
+      {
+       "what": "Bank statements",
+       "from": "ACC"
+      },
+      {
+       "what": "Vendor and client documents",
+       "from": "ADM"
+      }
+     ]
+    },
+    {
+     "ref": "F9",
+     "process": "Billing dispute resolution and deduction reconciliation",
+     "owns": "CCM",
+     "does": [
+      "CE_P",
+      "ACE"
+     ],
+     "advises": [
+      "ACC",
+      "BM_P"
+     ],
+     "informed": [
+      "FIN",
+      "MD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Client deduction advice",
+       "from": "ACC"
+      },
+      {
+       "what": "Case evidence",
+       "from": "BM_P"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "function": "Service delivery",
+   "count": "34 processes",
+   "processes": [
+    {
+     "ref": "D1",
+     "process": "SLA and TAT adherence across all locations",
+     "owns": "OPS",
+     "does": [
+      "AVP",
+      "RM_W",
+      "RM_E",
+      "BZ_S",
+      "BM_P",
+      "BM_T"
+     ],
+     "advises": [
+      "GRC",
+      "BEX"
+     ],
+     "informed": [
+      "MD",
+      "MIS"
+     ],
+     "inputs": [
+      {
+       "what": "Daily TAT and pending report",
+       "from": "MIS"
+      },
+      {
+       "what": "Client SLA schedule",
+       "from": "BID"
+      },
+      {
+       "what": "Capacity position",
+       "from": "AVP"
+      }
+     ]
+    },
+    {
+     "ref": "D10",
+     "process": "Facilities, assets, travel and admin vendors",
+     "owns": "ADM",
+     "does": [
+      "ADM"
+     ],
+     "advises": [
+      "BEX",
+      "OPS"
+     ],
+     "informed": [
+      "GRC",
+      "FIN"
+     ],
+     "inputs": [
+      {
+       "what": "New location plan",
+       "from": "BEX"
+      },
+      {
+       "what": "Asset register",
+       "from": "ACC"
+      },
+      {
+       "what": "Approved admin budget",
+       "from": "FIN"
+      }
+     ]
+    },
+    {
+     "ref": "D11",
+     "process": "Partner channel delivery to branch standard",
+     "owns": "PA_W",
+     "does": [
+      "PA_W"
+     ],
+     "advises": [
+      "BM_P",
+      "GRC",
+      "RM_W"
+     ],
+     "informed": [
+      "MD",
+      "ACC",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "SLA and quality standard",
+       "from": "GRC"
+      },
+      {
+       "what": "Client SOP",
+       "from": "BEX"
+      },
+      {
+       "what": "Case allocation",
+       "from": "BM_P"
+      }
+     ]
+    },
+    {
+     "ref": "D12EO",
+     "process": "Daily processing target and data accuracy — North East & East",
+     "owns": "TL_EO",
+     "does": [
+      "BO_EO"
+     ],
+     "advises": [
+      "BM_EO",
+      "BEX"
+     ],
+     "informed": [
+      "MIS",
+      "GRC"
+     ],
+     "inputs": [
+      {
+       "what": "Case inflow and priority",
+       "from": "BM_EO"
+      },
+      {
+       "what": "Client SOP and format",
+       "from": "BEX"
+      }
+     ]
+    },
+    {
+     "ref": "D12NO",
+     "process": "Daily processing target and data accuracy — North",
+     "owns": "TL_NO",
+     "does": [
+      "BO_NO"
+     ],
+     "advises": [
+      "BM_NO",
+      "BEX"
+     ],
+     "informed": [
+      "MIS",
+      "GRC"
+     ],
+     "inputs": [
+      {
+       "what": "Case inflow and priority",
+       "from": "BM_NO"
+      },
+      {
+       "what": "Client SOP and format",
+       "from": "BEX"
+      }
+     ]
+    },
+    {
+     "ref": "D12SO",
+     "process": "Daily processing target and data accuracy — South",
+     "owns": "TL_SO",
+     "does": [
+      "BO_SO"
+     ],
+     "advises": [
+      "BM_SO",
+      "BEX"
+     ],
+     "informed": [
+      "MIS",
+      "GRC"
+     ],
+     "inputs": [
+      {
+       "what": "Case inflow and priority",
+       "from": "BM_SO"
+      },
+      {
+       "what": "Client SOP and format",
+       "from": "BEX"
+      }
+     ]
+    },
+    {
+     "ref": "D12W",
+     "process": "Daily processing target and data accuracy — other West locations",
+     "owns": "TL_W",
+     "does": [
+      "BO_W"
+     ],
+     "advises": [
+      "BM_W",
+      "BEX"
+     ],
+     "informed": [
+      "MIS",
+      "GRC"
+     ],
+     "inputs": [
+      {
+       "what": "Case inflow and priority",
+       "from": "BM_W"
+      },
+      {
+       "what": "Client SOP and format",
+       "from": "BEX"
+      }
+     ]
+    },
+    {
+     "ref": "D13EO",
+     "process": "Field verification and evidence integrity — North East & East",
+     "owns": "FE_EO",
+     "does": [
+      "FE_EO"
+     ],
+     "advises": [
+      "BM_EO",
+      "GRC"
+     ],
+     "informed": [
+      "TL_EO",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Daily case allocation",
+       "from": "BM_EO"
+      },
+      {
+       "what": "Client SOP and checklist",
+       "from": "BEX"
+      }
+     ]
+    },
+    {
+     "ref": "D13NO",
+     "process": "Field verification and evidence integrity — North",
+     "owns": "FE_NO",
+     "does": [
+      "FE_NO"
+     ],
+     "advises": [
+      "BM_NO",
+      "GRC"
+     ],
+     "informed": [
+      "TL_NO",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Daily case allocation",
+       "from": "BM_NO"
+      },
+      {
+       "what": "Client SOP and checklist",
+       "from": "BEX"
+      }
+     ]
+    },
+    {
+     "ref": "D13SO",
+     "process": "Field verification and evidence integrity — South",
+     "owns": "FE_SO",
+     "does": [
+      "FE_SO"
+     ],
+     "advises": [
+      "BM_SO",
+      "GRC"
+     ],
+     "informed": [
+      "TL_SO",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Daily case allocation",
+       "from": "BM_SO"
+      },
+      {
+       "what": "Client SOP and checklist",
+       "from": "BEX"
+      }
+     ]
+    },
+    {
+     "ref": "D13W",
+     "process": "Field verification and evidence integrity — other West locations",
+     "owns": "FE_W",
+     "does": [
+      "FE_W"
+     ],
+     "advises": [
+      "BM_W",
+      "GRC"
+     ],
+     "informed": [
+      "TL_W",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Daily case allocation",
+       "from": "BM_W"
+      },
+      {
+       "what": "Client SOP and checklist",
+       "from": "BEX"
+      }
+     ]
+    },
+    {
+     "ref": "D14EO",
+     "process": "Case processing and report accuracy — North East & East",
+     "owns": "BO_EO",
+     "does": [
+      "BO_EO"
+     ],
+     "advises": [
+      "TL_EO",
+      "BEX"
+     ],
+     "informed": [
+      "GRC",
+      "BM_EO"
+     ],
+     "inputs": [
+      {
+       "what": "Field findings and evidence",
+       "from": "FE_EO"
+      },
+      {
+       "what": "Report template",
+       "from": "BEX"
+      }
+     ]
+    },
+    {
+     "ref": "D14NO",
+     "process": "Case processing and report accuracy — North",
+     "owns": "BO_NO",
+     "does": [
+      "BO_NO"
+     ],
+     "advises": [
+      "TL_NO",
+      "BEX"
+     ],
+     "informed": [
+      "GRC",
+      "BM_NO"
+     ],
+     "inputs": [
+      {
+       "what": "Field findings and evidence",
+       "from": "FE_NO"
+      },
+      {
+       "what": "Report template",
+       "from": "BEX"
+      }
+     ]
+    },
+    {
+     "ref": "D14SO",
+     "process": "Case processing and report accuracy — South",
+     "owns": "BO_SO",
+     "does": [
+      "BO_SO"
+     ],
+     "advises": [
+      "TL_SO",
+      "BEX"
+     ],
+     "informed": [
+      "GRC",
+      "BM_SO"
+     ],
+     "inputs": [
+      {
+       "what": "Field findings and evidence",
+       "from": "FE_SO"
+      },
+      {
+       "what": "Report template",
+       "from": "BEX"
+      }
+     ]
+    },
+    {
+     "ref": "D14W",
+     "process": "Case processing and report accuracy — other West locations",
+     "owns": "BO_W",
+     "does": [
+      "BO_W"
+     ],
+     "advises": [
+      "TL_W",
+      "BEX"
+     ],
+     "informed": [
+      "GRC",
+      "BM_W"
+     ],
+     "inputs": [
+      {
+       "what": "Field findings and evidence",
+       "from": "FE_W"
+      },
+      {
+       "what": "Report template",
+       "from": "BEX"
+      }
+     ]
+    },
+    {
+     "ref": "D16T",
+     "process": "Daily processing target and data accuracy — Thane",
+     "owns": "TL_T",
+     "does": [
+      "BO_T"
+     ],
+     "advises": [
+      "BM_T",
+      "BEX"
+     ],
+     "informed": [
+      "MIS",
+      "GRC"
+     ],
+     "inputs": [
+      {
+       "what": "Direction and standard",
+       "from": "BEX"
+      }
+     ]
+    },
+    {
+     "ref": "D17T",
+     "process": "Field verification and evidence integrity — Thane",
+     "owns": "FE_T",
+     "does": [
+      "FE_T"
+     ],
+     "advises": [
+      "BM_T",
+      "GRC"
+     ],
+     "informed": [
+      "TL_T",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Direction and standard",
+       "from": "BEX"
+      }
+     ]
+    },
+    {
+     "ref": "D18T",
+     "process": "Case processing and report accuracy — Thane",
+     "owns": "BO_T",
+     "does": [
+      "BO_T"
+     ],
+     "advises": [
+      "TL_T",
+      "BEX"
+     ],
+     "informed": [
+      "GRC",
+      "BM_T"
+     ],
+     "inputs": [
+      {
+       "what": "Direction and standard",
+       "from": "BEX"
+      }
+     ]
+    },
+    {
+     "ref": "D19",
+     "process": "Service catalogue and product definition — FI, BV, PD, DV, FCU-RCU, legal",
+     "owns": "BEX",
+     "does": [
+      "OPS",
+      "BD"
+     ],
+     "advises": [
+      "GRC",
+      "FIN"
+     ],
+     "informed": [
+      "MD",
+      "MIS"
+     ],
+     "inputs": [
+      {
+       "what": "Client requirement variations",
+       "from": "BD"
+      },
+      {
+       "what": "Delivery feasibility",
+       "from": "OPS"
+      }
+     ]
+    },
+    {
+     "ref": "D2",
+     "process": "Four-region delivery outcome and Regional Manager development",
+     "owns": "AVP",
+     "does": [
+      "RM_W",
+      "RM_E",
+      "RM_N",
+      "RM_S"
+     ],
+     "advises": [
+      "OPS",
+      "GRC"
+     ],
+     "informed": [
+      "MD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Regional performance pack",
+       "from": "MIS"
+      },
+      {
+       "what": "Quality findings by region",
+       "from": "GRC"
+      },
+      {
+       "what": "Succession bench view",
+       "from": "GRC"
+      }
+     ]
+    },
+    {
+     "ref": "D20",
+     "process": "Client SLA definition, sign-off and change control",
+     "owns": "BID",
+     "does": [
+      "BEX",
+      "OPS"
+     ],
+     "advises": [
+      "FIN",
+      "LEG"
+     ],
+     "informed": [
+      "MD",
+      "GRC"
+     ],
+     "inputs": [
+      {
+       "what": "Client requirement",
+       "from": "BD"
+      },
+      {
+       "what": "Capacity confirmation",
+       "from": "OPS"
+      }
+     ]
+    },
+    {
+     "ref": "D21",
+     "process": "Case rejection, rework and re-verification management",
+     "owns": "OPS",
+     "does": [
+      "BM_P",
+      "TL"
+     ],
+     "advises": [
+      "GRC",
+      "BEX"
+     ],
+     "informed": [
+      "MD",
+      "MIS"
+     ],
+     "inputs": [
+      {
+       "what": "Client rejection log",
+       "from": "GRC"
+      },
+      {
+       "what": "Root cause",
+       "from": "GRC"
+      }
+     ]
+    },
+    {
+     "ref": "D22",
+     "process": "Quality sampling methodology and sample size",
+     "owns": "GRC",
+     "does": [
+      "GRC"
+     ],
+     "advises": [
+      "BEX",
+      "OPS"
+     ],
+     "informed": [
+      "MD"
+     ],
+     "inputs": [
+      {
+       "what": "Volume by product",
+       "from": "MIS"
+      },
+      {
+       "what": "Defect history",
+       "from": "GRC"
+      }
+     ]
+    },
+    {
+     "ref": "D23",
+     "process": "Field agent onboarding, identity and badge control",
+     "owns": "OPS",
+     "does": [
+      "ADM",
+      "HRE"
+     ],
+     "advises": [
+      "GRC",
+      "TEC"
+     ],
+     "informed": [
+      "MD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Agent appointment records",
+       "from": "OPS"
+      },
+      {
+       "what": "BGV clearance",
+       "from": "GRC"
+      }
+     ]
+    },
+    {
+     "ref": "D24",
+     "process": "Territory mapping and route planning",
+     "owns": "OPS",
+     "does": [
+      "BM_P",
+      "AVP"
+     ],
+     "advises": [
+      "BEX",
+      "MIS"
+     ],
+     "informed": [
+      "FIN"
+     ],
+     "inputs": [
+      {
+       "what": "Case density by pin code",
+       "from": "MIS"
+      },
+      {
+       "what": "Field headcount",
+       "from": "HRE"
+      }
+     ]
+    },
+    {
+     "ref": "D25",
+     "process": "Peak and seasonal capacity planning",
+     "owns": "OPS",
+     "does": [
+      "AVP",
+      "BEX"
+     ],
+     "advises": [
+      "FIN",
+      "GRC"
+     ],
+     "informed": [
+      "MD",
+      "MIS"
+     ],
+     "inputs": [
+      {
+       "what": "Standard and direction from the owning function",
+       "from": "BEX"
+      }
+     ]
+    },
+    {
+     "ref": "D26",
+     "process": "TAT exception handling and client communication",
+     "owns": "OPS",
+     "does": [
+      "BM_P",
+      "TL"
+     ],
+     "advises": [
+      "BD",
+      "GRC"
+     ],
+     "informed": [
+      "MD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Standard and direction from the owning function",
+       "from": "BEX"
+      }
+     ]
+    },
+    {
+     "ref": "D3",
+     "process": "Branch operations, clients and people — Pune",
+     "owns": "BM_P",
+     "does": [
+      "TL",
+      "FE",
+      "BO"
+     ],
+     "advises": [
+      "RM_W",
+      "CCM"
+     ],
+     "informed": [
+      "OPS",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Daily allocation and TAT",
+       "from": "TL"
+      },
+      {
+       "what": "Quality audit findings",
+       "from": "GRC"
+      },
+      {
+       "what": "Client escalation log",
+       "from": "BD"
+      }
+     ]
+    },
+    {
+     "ref": "D4",
+     "process": "Daily processing target, allocation and data accuracy",
+     "owns": "TL",
+     "does": [
+      "BO"
+     ],
+     "advises": [
+      "BM_P",
+      "BEX"
+     ],
+     "informed": [
+      "MIS",
+      "GRC"
+     ],
+     "inputs": [
+      {
+       "what": "Case inflow and priority",
+       "from": "BM_P"
+      },
+      {
+       "what": "Client SOP and format",
+       "from": "BEX"
+      }
+     ]
+    },
+    {
+     "ref": "D5",
+     "process": "Field verification execution and evidence integrity",
+     "owns": "FE",
+     "does": [
+      "FE"
+     ],
+     "advises": [
+      "TL",
+      "BM_P"
+     ],
+     "informed": [
+      "GRC",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Daily case allocation",
+       "from": "BM_P"
+      },
+      {
+       "what": "Client SOP and checklist",
+       "from": "BEX"
+      },
+      {
+       "what": "Route and territory plan",
+       "from": "BM_P"
+      }
+     ]
+    },
+    {
+     "ref": "D6",
+     "process": "Case processing, report preparation and portal upload",
+     "owns": "BO",
+     "does": [
+      "BO"
+     ],
+     "advises": [
+      "TL",
+      "BEX"
+     ],
+     "informed": [
+      "GRC",
+      "BM_P"
+     ],
+     "inputs": [
+      {
+       "what": "Field findings and evidence",
+       "from": "FE"
+      },
+      {
+       "what": "Report template and client format",
+       "from": "BEX"
+      },
+      {
+       "what": "Portal access",
+       "from": "TEC"
+      }
+     ]
+    },
+    {
+     "ref": "D7",
+     "process": "Field agency and vendor empanelment and termination",
+     "owns": "OPS",
+     "does": [
+      "RM_W",
+      "RM_E"
+     ],
+     "advises": [
+      "GRC",
+      "ADM",
+      "FIN",
+      "BEX"
+     ],
+     "informed": [
+      "MD"
+     ],
+     "inputs": [
+      {
+       "what": "Agency quality scorecard",
+       "from": "GRC"
+      },
+      {
+       "what": "Rate benchmark",
+       "from": "ACC"
+      },
+      {
+       "what": "Capacity gap by location",
+       "from": "AVP"
+      }
+     ]
+    },
+    {
+     "ref": "D8",
+     "process": "South zone operations and branch performance",
+     "owns": "BZ_S",
+     "does": [
+      "BM_SO"
+     ],
+     "advises": [
+      "RM_S",
+      "AVP"
+     ],
+     "informed": [
+      "OPS",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Branch performance data",
+       "from": "MIS"
+      },
+      {
+       "what": "Quality findings",
+       "from": "GRC"
+      }
+     ]
+    },
+    {
+     "ref": "D9",
+     "process": "Capacity planning and case allocation model",
+     "owns": "OPS",
+     "does": [
+      "AVP",
+      "BEX"
+     ],
+     "advises": [
+      "MIS",
+      "FIN",
+      "BEX"
+     ],
+     "informed": [
+      "MD"
+     ],
+     "inputs": [
+      {
+       "what": "Case volume forecast by product",
+       "from": "MIS"
+      },
+      {
+       "what": "Headcount availability",
+       "from": "HRE"
+      },
+      {
+       "what": "Client volume commitment",
+       "from": "BD"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "function": "Client",
+   "count": "7 processes",
+   "processes": [
+    {
+     "ref": "K1",
+     "process": "Client retention and mandate renewal",
+     "owns": "BD",
+     "does": [
+      "RM_W",
+      "RM_E",
+      "BM_P"
+     ],
+     "advises": [
+      "MD",
+      "OPS"
+     ],
+     "informed": [
+      "FIN",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Service performance by client",
+       "from": "MIS"
+      },
+      {
+       "what": "Quality score by client",
+       "from": "GRC"
+      },
+      {
+       "what": "Escalation history",
+       "from": "OPS"
+      }
+     ]
+    },
+    {
+     "ref": "K2",
+     "process": "Client escalation resolution and service recovery",
+     "owns": "OPS",
+     "does": [
+      "RM_W",
+      "BM_P",
+      "TL"
+     ],
+     "advises": [
+      "GRC",
+      "BD"
+     ],
+     "informed": [
+      "MD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Escalation log",
+       "from": "BM_P"
+      },
+      {
+       "what": "Root cause finding",
+       "from": "GRC"
+      },
+      {
+       "what": "Client commitment",
+       "from": "BD"
+      }
+     ]
+    },
+    {
+     "ref": "K3",
+     "process": "New client empanelment and pricing approval",
+     "owns": "MD",
+     "does": [
+      "BD"
+     ],
+     "advises": [
+      "FIN",
+      "OPS",
+      "LEG",
+      "BEX"
+     ],
+     "informed": [
+      "BRD",
+      "AVP"
+     ],
+     "inputs": [
+      {
+       "what": "Costing and margin working",
+       "from": "FIN"
+      },
+      {
+       "what": "Delivery feasibility",
+       "from": "OPS"
+      },
+      {
+       "what": "Credit standing",
+       "from": "CCM"
+      },
+      {
+       "what": "Contract terms",
+       "from": "LEG"
+      }
+     ]
+    },
+    {
+     "ref": "K4",
+     "process": "Business development pipeline and onboarding",
+     "owns": "BD",
+     "does": [
+      "BD"
+     ],
+     "advises": [
+      "OPS",
+      "FIN"
+     ],
+     "informed": [
+      "MD",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Approved pricing band",
+       "from": "MD"
+      },
+      {
+       "what": "Capacity confirmation",
+       "from": "OPS"
+      },
+      {
+       "what": "Empanelment documents",
+       "from": "BID"
+      }
+     ]
+    },
+    {
+     "ref": "K5",
+     "process": "Tender submission, agreements, EMD and bank guarantees",
+     "owns": "BID",
+     "does": [
+      "BID"
+     ],
+     "advises": [
+      "FIN",
+      "LEG",
+      "OPS",
+      "BEX"
+     ],
+     "informed": [
+      "MD",
+      "BD"
+     ],
+     "inputs": [
+      {
+       "what": "Pricing approval",
+       "from": "MD"
+      },
+      {
+       "what": "Credentials and financials",
+       "from": "ACC"
+      },
+      {
+       "what": "Legal vetting",
+       "from": "LEG"
+      },
+      {
+       "what": "Capacity confirmation",
+       "from": "OPS"
+      }
+     ]
+    },
+    {
+     "ref": "K6",
+     "process": "Partner appointment and revenue-share terms",
+     "owns": "MD",
+     "does": [
+      "BD",
+      "PA_W"
+     ],
+     "advises": [
+      "LEG",
+      "GRC",
+      "FIN",
+      "BEX"
+     ],
+     "informed": [
+      "OPS",
+      "ACC"
+     ],
+     "inputs": [
+      {
+       "what": "Partner due diligence",
+       "from": "GRC"
+      },
+      {
+       "what": "Draft agreement",
+       "from": "LEG"
+      },
+      {
+       "what": "Territory and margin model",
+       "from": "FIN"
+      }
+     ]
+    },
+    {
+     "ref": "K7",
+     "process": "Client satisfaction measurement and review cadence",
+     "owns": "BD",
+     "does": [
+      "RM_W",
+      "BM_P"
+     ],
+     "advises": [
+      "GRC",
+      "OPS"
+     ],
+     "informed": [
+      "MD",
+      "MIS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Direction and standard",
+       "from": "BEX"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "function": "Assurance",
+   "count": "15 processes",
+   "processes": [
+    {
+     "ref": "Q1",
+     "process": "Report quality score and defect rate",
+     "owns": "GRC",
+     "does": [
+      "BM_P",
+      "TL",
+      "BO"
+     ],
+     "advises": [
+      "BEX",
+      "OPS"
+     ],
+     "informed": [
+      "MD",
+      "MIS"
+     ],
+     "inputs": [
+      {
+       "what": "Dispatched report sample",
+       "from": "BO"
+      },
+      {
+       "what": "Client rejection log",
+       "from": "BD"
+      },
+      {
+       "what": "SOP standard",
+       "from": "BEX"
+      }
+     ]
+    },
+    {
+     "ref": "Q10",
+     "process": "Client audit response and observation closure",
+     "owns": "GRC",
+     "does": [
+      "GRC",
+      "OPS"
+     ],
+     "advises": [
+      "TEC",
+      "FIN",
+      "LEG"
+     ],
+     "informed": [
+      "MD",
+      "BRD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Client audit scope",
+       "from": "BD"
+      },
+      {
+       "what": "Process evidence",
+       "from": "BEX"
+      }
+     ]
+    },
+    {
+     "ref": "Q11",
+     "process": "Background verification of own employees and agents",
+     "owns": "GRC",
+     "does": [
+      "HRE"
+     ],
+     "advises": [
+      "OPS",
+      "LEG"
+     ],
+     "informed": [
+      "MD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "New joiner and agent list",
+       "from": "HRE"
+      },
+      {
+       "what": "Verification vendor output",
+       "from": "GRC"
+      }
+     ]
+    },
+    {
+     "ref": "Q12",
+     "process": "Data retention, archival and destruction",
+     "owns": "TEC",
+     "does": [
+      "ENG"
+     ],
+     "advises": [
+      "LEG",
+      "GRC"
+     ],
+     "informed": [
+      "MD",
+      "BRD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Client retention obligations",
+       "from": "BID"
+      },
+      {
+       "what": "Regulatory position",
+       "from": "LEG"
+      }
+     ]
+    },
+    {
+     "ref": "Q13",
+     "process": "Whistleblower mechanism and protected disclosure",
+     "owns": "BRD",
+     "does": [
+      "GRC",
+      "CS"
+     ],
+     "advises": [
+      "LEG",
+      "MD"
+     ],
+     "informed": [
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Disclosures received",
+       "from": "GRC"
+      },
+      {
+       "what": "Investigation findings",
+       "from": "RISK"
+      }
+     ]
+    },
+    {
+     "ref": "Q14",
+     "process": "Conflict of interest and related-party declarations",
+     "owns": "CS",
+     "does": [
+      "GRC"
+     ],
+     "advises": [
+      "FIN",
+      "LEG"
+     ],
+     "informed": [
+      "BRD",
+      "MD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Annual declarations",
+       "from": "HRE"
+      },
+      {
+       "what": "Vendor and partner register",
+       "from": "ACC"
+      }
+     ]
+    },
+    {
+     "ref": "Q15",
+     "process": "Franchise governance — brand, SOP, data and conduct audit",
+     "owns": "GRC",
+     "does": [
+      "GRC"
+     ],
+     "advises": [
+      "RM_W",
+      "LEG",
+      "TEC",
+      "BEX"
+     ],
+     "informed": [
+      "MD",
+      "BRD"
+     ],
+     "inputs": [
+      {
+       "what": "Franchise file sample",
+       "from": "PA_W"
+      },
+      {
+       "what": "Brand and SOP standard",
+       "from": "BEX"
+      },
+      {
+       "what": "Client data access log",
+       "from": "TEC"
+      }
+     ]
+    },
+    {
+     "ref": "Q2",
+     "process": "SOP conformance audit",
+     "owns": "GRC",
+     "does": [
+      "GRC"
+     ],
+     "advises": [
+      "BEX",
+      "OPS"
+     ],
+     "informed": [
+      "MD",
+      "BRD"
+     ],
+     "inputs": [
+      {
+       "what": "Published SOP set",
+       "from": "BEX"
+      },
+      {
+       "what": "Operating records",
+       "from": "OPS"
+      }
+     ]
+    },
+    {
+     "ref": "Q3",
+     "process": "Regulatory and client compliance",
+     "owns": "LEG",
+     "does": [
+      "LEG",
+      "CS"
+     ],
+     "advises": [
+      "GRC",
+      "FIN"
+     ],
+     "informed": [
+      "MD",
+      "BRD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Client compliance schedule",
+       "from": "BID"
+      },
+      {
+       "what": "Statutory calendar",
+       "from": "CS"
+      },
+      {
+       "what": "Licence register",
+       "from": "ADM"
+      }
+     ]
+    },
+    {
+     "ref": "Q4",
+     "process": "Contract drafting, vetting and litigation",
+     "owns": "LEG",
+     "does": [
+      "LEG"
+     ],
+     "advises": [
+      "FIN",
+      "BID",
+      "MD"
+     ],
+     "informed": [
+      "GRC",
+      "CS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Draft commercial terms",
+       "from": "BID"
+      },
+      {
+       "what": "Credit and payment terms",
+       "from": "FIN"
+      }
+     ]
+    },
+    {
+     "ref": "Q5",
+     "process": "Partner brand, SOP and data audit",
+     "owns": "GRC",
+     "does": [
+      "GRC",
+      "OPS"
+     ],
+     "advises": [
+      "BD",
+      "TEC",
+      "BEX"
+     ],
+     "informed": [
+      "MD",
+      "PA_W"
+     ],
+     "inputs": [
+      {
+       "what": "Partner file sample",
+       "from": "PA_W"
+      },
+      {
+       "what": "Brand and data standard",
+       "from": "BEX"
+      },
+      {
+       "what": "Access log",
+       "from": "TEC"
+      }
+     ]
+    },
+    {
+     "ref": "Q6",
+     "process": "Enterprise risk register and quarterly review",
+     "owns": "RISK",
+     "does": [
+      "RISK"
+     ],
+     "advises": [
+      "GRC",
+      "FIN",
+      "OPS",
+      "BEX"
+     ],
+     "informed": [
+      "MD",
+      "BRD"
+     ],
+     "inputs": [
+      {
+       "what": "Function risk submissions",
+       "from": "GRC"
+      },
+      {
+       "what": "Audit findings",
+       "from": "GRC"
+      },
+      {
+       "what": "Incident log",
+       "from": "TEC"
+      }
+     ]
+    },
+    {
+     "ref": "Q7",
+     "process": "Issue log, ownership and closure",
+     "owns": "RISK",
+     "does": [
+      "RISK"
+     ],
+     "advises": [
+      "OPS",
+      "FIN",
+      "BEX"
+     ],
+     "informed": [
+      "MD"
+     ],
+     "inputs": [
+      {
+       "what": "Issues raised by any function",
+       "from": "GRC"
+      },
+      {
+       "what": "Audit observations",
+       "from": "GRC"
+      }
+     ]
+    },
+    {
+     "ref": "Q8",
+     "process": "Crisis management and business continuity",
+     "owns": "RISK",
+     "does": [
+      "RISK",
+      "TEC"
+     ],
+     "advises": [
+      "OPS",
+      "GRC",
+      "LEG",
+      "BEX"
+     ],
+     "informed": [
+      "MD",
+      "BRD"
+     ],
+     "inputs": [
+      {
+       "what": "Location and system dependency map",
+       "from": "TEC"
+      },
+      {
+       "what": "Client continuity obligations",
+       "from": "BID"
+      }
+     ]
+    },
+    {
+     "ref": "Q9",
+     "process": "Bank empanelment renewal and vendor due diligence response",
+     "owns": "BD",
+     "does": [
+      "BID",
+      "GRC"
+     ],
+     "advises": [
+      "FIN",
+      "LEG",
+      "TEC",
+      "BEX"
+     ],
+     "informed": [
+      "MD",
+      "BRD"
+     ],
+     "inputs": [
+      {
+       "what": "Empanelment renewal calendar",
+       "from": "BID"
+      },
+      {
+       "what": "Financials and credentials",
+       "from": "ACC"
+      },
+      {
+       "what": "Security posture",
+       "from": "TEC"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "function": "People",
+   "count": "18 processes",
+   "processes": [
+    {
+     "ref": "H1",
+     "process": "Recruitment, onboarding and vacancy closure",
+     "owns": "HRH",
+     "does": [
+      "HRE"
+     ],
+     "advises": [
+      "OPS",
+      "BEX"
+     ],
+     "informed": [
+      "MD",
+      "FIN"
+     ],
+     "inputs": [
+      {
+       "what": "Approved manpower plan",
+       "from": "MD"
+      },
+      {
+       "what": "Role and grade definition",
+       "from": "BEX"
+      },
+      {
+       "what": "Budget confirmation",
+       "from": "FIN"
+      }
+     ]
+    },
+    {
+     "ref": "H10",
+     "process": "Training delivery and effectiveness",
+     "owns": "LND",
+     "does": [
+      "LND"
+     ],
+     "advises": [
+      "HRH",
+      "OPS",
+      "BEX"
+     ],
+     "informed": [
+      "MD",
+      "MIS"
+     ],
+     "inputs": [
+      {
+       "what": "Skill gaps from the clearance assessment",
+       "from": "BEX"
+      },
+      {
+       "what": "Defect themes",
+       "from": "HRH"
+      },
+      {
+       "what": "New joiner list",
+       "from": "HRE"
+      }
+     ]
+    },
+    {
+     "ref": "H11",
+     "process": "Internship programme — selection, deployment and conversion",
+     "owns": "LND",
+     "does": [
+      "INT"
+     ],
+     "advises": [
+      "BEX",
+      "OPS",
+      "HRH"
+     ],
+     "informed": [
+      "MD",
+      "FIN"
+     ],
+     "inputs": [
+      {
+       "what": "Project briefs from sponsoring chairs",
+       "from": "BEX"
+      },
+      {
+       "what": "Placement capacity",
+       "from": "OPS"
+      },
+      {
+       "what": "Stipend budget",
+       "from": "FIN"
+      }
+     ]
+    },
+    {
+     "ref": "H12",
+     "process": "Intern project delivery",
+     "owns": "INT",
+     "does": [
+      "INT"
+     ],
+     "advises": [
+      "LND",
+      "BEX"
+     ],
+     "informed": [
+      "OPS"
+     ],
+     "inputs": [
+      {
+       "what": "Direction and standard",
+       "from": "BEX"
+      }
+     ]
+    },
+    {
+     "ref": "H13",
+     "process": "Job descriptions, role definitions and grade mapping",
+     "owns": "BEX",
+     "does": [
+      "HRH",
+      "LND"
+     ],
+     "advises": [
+      "OPS",
+      "FIN"
+     ],
+     "informed": [
+      "MD"
+     ],
+     "inputs": [
+      {
+       "what": "Chair definitions",
+       "from": "BEX"
+      },
+      {
+       "what": "Market benchmarks",
+       "from": "HRH"
+      }
+     ]
+    },
+    {
+     "ref": "H14",
+     "process": "Compensation structure and market benchmarking",
+     "owns": "HRH",
+     "does": [
+      "FIN"
+     ],
+     "advises": [
+      "MD",
+      "BEX"
+     ],
+     "informed": [
+      "BRD"
+     ],
+     "inputs": [
+      {
+       "what": "Market salary data",
+       "from": "HRH"
+      },
+      {
+       "what": "Budget envelope",
+       "from": "FIN"
+      }
+     ]
+    },
+    {
+     "ref": "H15",
+     "process": "Rewards, recognition and incentive schemes",
+     "owns": "HRH",
+     "does": [
+      "LND",
+      "OPS"
+     ],
+     "advises": [
+      "FIN",
+      "MD"
+     ],
+     "informed": [
+      "BRD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Performance data",
+       "from": "MIS"
+      },
+      {
+       "what": "Budget",
+       "from": "FIN"
+      }
+     ]
+    },
+    {
+     "ref": "H16",
+     "process": "Full and final settlement and exit clearance",
+     "owns": "HRH",
+     "does": [
+      "HRE",
+      "ACC"
+     ],
+     "advises": [
+      "OPS",
+      "ADM"
+     ],
+     "informed": [
+      "FIN",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Resignation and clearance",
+       "from": "HRE"
+      },
+      {
+       "what": "Asset return",
+       "from": "ADM"
+      },
+      {
+       "what": "Dues position",
+       "from": "ACC"
+      }
+     ]
+    },
+    {
+     "ref": "H17",
+     "process": "Statutory registers, labour licences per location",
+     "owns": "HRH",
+     "does": [
+      "HRE",
+      "ADM"
+     ],
+     "advises": [
+      "LEG",
+      "CS"
+     ],
+     "informed": [
+      "MD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Location list",
+       "from": "OPS"
+      },
+      {
+       "what": "Headcount by location",
+       "from": "HRE"
+      }
+     ]
+    },
+    {
+     "ref": "H18",
+     "process": "Employee identity, asset issue and access provisioning",
+     "owns": "ADM",
+     "does": [
+      "HRE",
+      "TEC"
+     ],
+     "advises": [
+      "HRH"
+     ],
+     "informed": [
+      "OPS",
+      "FIN",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Standard and direction from the owning function",
+       "from": "BEX"
+      }
+     ]
+    },
+    {
+     "ref": "H2",
+     "process": "Payroll accuracy and statutory benefits",
+     "owns": "HRH",
+     "does": [
+      "HRE"
+     ],
+     "advises": [
+      "ACC"
+     ],
+     "informed": [
+      "FIN",
+      "MD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Attendance and leave",
+       "from": "HRE"
+      },
+      {
+       "what": "Salary structure",
+       "from": "HRH"
+      },
+      {
+       "what": "Disbursement confirmation",
+       "from": "ACC"
+      }
+     ]
+    },
+    {
+     "ref": "H3",
+     "process": "Appraisal cycle, knowledge tests and psychometric assessment",
+     "owns": "HRH",
+     "does": [
+      "HRE",
+      "BEX"
+     ],
+     "advises": [
+      "OPS",
+      "FIN",
+      "BEX"
+     ],
+     "informed": [
+      "MD"
+     ],
+     "inputs": [
+      {
+       "what": "Level framework and test bank",
+       "from": "BEX"
+      },
+      {
+       "what": "Performance data by chair",
+       "from": "MIS"
+      },
+      {
+       "what": "Calibration input",
+       "from": "OPS"
+      }
+     ]
+    },
+    {
+     "ref": "H4",
+     "process": "Attrition, engagement and succession",
+     "owns": "HRH",
+     "does": [
+      "HRE",
+      "RM_W",
+      "BM_P"
+     ],
+     "advises": [
+      "OPS",
+      "AVP"
+     ],
+     "informed": [
+      "MD",
+      "BRD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Exit interview data",
+       "from": "HRE"
+      },
+      {
+       "what": "Engagement survey",
+       "from": "HRE"
+      },
+      {
+       "what": "Succession bench view",
+       "from": "AVP"
+      }
+     ]
+    },
+    {
+     "ref": "H5",
+     "process": "Capability build, induction and training delivery",
+     "owns": "HRH",
+     "does": [
+      "HRE",
+      "BEX"
+     ],
+     "advises": [
+      "OPS",
+      "BM_P",
+      "BEX"
+     ],
+     "informed": [
+      "MD"
+     ],
+     "inputs": [
+      {
+       "what": "Skill gap from the matrix",
+       "from": "BEX"
+      },
+      {
+       "what": "Defect themes",
+       "from": "HRH"
+      },
+      {
+       "what": "New joiner list",
+       "from": "HRE"
+      }
+     ]
+    },
+    {
+     "ref": "H6",
+     "process": "Employee records, attendance and exit",
+     "owns": "HRE",
+     "does": [
+      "HRE"
+     ],
+     "advises": [
+      "HRH"
+     ],
+     "informed": [
+      "ACC",
+      "OPS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Joining and exit documentation",
+       "from": "HRE"
+      },
+      {
+       "what": "Branch attendance",
+       "from": "BM_P"
+      }
+     ]
+    },
+    {
+     "ref": "H7",
+     "process": "Manpower planning and headcount approval",
+     "owns": "HRH",
+     "does": [
+      "LND",
+      "HRE"
+     ],
+     "advises": [
+      "OPS",
+      "FIN",
+      "BEX"
+     ],
+     "informed": [
+      "MD"
+     ],
+     "inputs": [
+      {
+       "what": "Volume forecast",
+       "from": "MIS"
+      },
+      {
+       "what": "Approved budget",
+       "from": "FIN"
+      },
+      {
+       "what": "Capacity gap",
+       "from": "OPS"
+      }
+     ]
+    },
+    {
+     "ref": "H8",
+     "process": "Employee satisfaction and engagement measurement",
+     "owns": "HRH",
+     "does": [
+      "HRE",
+      "LND"
+     ],
+     "advises": [
+      "OPS",
+      "BEX",
+      "LND"
+     ],
+     "informed": [
+      "MD",
+      "BRD"
+     ],
+     "inputs": [
+      {
+       "what": "Survey responses",
+       "from": "HRE"
+      },
+      {
+       "what": "Attrition and exit data",
+       "from": "HRE"
+      }
+     ]
+    },
+    {
+     "ref": "H9",
+     "process": "POSH, grievance and disciplinary process",
+     "owns": "HRH",
+     "does": [
+      "HRE"
+     ],
+     "advises": [
+      "LEG",
+      "MD",
+      "BEX"
+     ],
+     "informed": [
+      "BRD"
+     ],
+     "inputs": [
+      {
+       "what": "Direction and standard",
+       "from": "BEX"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "function": "Enablement",
+   "count": "16 processes",
+   "processes": [
+    {
+     "ref": "E1",
+     "process": "SOP authorship, version control and publication",
+     "owns": "BEX",
+     "does": [
+      "BEX"
+     ],
+     "advises": [
+      "OPS",
+      "GRC"
+     ],
+     "informed": [
+      "MD",
+      "TL"
+     ],
+     "inputs": [
+      {
+       "what": "Client requirement and format",
+       "from": "BD"
+      },
+      {
+       "what": "Defect root cause",
+       "from": "GRC"
+      },
+      {
+       "what": "Operating reality",
+       "from": "OPS"
+      }
+     ]
+    },
+    {
+     "ref": "E10",
+     "process": "Knowledge management and document repository",
+     "owns": "BEX",
+     "does": [
+      "BEX"
+     ],
+     "advises": [
+      "GRC",
+      "TEC"
+     ],
+     "informed": [
+      "OPS",
+      "LND"
+     ],
+     "inputs": [
+      {
+       "what": "Direction and standard",
+       "from": "BEX"
+      }
+     ]
+    },
+    {
+     "ref": "E11",
+     "process": "Application access management and periodic access review",
+     "owns": "TEC",
+     "does": [
+      "ENG"
+     ],
+     "advises": [
+      "GRC",
+      "HRE",
+      "BEX"
+     ],
+     "informed": [
+      "MD"
+     ],
+     "inputs": [
+      {
+       "what": "Joiner, mover and leaver list",
+       "from": "HRE"
+      },
+      {
+       "what": "Role-based access matrix",
+       "from": "BEX"
+      }
+     ]
+    },
+    {
+     "ref": "E12",
+     "process": "Backup, recovery and disaster recovery testing",
+     "owns": "TEC",
+     "does": [
+      "ENG"
+     ],
+     "advises": [
+      "RISK",
+      "GRC"
+     ],
+     "informed": [
+      "MD",
+      "BRD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Recovery objectives",
+       "from": "RISK"
+      },
+      {
+       "what": "System inventory",
+       "from": "TEC"
+      }
+     ]
+    },
+    {
+     "ref": "E13",
+     "process": "Technology vendor and SaaS subscription management",
+     "owns": "TEC",
+     "does": [
+      "ENG",
+      "ACC"
+     ],
+     "advises": [
+      "FIN",
+      "LEG",
+      "BEX"
+     ],
+     "informed": [
+      "MD"
+     ],
+     "inputs": [
+      {
+       "what": "Contract terms",
+       "from": "LEG"
+      },
+      {
+       "what": "Spend data",
+       "from": "ACC"
+      }
+     ]
+    },
+    {
+     "ref": "E14",
+     "process": "Field mobile application and evidence capture",
+     "owns": "TEC",
+     "does": [
+      "ENG"
+     ],
+     "advises": [
+      "OPS",
+      "GRC",
+      "BEX"
+     ],
+     "informed": [
+      "MD",
+      "BM_P"
+     ],
+     "inputs": [
+      {
+       "what": "Field workflow requirement",
+       "from": "OPS"
+      },
+      {
+       "what": "Evidence standard",
+       "from": "GRC"
+      }
+     ]
+    },
+    {
+     "ref": "E15",
+     "process": "Client portal integration and file exchange",
+     "owns": "TEC",
+     "does": [
+      "ENG"
+     ],
+     "advises": [
+      "OPS",
+      "BID",
+      "GRC",
+      "BEX"
+     ],
+     "informed": [
+      "MD"
+     ],
+     "inputs": [
+      {
+       "what": "Client technical specification",
+       "from": "BID"
+      },
+      {
+       "what": "Volume and format requirement",
+       "from": "OPS"
+      }
+     ]
+    },
+    {
+     "ref": "E2",
+     "process": "Management MIS accuracy and KPI registry",
+     "owns": "MIS",
+     "does": [
+      "MIS"
+     ],
+     "advises": [
+      "FIN",
+      "OPS",
+      "GRC",
+      "BEX"
+     ],
+     "informed": [
+      "MD",
+      "BRD"
+     ],
+     "inputs": [
+      {
+       "what": "Operational data",
+       "from": "OPS"
+      },
+      {
+       "what": "Financial data",
+       "from": "FIN"
+      },
+      {
+       "what": "Quality data",
+       "from": "GRC"
+      },
+      {
+       "what": "People data",
+       "from": "HRE"
+      }
+     ]
+    },
+    {
+     "ref": "E3",
+     "process": "Branch and zone launch playbook and stage gate",
+     "owns": "BEX",
+     "does": [
+      "BEX"
+     ],
+     "advises": [
+      "OPS",
+      "ADM",
+      "TEC"
+     ],
+     "informed": [
+      "MD",
+      "FIN"
+     ],
+     "inputs": [
+      {
+       "what": "Expansion business case",
+       "from": "RM_W"
+      },
+      {
+       "what": "Site and facilities plan",
+       "from": "ADM"
+      },
+      {
+       "what": "Systems readiness",
+       "from": "TEC"
+      }
+     ]
+    },
+    {
+     "ref": "E4",
+     "process": "Technology roadmap and platform delivery",
+     "owns": "TEC",
+     "does": [
+      "ENG"
+     ],
+     "advises": [
+      "OPS",
+      "BEX"
+     ],
+     "informed": [
+      "MD",
+      "FIN"
+     ],
+     "inputs": [
+      {
+       "what": "Business requirement",
+       "from": "BEX"
+      },
+      {
+       "what": "Operating pain points",
+       "from": "OPS"
+      },
+      {
+       "what": "Approved budget",
+       "from": "FIN"
+      }
+     ]
+    },
+    {
+     "ref": "E4b",
+     "process": "Release delivery, platform stability and production support",
+     "owns": "ENG",
+     "does": [
+      "ENG"
+     ],
+     "advises": [
+      "TEC",
+      "BEX"
+     ],
+     "informed": [
+      "OPS"
+     ],
+     "inputs": [
+      {
+       "what": "Prioritised backlog",
+       "from": "TEC"
+      },
+      {
+       "what": "Incident reports",
+       "from": "OPS"
+      }
+     ]
+    },
+    {
+     "ref": "E5",
+     "process": "Information security and client data protection",
+     "owns": "TEC",
+     "does": [
+      "ENG"
+     ],
+     "advises": [
+      "GRC",
+      "LEG",
+      "BEX"
+     ],
+     "informed": [
+      "MD",
+      "BRD"
+     ],
+     "inputs": [
+      {
+       "what": "Client security requirement",
+       "from": "BID"
+      },
+      {
+       "what": "Access register",
+       "from": "HRE"
+      },
+      {
+       "what": "Regulatory position",
+       "from": "LEG"
+      }
+     ]
+    },
+    {
+     "ref": "E6",
+     "process": "Job architecture, seat grades and the KRA/KPI framework",
+     "owns": "BEX",
+     "does": [
+      "BEX"
+     ],
+     "advises": [
+      "GRC",
+      "MIS"
+     ],
+     "informed": [
+      "MD",
+      "OPS"
+     ],
+     "inputs": [
+      {
+       "what": "Org structure decisions",
+       "from": "MD"
+      },
+      {
+       "what": "KPI source systems",
+       "from": "MIS"
+      },
+      {
+       "what": "Appraisal outcomes",
+       "from": "GRC"
+      }
+     ]
+    },
+    {
+     "ref": "E7",
+     "process": "Performance review system — the platform and the record",
+     "owns": "BEX",
+     "does": [
+      "MIS",
+      "TEC"
+     ],
+     "advises": [
+      "GRC",
+      "LND"
+     ],
+     "informed": [
+      "MD"
+     ],
+     "inputs": [
+      {
+       "what": "Level framework and criteria",
+       "from": "BEX"
+      },
+      {
+       "what": "Appraisal cycle dates",
+       "from": "GRC"
+      },
+      {
+       "what": "Performance data",
+       "from": "MIS"
+      }
+     ]
+    },
+    {
+     "ref": "E8",
+     "process": "Change management and adoption",
+     "owns": "BEX",
+     "does": [
+      "BEX",
+      "LND"
+     ],
+     "advises": [
+      "OPS",
+      "GRC",
+      "TEC"
+     ],
+     "informed": [
+      "MD",
+      "BRD"
+     ],
+     "inputs": [
+      {
+       "what": "Process or system change scope",
+       "from": "BEX"
+      },
+      {
+       "what": "Affected chair list",
+       "from": "GRC"
+      },
+      {
+       "what": "Training need",
+       "from": "LND"
+      }
+     ]
+    },
+    {
+     "ref": "E9",
+     "process": "Automation and manual-effort reduction",
+     "owns": "TEC",
+     "does": [
+      "ENG",
+      "BEX"
+     ],
+     "advises": [
+      "OPS",
+      "FIN"
+     ],
+     "informed": [
+      "MD"
+     ],
+     "inputs": [
+      {
+       "what": "Manual effort baseline",
+       "from": "BEX"
+      },
+      {
+       "what": "Volume data",
+       "from": "MIS"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "function": "Governance",
+   "count": "12 processes",
+   "processes": [
+    {
+     "ref": "G1",
+     "process": "Strategy, capital approval and statutory standing",
+     "owns": "BRD",
+     "does": [
+      "MD"
+     ],
+     "advises": [
+      "FIN",
+      "GRC",
+      "CS"
+     ],
+     "informed": [
+      "OPS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Annual plan and budget",
+       "from": "MD"
+      },
+      {
+       "what": "Assurance findings",
+       "from": "GRC"
+      },
+      {
+       "what": "Statutory position",
+       "from": "CS"
+      }
+     ]
+    },
+    {
+     "ref": "G10",
+     "process": "Policy library, ownership and review cycle",
+     "owns": "BEX",
+     "does": [
+      "GRC",
+      "LEG"
+     ],
+     "advises": [
+      "OPS",
+      "FIN"
+     ],
+     "informed": [
+      "MD",
+      "BRD"
+     ],
+     "inputs": [
+      {
+       "what": "Policy inventory",
+       "from": "GRC"
+      },
+      {
+       "what": "Regulatory change",
+       "from": "LEG"
+      }
+     ]
+    },
+    {
+     "ref": "G11",
+     "process": "Board calendar, reserved matters and minutes",
+     "owns": "CS",
+     "does": [
+      "CS"
+     ],
+     "advises": [
+      "MD",
+      "GRC"
+     ],
+     "informed": [
+      "BRD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Meeting schedule",
+       "from": "MD"
+      },
+      {
+       "what": "Papers from each function",
+       "from": "MIS"
+      }
+     ]
+    },
+    {
+     "ref": "G12",
+     "process": "Management review cadence and action closure",
+     "owns": "MD",
+     "does": [
+      "MIS",
+      "BEX"
+     ],
+     "advises": [
+      "OPS",
+      "FIN",
+      "GRC"
+     ],
+     "informed": [
+      "BRD"
+     ],
+     "inputs": [
+      {
+       "what": "Function performance packs",
+       "from": "MIS"
+      },
+      {
+       "what": "Open action log",
+       "from": "RISK"
+      }
+     ]
+    },
+    {
+     "ref": "G2",
+     "process": "Organisation design and senior appointments",
+     "owns": "MD",
+     "does": [
+      "BEX",
+      "GRC"
+     ],
+     "advises": [
+      "OPS",
+      "FIN",
+      "BEX"
+     ],
+     "informed": [
+      "BRD"
+     ],
+     "inputs": [
+      {
+       "what": "Structure and grade proposal",
+       "from": "BEX"
+      },
+      {
+       "what": "Capability assessment",
+       "from": "GRC"
+      },
+      {
+       "what": "Cost impact",
+       "from": "FIN"
+      }
+     ]
+    },
+    {
+     "ref": "G3",
+     "process": "Board and statutory secretarial compliance",
+     "owns": "CS",
+     "does": [
+      "CS"
+     ],
+     "advises": [
+      "GRC",
+      "FIN"
+     ],
+     "informed": [
+      "BRD",
+      "MD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Financial statements",
+       "from": "FIN"
+      },
+      {
+       "what": "Board papers",
+       "from": "MD"
+      },
+      {
+       "what": "Compliance confirmations",
+       "from": "GRC"
+      }
+     ]
+    },
+    {
+     "ref": "G4",
+     "process": "Financial reporting, budget and statutory audit",
+     "owns": "FIN",
+     "does": [
+      "ACC"
+     ],
+     "advises": [
+      "GRC",
+      "MIS"
+     ],
+     "informed": [
+      "MD",
+      "BRD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Trial balance and schedules",
+       "from": "ACC"
+      },
+      {
+       "what": "Operational volume data",
+       "from": "MIS"
+      },
+      {
+       "what": "Audit observations",
+       "from": "GRC"
+      }
+     ]
+    },
+    {
+     "ref": "G5",
+     "process": "Tax and statutory financial compliance",
+     "owns": "ACC",
+     "does": [
+      "ACE"
+     ],
+     "advises": [
+      "LEG",
+      "CS"
+     ],
+     "informed": [
+      "FIN",
+      "GRC",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Transaction data",
+       "from": "ACE"
+      },
+      {
+       "what": "Statutory calendar",
+       "from": "CS"
+      }
+     ]
+    },
+    {
+     "ref": "G6",
+     "process": "Scope undefined — chair pending definition",
+     "owns": "FEX",
+     "does": [
+      "FEX"
+     ],
+     "advises": [
+      "FIN",
+      "BEX"
+     ],
+     "informed": [
+      "ACC",
+      "GRC"
+     ],
+     "inputs": [
+      {
+       "what": "Definition decision",
+       "from": "FIN"
+      }
+     ]
+    },
+    {
+     "ref": "G7",
+     "process": "Corpus planning and reserves",
+     "owns": "FIN",
+     "does": [
+      "ACC"
+     ],
+     "advises": [
+      "MD",
+      "BRD"
+     ],
+     "informed": [
+      "GRC",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Cash flow forecast",
+       "from": "FIN"
+      },
+      {
+       "what": "Growth and capex plan",
+       "from": "MD"
+      }
+     ]
+    },
+    {
+     "ref": "G8",
+     "process": "Investment and treasury management",
+     "owns": "FIN",
+     "does": [
+      "ACC"
+     ],
+     "advises": [
+      "MD",
+      "BRD"
+     ],
+     "informed": [
+      "GRC",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Surplus position",
+       "from": "ACC"
+      },
+      {
+       "what": "Board mandate on risk appetite",
+       "from": "BRD"
+      }
+     ]
+    },
+    {
+     "ref": "G9",
+     "process": "Delegation of authority schedule and review",
+     "owns": "MD",
+     "does": [
+      "BEX",
+      "FIN"
+     ],
+     "advises": [
+      "GRC",
+      "CS"
+     ],
+     "informed": [
+      "BRD"
+     ],
+     "inputs": [
+      {
+       "what": "Proposed limits by chair",
+       "from": "BEX"
+      },
+      {
+       "what": "Spend pattern",
+       "from": "ACC"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "function": "Delivery",
+   "count": "1 processes",
+   "processes": [
+    {
+     "ref": "D15",
+     "process": "RCU and fraud detection standard",
+     "owns": "GRC",
+     "does": [
+      "FE",
+      "BM_P"
+     ],
+     "advises": [
+      "OPS",
+      "TEC"
+     ],
+     "informed": [
+      "MD",
+      "BM_P",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Field escalations",
+       "from": "FE"
+      },
+      {
+       "what": "Defect and rejection data",
+       "from": "MIS"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "function": "Accounting",
+   "count": "9 processes",
+   "processes": [
+    {
+     "ref": "AC1",
+     "process": "Books of account and general ledger maintenance",
+     "owns": "ACC",
+     "does": [
+      "ACE"
+     ],
+     "advises": [
+      "FIN"
+     ],
+     "informed": [
+      "GRC",
+      "MD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Transaction documents",
+       "from": "ACE"
+      },
+      {
+       "what": "Bank statements",
+       "from": "ACC"
+      }
+     ]
+    },
+    {
+     "ref": "AC2",
+     "process": "Month, quarter and year-end closing",
+     "owns": "ACC",
+     "does": [
+      "ACE"
+     ],
+     "advises": [
+      "FIN",
+      "MIS"
+     ],
+     "informed": [
+      "MD",
+      "BRD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Cut-off confirmations from every function",
+       "from": "MIS"
+      },
+      {
+       "what": "Accrual and provision inputs",
+       "from": "FIN"
+      }
+     ]
+    },
+    {
+     "ref": "AC3",
+     "process": "Financial statements — P&L, balance sheet and cash flow",
+     "owns": "FIN",
+     "does": [
+      "ACC"
+     ],
+     "advises": [
+      "GRC"
+     ],
+     "informed": [
+      "MD",
+      "BRD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Closed trial balance",
+       "from": "ACC"
+      },
+      {
+       "what": "Operational volume data",
+       "from": "MIS"
+      }
+     ]
+    },
+    {
+     "ref": "AC4",
+     "process": "Bank reconciliation and cash control",
+     "owns": "ACC",
+     "does": [
+      "ACE"
+     ],
+     "advises": [
+      "FIN"
+     ],
+     "informed": [
+      "GRC",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Bank statements",
+       "from": "ACC"
+      },
+      {
+       "what": "Receipt and payment records",
+       "from": "ACE"
+      }
+     ]
+    },
+    {
+     "ref": "AC5",
+     "process": "Fixed asset register, depreciation and physical verification",
+     "owns": "ACC",
+     "does": [
+      "ADM",
+      "ACE"
+     ],
+     "advises": [
+      "FIN",
+      "RISK"
+     ],
+     "informed": [
+      "GRC",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Asset tagging and location data",
+       "from": "ADM"
+      },
+      {
+       "what": "Capitalisation approvals",
+       "from": "FIN"
+      }
+     ]
+    },
+    {
+     "ref": "AC6",
+     "process": "Provisions, accruals and bad debt provisioning",
+     "owns": "FIN",
+     "does": [
+      "ACC"
+     ],
+     "advises": [
+      "CCM",
+      "GRC"
+     ],
+     "informed": [
+      "MD",
+      "BRD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Ageing beyond policy",
+       "from": "CCM"
+      },
+      {
+       "what": "Known disputes",
+       "from": "CCM"
+      }
+     ]
+    },
+    {
+     "ref": "AC7",
+     "process": "Revenue recognition and cut-off",
+     "owns": "ACC",
+     "does": [
+      "ACE"
+     ],
+     "advises": [
+      "FIN",
+      "OPS"
+     ],
+     "informed": [
+      "GRC",
+      "BRD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Completed case data by period",
+       "from": "MIS"
+      },
+      {
+       "what": "Contract terms",
+       "from": "BID"
+      }
+     ]
+    },
+    {
+     "ref": "AC8",
+     "process": "Inter-branch and inter-unit accounting",
+     "owns": "ACC",
+     "does": [
+      "ACE"
+     ],
+     "advises": [
+      "OPS"
+     ],
+     "informed": [
+      "FIN",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Branch expense claims",
+       "from": "ADM"
+      },
+      {
+       "what": "Branch revenue statements",
+       "from": "MIS"
+      }
+     ]
+    },
+    {
+     "ref": "AC9",
+     "process": "Statutory audit coordination and observation closure",
+     "owns": "FIN",
+     "does": [
+      "ACC"
+     ],
+     "advises": [
+      "GRC",
+      "CS"
+     ],
+     "informed": [
+      "MD",
+      "BRD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Audit requirement list",
+       "from": "GRC"
+      },
+      {
+       "what": "Supporting schedules",
+       "from": "ACC"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "function": "Legal",
+   "count": "7 processes",
+   "processes": [
+    {
+     "ref": "LG1",
+     "process": "Contract drafting, vetting and standard templates",
+     "owns": "LEG",
+     "does": [
+      "LEG"
+     ],
+     "advises": [
+      "FIN",
+      "BID",
+      "BD"
+     ],
+     "informed": [
+      "GRC",
+      "MD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Commercial terms",
+       "from": "BID"
+      },
+      {
+       "what": "Credit and payment terms",
+       "from": "FIN"
+      }
+     ]
+    },
+    {
+     "ref": "LG2",
+     "process": "Contract repository, renewal and expiry tracking",
+     "owns": "LEG",
+     "does": [
+      "BID"
+     ],
+     "advises": [
+      "ACC",
+      "BD"
+     ],
+     "informed": [
+      "GRC",
+      "MD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Executed agreements",
+       "from": "BID"
+      },
+      {
+       "what": "Renewal calendar",
+       "from": "BD"
+      }
+     ]
+    },
+    {
+     "ref": "LG3",
+     "process": "Litigation, legal notices and dispute management",
+     "owns": "LEG",
+     "does": [
+      "LEG"
+     ],
+     "advises": [
+      "FIN",
+      "MD"
+     ],
+     "informed": [
+      "GRC",
+      "BRD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Notice or claim received",
+       "from": "GRC"
+      },
+      {
+       "what": "Case facts and evidence",
+       "from": "OPS"
+      }
+     ]
+    },
+    {
+     "ref": "LG4",
+     "process": "Regulatory licences, registrations and renewals",
+     "owns": "LEG",
+     "does": [
+      "ADM",
+      "CS"
+     ],
+     "advises": [
+      "GRC",
+      "FIN"
+     ],
+     "informed": [
+      "MD",
+      "BRD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Location list",
+       "from": "OPS"
+      },
+      {
+       "what": "Licence calendar",
+       "from": "ADM"
+      }
+     ]
+    },
+    {
+     "ref": "LG5",
+     "process": "Employment law advisory and disciplinary support",
+     "owns": "LEG",
+     "does": [
+      "GRC"
+     ],
+     "advises": [
+      "HRE"
+     ],
+     "informed": [
+      "MD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Case documentation",
+       "from": "HRE"
+      },
+      {
+       "what": "Policy position",
+       "from": "GRC"
+      }
+     ]
+    },
+    {
+     "ref": "LG6",
+     "process": "Brand protection and partner brand licensing",
+     "owns": "LEG",
+     "does": [
+      "BD"
+     ],
+     "advises": [
+      "GRC",
+      "MD"
+     ],
+     "informed": [
+      "PA_W",
+      "OPS",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Partner agreement terms",
+       "from": "BD"
+      },
+      {
+       "what": "Brand usage audit findings",
+       "from": "GRC"
+      }
+     ]
+    },
+    {
+     "ref": "LG7",
+     "process": "Non-disclosure, data processing and client security agreements",
+     "owns": "LEG",
+     "does": [
+      "BID",
+      "TEC"
+     ],
+     "advises": [
+      "GRC",
+      "MD",
+      "BEX"
+     ],
+     "informed": [
+      "OPS"
+     ],
+     "inputs": [
+      {
+       "what": "Client security requirement",
+       "from": "BID"
+      },
+      {
+       "what": "Data flow map",
+       "from": "TEC"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "function": "Partner claims",
+   "count": "6 processes",
+   "processes": [
+    {
+     "ref": "PC1",
+     "process": "Monthly partner claim submission with supporting evidence",
+     "owns": "PA_W",
+     "does": [
+      "PA_SO",
+      "PA_EO",
+      "PA_NO"
+     ],
+     "advises": [
+      "RM_W",
+      "ACC"
+     ],
+     "informed": [
+      "FIN",
+      "MD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Case and billing statement for the period",
+       "from": "ACC"
+      },
+      {
+       "what": "Profit-sharing agreement terms",
+       "from": "LEG"
+      },
+      {
+       "what": "Collection status on sourced accounts",
+       "from": "CCM"
+      }
+     ]
+    },
+    {
+     "ref": "PC2",
+     "process": "Independent computation of partner entitlement from billing and collection data",
+     "owns": "ACC",
+     "does": [
+      "ACE"
+     ],
+     "advises": [
+      "CCM",
+      "LEG"
+     ],
+     "informed": [
+      "FIN",
+      "GRC",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Partner-attributed billing",
+       "from": "ACC"
+      },
+      {
+       "what": "Collections received against those accounts",
+       "from": "CCM"
+      },
+      {
+       "what": "Agreement terms and share percentage",
+       "from": "LEG"
+      }
+     ]
+    },
+    {
+     "ref": "PC3",
+     "process": "Claim versus entitlement reconciliation and variance resolution",
+     "owns": "ACC",
+     "does": [
+      "ACE",
+      "RM_W"
+     ],
+     "advises": [
+      "PA_W",
+      "CCM"
+     ],
+     "informed": [
+      "FIN",
+      "MD",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Submitted claim",
+       "from": "PA_W"
+      },
+      {
+       "what": "Computed entitlement",
+       "from": "ACC"
+      },
+      {
+       "what": "Regional confirmation of case data",
+       "from": "RM_W"
+      }
+     ]
+    },
+    {
+     "ref": "PC4",
+     "process": "Partner claim approval and release",
+     "owns": "FIN",
+     "does": [
+      "ACC"
+     ],
+     "advises": [
+      "MD",
+      "GRC"
+     ],
+     "informed": [
+      "BRD",
+      "PA_W",
+      "BEX"
+     ],
+     "inputs": [
+      {
+       "what": "Reconciled claim",
+       "from": "ACC"
+      },
+      {
+       "what": "Variance explanation where any remains",
+       "from": "ACC"
+      },
+      {
+       "what": "Cash position",
+       "from": "FIN"
+      }
+     ]
+    },
+    {
+     "ref": "PC5",
+     "process": "Partner agreement, profit-share terms and renewal",
+     "owns": "MD",
+     "does": [
+      "BD",
+      "LEG"
+     ],
+     "advises": [
+      "FIN",
+      "GRC",
+      "OPS",
+      "BEX"
+     ],
+     "informed": [
+      "BRD",
+      "PA_W"
+     ],
+     "inputs": [
+      {
+       "what": "Territory and margin model",
+       "from": "FIN"
+      },
+      {
+       "what": "Draft agreement",
+       "from": "LEG"
+      },
+      {
+       "what": "Partner due diligence",
+       "from": "GRC"
+      }
+     ]
+    },
+    {
+     "ref": "PC6",
+     "process": "Partner onboarding, exit and territory handover",
+     "owns": "BD",
+     "does": [
+      "RM_W",
+      "LEG"
+     ],
+     "advises": [
+      "GRC",
+      "FIN",
+      "OPS",
+      "BEX"
+     ],
+     "informed": [
+      "MD"
+     ],
+     "inputs": [
+      {
+       "what": "Due diligence outcome",
+       "from": "GRC"
+      },
+      {
+       "what": "Territory plan",
+       "from": "BD"
+      },
+      {
+       "what": "Outstanding claim position",
+       "from": "ACC"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "ownershipLoad": {
+  "MD": 9,
+  "BD": 7,
+  "BDE_EO": 1,
+  "BDE_NO": 1,
+  "BDE_P": 1,
+  "BDE_SO": 1,
+  "BDE_T": 1,
+  "BDE_W": 1,
+  "FIN": 14,
+  "PA_EO": 1,
+  "PA_NO": 1,
+  "PA_SO": 1,
+  "PA_W": 4,
+  "RM_W": 2,
+  "RM_E": 2,
+  "RM_N": 2,
+  "RM_S": 2,
+  "BM_P": 4,
+  "BM_T": 2,
+  "BZ_S": 2,
+  "BM_EO": 2,
+  "BM_NO": 1,
+  "BM_SO": 1,
+  "BM_W": 1,
+  "ACC": 14,
+  "OPS": 11,
+  "ADM": 3,
+  "TEC": 10,
+  "GRC": 9,
+  "RISK": 4,
+  "CE_EO": 1,
+  "CE_NO": 1,
+  "CE_P": 1,
+  "CE_SO": 1,
+  "CE_T": 1,
+  "CE_W": 1,
+  "CCM": 2,
+  "CCE": 1,
+  "ACE": 1,
+  "TL_EO": 1,
+  "TL_NO": 1,
+  "TL_SO": 1,
+  "TL_W": 1,
+  "FE_EO": 1,
+  "FE_NO": 1,
+  "FE_SO": 1,
+  "FE_W": 1,
+  "BO_EO": 1,
+  "BO_NO": 1,
+  "BO_SO": 1,
+  "BO_W": 1,
+  "TL_T": 1,
+  "FE_T": 1,
+  "BO_T": 1,
+  "BEX": 9,
+  "AVP": 1,
+  "BID": 2,
+  "TL": 1,
+  "FE": 1,
+  "BO": 1,
+  "BRD": 2,
+  "CS": 3,
+  "LEG": 9,
+  "HRH": 12,
+  "LND": 2,
+  "INT": 1,
+  "HRE": 1,
+  "MIS": 1,
+  "ENG": 1,
+  "FEX": 1
+ }
+}
