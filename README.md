@@ -32,8 +32,8 @@ this process merely reads is a token anyone can forge.
 
 ### Loading data
 
-Data setup carries the uploader. **Eleven file kinds, all implemented**, in load
-order:
+Data setup carries the uploader. **Thirteen file kinds, all implemented**, in
+load order:
 
 | | Kind | Loads |
 |---|---|---|
@@ -48,6 +48,8 @@ order:
 | 9 | Past performance | MTD, revenue and collections history |
 | 10 | Opening balances | live escalations, OGL assignments and claims at cutover |
 | 11 | Holidays | the festival calendar (load any time) |
+| 12 | SLA rules | the TAT per client, verification type, zone and priority |
+| 13 | Escalation matrix | who is told, at which level, for which client and zone |
 
 Each has a **Download template** button giving the exact headers, one example
 row, and the rule for every column. Load them in order: People needs Chairs,
@@ -55,7 +57,13 @@ Clients needs Geography, Assignments needs both plus People.
 
 Chairs was not in the original ten. The People template said the chair "must
 already exist" and nothing could create one, so no person could be loaded at
-all.
+all. SLA rules and the escalation matrix were not there either, which meant
+every assignment took the one cutover rule at 1,440 minutes and every
+escalation fell back to the reporting line.
+
+Which function handles a kind is now a column on the kind, so a fourteenth is
+two rows and a pair of functions — not an edit to two dispatchers and a
+redeploy.
 
 ---
 
@@ -64,7 +72,7 @@ all.
 | Piece | Where | Live? |
 |---|---|---|
 | Database — 103 tables, RLS, functions | Supabase `crux`, ap-south-1 | **Yes** |
-| Bulk upload — all eleven kinds | Edge function, URL above | **Yes** |
+| Bulk upload — all thirteen kinds | Edge function, URL above | **Yes** |
 | PMS appraisal cascade and scoring | Database functions | **Yes** |
 | Dummy dataset — 17 people, 5 clients, 16 branches | Loaded through the uploader | **Yes** |
 | Indian holiday calendar 2026–27 | 26 days, 6 confirmed | **Yes** |
@@ -262,6 +270,23 @@ reason and who waived it.
 
 All four run inside `crux_tick()`, every fifteen minutes.
 
+### Doing the work
+
+The assignee records a finding against **each** verification point — positive,
+negative, partial, refer, or untraceable — and anything but a clean positive
+has to say what was seen.
+
+Completion is a **delivery**, not a state change somebody types: it asks how
+the report went out (Force1, e-mail, WhatsApp, the client portal, by hand), to
+whom, and with what reference. That reference is what makes *was it actually
+sent?* answerable in three months without relying on anyone's memory.
+
+A move to `COMPLETED` while any point has no finding on it is refused — by the
+trigger, not by the function, so it holds for every caller including one
+nobody has written yet. Accepting the report closes the case's points as well
+as the assignment; closing one without the other is how a case ends up closed
+with a point still open on somebody's list.
+
 ### Disputes and arbitration
 
 A dispute sends the work back to `REWORK` and stays open as a finding until
@@ -366,10 +391,12 @@ deadline, until somebody fixes it.
    DNS, use single sender verification — see *Where the API key comes from*.
 4. Load people, chairs and coverage by bulk upload, in load order.
 5. Load the full holiday calendar and the rate card.
-6. Fill in `ogl_escalation_matrix`. It is not required — escalation falls back
-   to the reporting line and says so — but every fallback raises a
+6. **Load SLA rules.** Without them every assignment gets the cutover default
+   of 1,440 business minutes, and every deadline in the tool is fiction.
+7. **Load the escalation matrix.** Not strictly required — escalation falls
+   back to the reporting line and says so — but every fallback raises a
    configuration alert, and you will get tired of them.
-7. `sample_purge()`, and clear the sample administrator's password.
+8. `sample_purge()`, and clear the sample administrator's password.
 
 ---
 

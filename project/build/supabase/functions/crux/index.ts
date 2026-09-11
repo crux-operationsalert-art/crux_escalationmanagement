@@ -427,6 +427,40 @@ Deno.serve(async (req: Request) => {
       return json(out);
     }
 
+    // The assignee's own work: what was found, and where the report went.
+    if (path === "/api/ogl/points") {
+      const id = url.searchParams.get("id");
+      if (!id) return json({ error: "missing_id" }, 400);
+      return json({ points: await rpc("ogl_open_points", { p_assignment: id }) });
+    }
+
+    if (path === "/api/ogl/report" && req.method === "POST") {
+      const b = await req.json();
+      const out = await rpc("ogl_report_point", {
+        p_requirement: b.requirement, p_actor: person.id, p_outcome: b.outcome,
+        p_remarks: b.remarks ?? null, p_findings: b.findings ?? {} });
+      if (out && out.error) return json(out, 409);
+      return json(out);
+    }
+
+    if (path === "/api/ogl/complete" && req.method === "POST") {
+      const b = await req.json();
+      const out = await rpc("ogl_complete", {
+        p_assignment: b.id, p_actor: person.id, p_channel: b.channel,
+        p_recipient: b.recipient ?? null, p_reference: b.reference ?? null,
+        p_remarks: b.remarks ?? null });
+      if (out && out.error) return json(out, 409);
+      return json(out);
+    }
+
+    if (path === "/api/ogl/accept" && req.method === "POST") {
+      const b = await req.json();
+      const out = await rpc("ogl_review_accept", {
+        p_assignment: b.id, p_actor: person.id, p_remarks: b.remarks ?? null });
+      if (out && out.error) return json(out, 409);
+      return json(out);
+    }
+
     if (path === "/api/ogl/strike-waive" && req.method === "POST") {
       const b = await req.json();
       const out = await rpc("ogl_strike_waive", {

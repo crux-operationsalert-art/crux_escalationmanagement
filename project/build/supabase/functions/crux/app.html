@@ -554,6 +554,81 @@ async function oglArbitrate(id){
   };
 }
 
+/* What the assignee actually does. Each point gets its own finding, and
+   anything but a clean positive has to say what was seen. */
+async function oglReport(id){
+  var p = await crux("/api/ogl/points?id=" + encodeURIComponent(id));
+  var pts = p.points || [];
+  if (!pts.length) { el("oglMsg").innerHTML = msg("ok","Every point is already reported."); return; }
+  el("oglForm").innerHTML =
+    '<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:16px">' +
+    '<div class="row"><div><label>Which point</label><select id="pSel">' +
+      pts.map(function(x){
+        return '<option value="'+esc(x.id)+'">'+esc(x.force1_point_id)+' &mdash; '+
+          esc(x.verification_type)+' for '+esc(x.party)+'</option>'; }).join("") +
+    '</select></div></div>' +
+    '<div id="pAddr" class="mute" style="margin:-6px 0 12px"></div>' +
+    '<div class="row"><div><label>What was found</label><select id="pOut">' +
+      '<option value="POSITIVE">Positive &mdash; confirmed as stated</option>' +
+      '<option value="NEGATIVE">Negative &mdash; contradicted</option>' +
+      '<option value="PARTIAL">Partial &mdash; some of it stands</option>' +
+      '<option value="REFER">Refer &mdash; needs a decision above me</option>' +
+      '<option value="UNTRACEABLE">Untraceable &mdash; could not be found</option>' +
+    '</select></div></div>' +
+    '<div class="row"><div><label>What was seen</label>' +
+      '<textarea id="pRem" rows="3" placeholder="Required for anything but a clean positive."></textarea></div></div>' +
+    '<button id="pGo">Record it</button> ' +
+    '<button class="ghost" onclick="el(\'oglForm\').innerHTML=\'\'">Cancel</button></div>';
+  function showAddr(){
+    var s = pts.filter(function(x){ return x.id === el("pSel").value; })[0];
+    el("pAddr").innerHTML = s && s.address ? "At: " + esc(s.address) : "";
+  }
+  el("pSel").onchange = showAddr; showAddr();
+  el("pGo").onclick = async function(){
+    el("pGo").disabled = true;
+    var out = await crux("/api/ogl/report", { method:"POST",
+      body:{ requirement: el("pSel").value, outcome: el("pOut").value, remarks: el("pRem").value } });
+    el("pGo").disabled = false;
+    if (out.error) { el("oglMsg").innerHTML = msg("bad", out.reason || out.error); return; }
+    if (out.still_to_report > 0) { el("oglMsg").innerHTML = msg("ok", out.note); oglReport(id); }
+    else oglReload();
+  };
+}
+
+/* Completion is a delivery, not a state change somebody types. The channel
+   and the reference are the evidence that it went. */
+function oglFinish(id){
+  el("oglForm").innerHTML =
+    '<div style="margin-top:16px;border-top:1px solid var(--line);padding-top:16px">' +
+    '<div class="row"><div><label>How was the report delivered?</label><select id="fCh">' +
+      '<option value="FORCE1">Force1</option><option value="EMAIL">E-mail</option>' +
+      '<option value="WHATSAPP">WhatsApp</option><option value="PORTAL">Client portal</option>' +
+      '<option value="HAND">By hand</option>' +
+    '</select></div>' +
+    '<div><label>To whom</label><input id="fTo" placeholder="address, number or name"></div>' +
+    '<div><label>Reference</label><input id="fRef" placeholder="Force1 ref or message id"></div></div>' +
+    '<div class="row"><div><label>Anything else</label><textarea id="fRem" rows="2"></textarea></div></div>' +
+    '<button id="fGo">Complete</button> ' +
+    '<button class="ghost" onclick="el(\'oglForm\').innerHTML=\'\'">Cancel</button></div>';
+  el("fGo").onclick = async function(){
+    el("fGo").disabled = true;
+    var out = await crux("/api/ogl/complete", { method:"POST",
+      body:{ id:id, channel: el("fCh").value, recipient: el("fTo").value,
+             reference: el("fRef").value, remarks: el("fRem").value } });
+    el("fGo").disabled = false;
+    if (out.error) { el("oglMsg").innerHTML = msg("bad", out.reason || out.error); return; }
+    oglReload();
+  };
+}
+
+async function oglAccept(id){
+  var why = prompt("Anything to note before closing it?") ;
+  if (why === null) return;
+  var out = await crux("/api/ogl/accept", { method:"POST", body:{ id:id, remarks: why } });
+  if (out.error) { el("oglMsg").innerHTML = msg("bad", out.reason || out.error); return; }
+  oglReload();
+}
+
 /* Helping with a case is a recorded act with an end date. */
 async function oglLend(id){
   var refs = await crux("/api/refs");
@@ -630,6 +705,12 @@ async function oglDetail(id){
               return '<button onclick="oglArbitrate(\'' + esc(id) + '\')">' + esc(x.label) + '</button>';
             if (x.kind === "lend")
               return '<button'+g+' onclick="oglLend(\'' + esc(id) + '\')">' + esc(x.label) + '</button>';
+            if (x.kind === "report")
+              return '<button onclick="oglReport(\'' + esc(id) + '\')">' + esc(x.label) + '</button>';
+            if (x.kind === "complete")
+              return '<button onclick="oglFinish(\'' + esc(id) + '\')">' + esc(x.label) + '</button>';
+            if (x.kind === "accept")
+              return '<button onclick="oglAccept(\'' + esc(id) + '\')">' + esc(x.label) + '</button>';
             if (x.kind === "decide")
               return '<button onclick="location.hash=\'#ogl\'">' + esc(x.label) + '</button>';
             return "";
